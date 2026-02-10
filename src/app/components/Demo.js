@@ -330,11 +330,10 @@ export default function Demo() {
 
         {/* Chat interface */}
         <div
-          className="bg-white rounded-3xl border border-[#eef2e6] overflow-hidden"
-          style={{ boxShadow: "var(--card-shadow)" }}
+          className="bg-white rounded-3xl border border-[#a7f3d0] overflow-hidden shadow-xl shadow-[#4ade80]/10 relative z-10"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary-dark to-primary px-6 py-4 flex items-center gap-3">
+          <div className="bg-gradient-to-r from-[#14532d] to-[#166534] px-6 py-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl">
               🌿
             </div>

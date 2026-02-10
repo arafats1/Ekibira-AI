@@ -71,19 +71,23 @@ export default function Solution() {
   ];
 
   return (
-    <section id="solution" className="relative py-24 md:py-32 px-6 bg-gradient-to-b from-[#ecfdf5] to-[#d1fae5] overflow-hidden">
-      <div className="max-w-6xl mx-auto">
+    <section id="solution" className="relative py-24 md:py-32 px-6 overflow-hidden">
+      {/* Forest background image */}
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1920&q=80')] bg-cover bg-center" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f13]/80 via-[#0a1f13]/70 to-[#0a1f13]/85" />
+
+      <div className="max-w-6xl mx-auto relative z-10">
         {/* Section header */}
         <div className="text-center mb-16">
-          <span className="inline-block text-[#2d6a4f] font-semibold text-sm tracking-widest uppercase mb-4 font-[family-name:var(--font-body)]">
+          <span className="inline-block text-[#4ade80] font-semibold text-sm tracking-widest uppercase mb-4 font-[family-name:var(--font-body)]">
             Our Solution
           </span>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#1a2e1a] leading-tight mb-6">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
             Intelligence That
             <br />
-            <span className="gradient-text">Grows Forests</span>
+            <span className="text-[#4ade80]">Grows Forests</span>
           </h2>
-          <p className="text-[#6b7c6b] text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
+          <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
             KijaniAI combines cutting-edge AI with local ecological knowledge to give
             communities the tools they need to restore and protect Africa&rsquo;s forests.
           </p>
@@ -94,16 +98,15 @@ export default function Solution() {
           {features.map((feature, i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl p-8 border border-[#a7f3d0] hover:border-[#34d399] transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-[#34d399]/10"
-              style={{ boxShadow: "var(--card-shadow)" }}
+              className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/15 hover:bg-white/15 transition-all duration-300 shadow-lg"
             >
               <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl ${feature.color} mb-5`}>
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-bold text-[#1a2e1a] mb-3 font-[family-name:var(--font-display)]">
+              <h3 className="text-xl font-bold text-white mb-3 font-[family-name:var(--font-display)]">
                 {feature.title}
               </h3>
-              <p className="text-[#6b7c6b] leading-relaxed font-[family-name:var(--font-body)]">
+              <p className="text-white/70 leading-relaxed font-[family-name:var(--font-body)]">
                 {feature.description}
               </p>
             </div>
@@ -112,10 +115,10 @@ export default function Solution() {
 
         {/* How it works */}
         <div className="text-center mb-12">
-          <h3 className="text-3xl md:text-4xl font-bold text-[#1a2e1a] mb-4">
+          <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
             How It Works
           </h3>
-          <p className="text-[#6b7c6b] text-lg font-[family-name:var(--font-body)]">
+          <p className="text-white/60 text-lg font-[family-name:var(--font-body)]">
             Simple, accessible, and powerful
           </p>
         </div>
@@ -123,16 +126,16 @@ export default function Solution() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {steps.map((step, i) => (
             <div key={i} className="relative text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#2d6a4f] text-white text-xl font-bold mb-4 font-[family-name:var(--font-display)]">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#4ade80] text-[#0a1f13] text-xl font-bold mb-4 font-[family-name:var(--font-display)]">
                 {step.step}
               </div>
               {i < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-[#2d6a4f]/20" />
+                <div className="hidden lg:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-white/20" />
               )}
-              <h4 className="text-lg font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">
+              <h4 className="text-lg font-bold text-white mb-2 font-[family-name:var(--font-display)]">
                 {step.title}
               </h4>
-              <p className="text-[#6b7c6b] text-sm font-[family-name:var(--font-body)]">{step.description}</p>
+              <p className="text-white/60 text-sm font-[family-name:var(--font-body)]">{step.description}</p>
             </div>
           ))}
         </div>

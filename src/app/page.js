@@ -4,7 +4,6 @@ import Problem from "./components/Problem";
 import Solution from "./components/Solution";
 import Demo from "./components/Demo";
 import Impact from "./components/Impact";
-import CTA from "./components/CTA";
 import Footer from "./components/Footer";
 
 export default function Home() {
@@ -16,7 +15,6 @@ export default function Home() {
       <Solution />
       <Demo />
       <Impact />
-      <CTA />
       <Footer />
     </>
   );
