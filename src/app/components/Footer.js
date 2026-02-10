@@ -1,8 +1,8 @@
 export default function Footer() {
   return (
-    <footer className="bg-[#14532d] text-[#a7f3d0] py-12 px-6">
+    <footer className="bg-[#14532d] text-[#a7f3d0] py-8 sm:py-12 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-3 gap-8 mb-8">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-6 sm:mb-8">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-3">
@@ -40,7 +40,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-[#a7f3d0]/60 font-[family-name:var(--font-body)]">
+        <div className="border-t border-white/10 pt-4 sm:pt-6 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 text-[10px] sm:text-xs text-[#a7f3d0]/60 font-[family-name:var(--font-body)]">
           <p>&copy; {new Date().getFullYear()} EkibiraAI by Abram Group. All rights reserved.</p>
           <p>
             Built with 💚 in Uganda for Africa &bull; Powered by AI

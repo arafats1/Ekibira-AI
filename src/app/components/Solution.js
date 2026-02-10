@@ -71,42 +71,42 @@ export default function Solution() {
   ];
 
   return (
-    <section id="solution" className="relative py-24 md:py-32 px-6 overflow-hidden">
+    <section id="solution" className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 overflow-hidden">
       {/* Forest background image */}
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1920&q=80')] bg-cover bg-center" />
       <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f13]/80 via-[#0a1f13]/70 to-[#0a1f13]/85" />
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Section header */}
-        <div className="text-center mb-16">
-          <span className="inline-block text-[#4ade80] font-semibold text-sm tracking-widest uppercase mb-4 font-[family-name:var(--font-body)]">
+        <div className="text-center mb-10 sm:mb-16">
+          <span className="inline-block text-[#4ade80] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">
             Our Solution
           </span>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6">
             Intelligence That
             <br />
             <span className="text-[#4ade80]">Grows Forests</span>
           </h2>
-          <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
+          <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
             EkibiraAI combines cutting-edge AI with local ecological knowledge to give
             communities the tools they need to restore and protect Africa&rsquo;s forests.
           </p>
         </div>
 
         {/* Features grid */}
-        <div className="grid md:grid-cols-2 gap-6 mb-20">
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-14 sm:mb-20">
           {features.map((feature, i) => (
             <div
               key={i}
-              className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/15 hover:bg-white/15 transition-all duration-300 shadow-lg"
+              className="bg-white/10 backdrop-blur-md rounded-2xl p-5 sm:p-8 border border-white/15 hover:bg-white/15 transition-all duration-300 shadow-lg"
             >
-              <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl ${feature.color} mb-5`}>
+              <div className={`inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${feature.color} mb-4 sm:mb-5`}>
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-bold text-white mb-3 font-[family-name:var(--font-display)]">
+              <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 font-[family-name:var(--font-display)]">
                 {feature.title}
               </h3>
-              <p className="text-white/70 leading-relaxed font-[family-name:var(--font-body)]">
+              <p className="text-white/70 leading-relaxed text-sm sm:text-base font-[family-name:var(--font-body)]">
                 {feature.description}
               </p>
             </div>
@@ -114,28 +114,28 @@ export default function Solution() {
         </div>
 
         {/* How it works */}
-        <div className="text-center mb-12">
-          <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
             How It Works
           </h3>
-          <p className="text-white/60 text-lg font-[family-name:var(--font-body)]">
+          <p className="text-white/60 text-base sm:text-lg font-[family-name:var(--font-body)]">
             Simple, accessible, and powerful
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {steps.map((step, i) => (
             <div key={i} className="relative text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#4ade80] text-[#0a1f13] text-xl font-bold mb-4 font-[family-name:var(--font-display)]">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#4ade80] text-[#0a1f13] text-base sm:text-xl font-bold mb-3 sm:mb-4 font-[family-name:var(--font-display)]">
                 {step.step}
               </div>
               {i < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-white/20" />
               )}
-              <h4 className="text-lg font-bold text-white mb-2 font-[family-name:var(--font-display)]">
+              <h4 className="text-sm sm:text-lg font-bold text-white mb-1 sm:mb-2 font-[family-name:var(--font-display)]">
                 {step.title}
               </h4>
-              <p className="text-white/60 text-sm font-[family-name:var(--font-body)]">{step.description}</p>
+              <p className="text-white/60 text-xs sm:text-sm font-[family-name:var(--font-body)]">{step.description}</p>
             </div>
           ))}
         </div>

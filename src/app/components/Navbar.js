@@ -6,7 +6,7 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#2d6a4f]/10">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
         <a href="#" className="flex items-center gap-2">
           <span className="text-2xl">🌿</span>
           <span className="font-[family-name:var(--font-display)] text-xl font-bold text-[#1b4332] tracking-tight">
@@ -46,15 +46,15 @@ export default function Navbar() {
 
       {/* Mobile nav */}
       {open && (
-        <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-[#eef2e6] px-6 py-4 flex flex-col gap-4 text-sm font-medium">
-          <a href="#problem" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f]">The Problem</a>
-          <a href="#solution" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f]">Solution</a>
-          <a href="/advisor" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f]">Try Advisor</a>
-          <a href="#impact" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f]">Impact</a>
+        <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-[#eef2e6] px-4 sm:px-6 py-3 flex flex-col gap-1 text-sm font-medium">
+          <a href="#problem" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">The Problem</a>
+          <a href="#solution" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Solution</a>
+          <a href="/advisor" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Try Advisor</a>
+          <a href="#impact" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Impact</a>
           <a
             href="#support"
             onClick={() => setOpen(false)}
-            className="bg-[#2d6a4f] text-white px-5 py-2.5 rounded-full text-center hover:bg-[#1b4332] transition-colors font-semibold"
+            className="bg-[#2d6a4f] text-white px-5 py-3 rounded-full text-center hover:bg-[#1b4332] transition-colors font-semibold mt-2"
           >
             Support This Initiative
           </a>

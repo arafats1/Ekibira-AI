@@ -172,13 +172,13 @@ function TypingIndicator() {
 function AIResponse({ data }) {
   const colors = getRiskColor(data.riskScore);
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-3 sm:space-y-4 animate-fade-in">
       {/* Risk Assessment */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-5 border border-[#a7f3d0]/40 shadow-sm">
-        <h4 className="font-bold text-[#1a2e1a] mb-3 flex items-center gap-2 font-[family-name:var(--font-display)]">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
+        <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
           <span className="text-lg">📊</span> Deforestation Risk Assessment
         </h4>
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
           <div className={`px-3 py-1 rounded-full text-sm font-bold ${colors.bg} ${colors.text}`}>
             {data.riskLevel} Risk
           </div>
@@ -195,13 +195,13 @@ function AIResponse({ data }) {
       </div>
 
       {/* Native Trees */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-5 border border-[#a7f3d0]/40 shadow-sm">
-        <h4 className="font-bold text-[#1a2e1a] mb-3 flex items-center gap-2 font-[family-name:var(--font-display)]">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
+        <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
           <span className="text-lg">🌳</span> Recommended Native Trees
         </h4>
         <div className="space-y-2.5">
           {data.nativeTrees.map((tree, i) => (
-            <div key={i} className="flex items-start gap-3 p-3 bg-[#f0fdf4]/80 rounded-lg">
+            <div key={i} className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-[#f0fdf4]/80 rounded-lg">
               <span className="text-[#2d6a4f] font-bold text-sm mt-0.5">{i + 1}.</span>
               <div className="font-[family-name:var(--font-body)]">
                 <span className="font-semibold text-[#1a2e1a] text-sm">{tree.name}</span>
@@ -213,12 +213,12 @@ function AIResponse({ data }) {
       </div>
 
       {/* Carbon Potential */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-5 border border-[#a7f3d0]/40 shadow-sm">
-        <h4 className="font-bold text-[#1a2e1a] mb-3 flex items-center gap-2 font-[family-name:var(--font-display)]">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
+        <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
           <span className="text-lg">🌍</span> Carbon Sequestration Potential
         </h4>
-        <div className="bg-gradient-to-r from-[#f0fdf4] to-[#fefce8] rounded-lg p-4 font-[family-name:var(--font-body)]">
-          <div className="text-2xl font-bold text-[#2d6a4f] font-[family-name:var(--font-display)]">{data.carbonPotential}</div>
+        <div className="bg-gradient-to-r from-[#f0fdf4] to-[#fefce8] rounded-lg p-3 sm:p-4 font-[family-name:var(--font-body)]">
+          <div className="text-xl sm:text-2xl font-bold text-[#2d6a4f] font-[family-name:var(--font-display)]">{data.carbonPotential}</div>
           <p className="text-sm text-[#6b7c6b] mt-1">Estimated annual sequestration with recommended species</p>
           <div className="mt-3 text-sm">
             <span className="font-semibold text-[#1a2e1a]">Carbon Credit Value:</span>{" "}
@@ -228,8 +228,8 @@ function AIResponse({ data }) {
       </div>
 
       {/* Farming Tips */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-5 border border-[#a7f3d0]/40 shadow-sm">
-        <h4 className="font-bold text-[#1a2e1a] mb-3 flex items-center gap-2 font-[family-name:var(--font-display)]">
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
+        <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
           <span className="text-lg">🌾</span> Climate-Smart Recommendations
         </h4>
         <div className="space-y-2 font-[family-name:var(--font-body)]">
@@ -279,7 +279,7 @@ export default function AdvisorPage() {
   };
 
   const quickOptions = [
-    { label: "Uganda", icon: "�️" },
+    { label: "Uganda", icon: "🏔️" },
     { label: "Ghana - West Africa", icon: "🌴" },
     { label: "Congo Basin", icon: "🌿" },
     { label: "South Africa", icon: "🦁" },
@@ -316,17 +316,17 @@ export default function AdvisorPage() {
       </div>
 
       {/* Top navigation bar */}
-      <nav className="relative z-20 px-6 py-4">
+      <nav className="relative z-20 px-4 sm:px-6 py-3 sm:py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-2xl">🌿</span>
-            <span className="font-[family-name:var(--font-display)] text-xl font-bold text-white tracking-tight group-hover:text-[#4ade80] transition-colors">
+            <span className="text-xl sm:text-2xl">🌿</span>
+            <span className="font-[family-name:var(--font-display)] text-lg sm:text-xl font-bold text-white tracking-tight group-hover:text-[#4ade80] transition-colors">
               EkibiraAI
             </span>
           </Link>
           <Link
             href="/"
-            className="flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium transition-colors font-[family-name:var(--font-body)]"
+            className="flex items-center gap-1.5 sm:gap-2 text-white/70 hover:text-white text-xs sm:text-sm font-medium transition-colors font-[family-name:var(--font-body)]"
           >
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -337,20 +337,20 @@ export default function AdvisorPage() {
       </nav>
 
       {/* Main content */}
-      <main className="relative z-10 px-4 sm:px-6 pb-12 pt-2">
+      <main className="relative z-10 px-3 sm:px-6 pb-8 sm:pb-12 pt-1 sm:pt-2">
         <div className="max-w-5xl mx-auto">
           {/* Hero header */}
-          <div className="text-center mb-8 animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-5 py-2 mb-6">
+          <div className="text-center mb-6 sm:mb-8 animate-fade-in-up">
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 sm:px-5 py-1.5 sm:py-2 mb-4 sm:mb-6">
               <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse-soft" />
-              <span className="text-white/90 text-sm font-medium tracking-wide font-[family-name:var(--font-body)]">
+              <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide font-[family-name:var(--font-body)]">
                 AI-Powered Reforestation Intelligence
               </span>
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight mb-4 drop-shadow-lg font-[family-name:var(--font-display)]">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight mb-3 sm:mb-4 drop-shadow-lg font-[family-name:var(--font-display)]">
               EkibiraAI <span className="text-[#4ade80]">Advisor</span>
             </h1>
-            <p className="text-white/75 text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
+            <p className="text-white/75 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
               Enter any location in Africa to receive an AI-driven deforestation risk analysis,
               native tree recommendations, carbon sequestration estimates, and climate-smart strategies.
             </p>
@@ -358,7 +358,7 @@ export default function AdvisorPage() {
 
           {/* Region quick-select cards */}
           {messages.length === 0 && (
-            <div className="animate-fade-in-up delay-200 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-8">
+            <div className="animate-fade-in-up delay-200 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-6 sm:mb-8">
               {quickOptions.map((option, i) => (
                 <button
                   key={i}
@@ -369,25 +369,25 @@ export default function AdvisorPage() {
                       if (form) form.requestSubmit();
                     }, 100);
                   }}
-                  className="group bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 text-center hover:bg-white/20 hover:border-[#4ade80]/40 transition-all hover:scale-[1.03] active:scale-[0.98]"
+                  className={`group bg-white/10 backdrop-blur-md border border-white/15 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center hover:bg-white/20 hover:border-[#4ade80]/40 transition-all hover:scale-[1.03] active:scale-[0.98] ${i === 4 ? 'col-span-2 sm:col-span-1' : ''}`}
                 >
-                  <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">{option.icon}</span>
-                  <span className="text-white/90 text-xs font-medium font-[family-name:var(--font-body)]">{option.label}</span>
+                  <span className="text-xl sm:text-2xl block mb-1 sm:mb-2 group-hover:scale-110 transition-transform">{option.icon}</span>
+                  <span className="text-white/90 text-[10px] sm:text-xs font-medium font-[family-name:var(--font-body)] leading-tight">{option.label}</span>
                 </button>
               ))}
             </div>
           )}
 
           {/* Chat container */}
-          <div className="animate-fade-in-up delay-300 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/15 overflow-hidden shadow-2xl shadow-black/20">
+          <div className="animate-fade-in-up delay-300 bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-white/15 overflow-hidden shadow-2xl shadow-black/20">
             {/* Chat header */}
-            <div className="bg-gradient-to-r from-[#14532d]/90 to-[#166534]/90 backdrop-blur-sm px-6 py-4 flex items-center gap-3 border-b border-white/10">
-              <div className="w-11 h-11 rounded-full bg-[#4ade80]/20 flex items-center justify-center text-xl border border-[#4ade80]/30">
+            <div className="bg-gradient-to-r from-[#14532d]/90 to-[#166534]/90 backdrop-blur-sm px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-3 border-b border-white/10">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-[#4ade80]/20 flex items-center justify-center text-lg sm:text-xl border border-[#4ade80]/30">
                 🌿
               </div>
-              <div className="flex-1">
-                <h3 className="text-white font-bold font-[family-name:var(--font-display)] text-lg">EkibiraAI Advisor</h3>
-                <p className="text-[#a7f3d0]/80 text-xs font-[family-name:var(--font-body)]">Smart Reforestation & Land-Use Intelligence</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-white font-bold font-[family-name:var(--font-display)] text-base sm:text-lg">EkibiraAI Advisor</h3>
+                <p className="text-[#a7f3d0]/80 text-[10px] sm:text-xs font-[family-name:var(--font-body)] truncate">Smart Reforestation Intelligence</p>
               </div>
               <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1">
                 <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse" />
@@ -396,14 +396,14 @@ export default function AdvisorPage() {
             </div>
 
             {/* Messages area */}
-            <div className="h-[520px] overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-[#f0fdf4]/95 to-[#fafcf7]/95 backdrop-blur-sm">
+            <div className="h-[360px] sm:h-[420px] md:h-[520px] overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-[#f0fdf4]/95 to-[#fafcf7]/95 backdrop-blur-sm">
               {/* Welcome message */}
-              <div className="flex gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-sm flex-shrink-0 border border-[#2d6a4f]/20">
+              <div className="flex gap-2 sm:gap-3">
+                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 border border-[#2d6a4f]/20">
                   🌿
                 </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-[#a7f3d0]/30 shadow-sm">
-                  <p className="text-sm text-[#1a2e1a] leading-relaxed font-[family-name:var(--font-body)]">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-sm px-3 sm:px-5 py-3 sm:py-4 max-w-[88%] sm:max-w-[85%] border border-[#a7f3d0]/30 shadow-sm">
+                  <p className="text-xs sm:text-sm text-[#1a2e1a] leading-relaxed font-[family-name:var(--font-body)]">
                     Welcome to <strong className="text-[#2d6a4f]">EkibiraAI</strong>! I&rsquo;m your AI-powered reforestation advisor.
                     Tell me a location in Africa and I&rsquo;ll provide a comprehensive analysis:
                   </p>
@@ -428,28 +428,28 @@ export default function AdvisorPage() {
                 <div key={i}>
                   {msg.type === "user" && (
                     <div className="flex justify-end">
-                      <div className="bg-gradient-to-br from-[#2d6a4f] to-[#1b4332] text-white rounded-2xl rounded-br-sm px-5 py-3 max-w-[85%] shadow-md">
-                        <p className="text-sm font-[family-name:var(--font-body)]">{msg.text}</p>
+                      <div className="bg-gradient-to-br from-[#2d6a4f] to-[#1b4332] text-white rounded-2xl rounded-br-sm px-3 sm:px-5 py-2 sm:py-3 max-w-[88%] sm:max-w-[85%] shadow-md">
+                        <p className="text-xs sm:text-sm font-[family-name:var(--font-body)]">{msg.text}</p>
                       </div>
                     </div>
                   )}
                   {msg.type === "ai" && (
-                    <div className="flex gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-sm flex-shrink-0 border border-[#2d6a4f]/20">
+                    <div className="flex gap-2 sm:gap-3">
+                      <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 border border-[#2d6a4f]/20">
                         🌿
                       </div>
-                      <div className="max-w-[90%]">
+                      <div className="max-w-[92%] sm:max-w-[90%]">
                         <AIResponse data={msg.data} />
                       </div>
                     </div>
                   )}
                   {msg.type === "ai-text" && (
-                    <div className="flex gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-sm flex-shrink-0 border border-[#2d6a4f]/20">
+                    <div className="flex gap-2 sm:gap-3">
+                      <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 border border-[#2d6a4f]/20">
                         🌿
                       </div>
-                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-sm px-5 py-3 max-w-[85%] border border-[#a7f3d0]/30 shadow-sm">
-                        <p className="text-sm text-[#1a2e1a] font-[family-name:var(--font-body)]">{msg.text}</p>
+                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-sm px-3 sm:px-5 py-2 sm:py-3 max-w-[88%] sm:max-w-[85%] border border-[#a7f3d0]/30 shadow-sm">
+                        <p className="text-xs sm:text-sm text-[#1a2e1a] font-[family-name:var(--font-body)]">{msg.text}</p>
                       </div>
                     </div>
                   )}
@@ -457,8 +457,8 @@ export default function AdvisorPage() {
               ))}
 
               {loading && (
-                <div className="flex gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-sm flex-shrink-0 border border-[#2d6a4f]/20">
+                <div className="flex gap-2 sm:gap-3">
+                  <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 border border-[#2d6a4f]/20">
                     🌿
                   </div>
                   <TypingIndicator />
@@ -472,20 +472,20 @@ export default function AdvisorPage() {
             <form
               id="advisor-form"
               onSubmit={handleSubmit}
-              className="p-4 bg-white/90 backdrop-blur-sm border-t border-[#a7f3d0]/30 flex gap-3"
+              className="p-2.5 sm:p-4 bg-white/90 backdrop-blur-sm border-t border-[#a7f3d0]/30 flex gap-2 sm:gap-3"
             >
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Enter a location in Africa (e.g., Uganda, Lagos, Congo Basin)..."
-                className="flex-1 px-5 py-3.5 rounded-xl border border-[#a7f3d0]/40 bg-[#f0fdf4]/50 text-[#1a2e1a] text-sm focus:outline-none focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/20 transition-all font-[family-name:var(--font-body)] placeholder:text-[#6b7c6b]/60"
+                placeholder="Enter a location (e.g., Uganda, Lagos)..."
+                className="flex-1 min-w-0 px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-lg sm:rounded-xl border border-[#a7f3d0]/40 bg-[#f0fdf4]/50 text-[#1a2e1a] text-xs sm:text-sm focus:outline-none focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/20 transition-all font-[family-name:var(--font-body)] placeholder:text-[#6b7c6b]/60"
                 disabled={loading}
               />
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="bg-gradient-to-r from-[#2d6a4f] to-[#1b4332] text-white px-7 py-3.5 rounded-xl font-semibold text-sm hover:from-[#1b4332] hover:to-[#14532d] transition-all disabled:opacity-40 disabled:cursor-not-allowed font-[family-name:var(--font-body)] shadow-md hover:shadow-lg"
+                className="bg-gradient-to-r from-[#2d6a4f] to-[#1b4332] text-white px-4 sm:px-7 py-2.5 sm:py-3.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm hover:from-[#1b4332] hover:to-[#14532d] transition-all disabled:opacity-40 disabled:cursor-not-allowed font-[family-name:var(--font-body)] shadow-md hover:shadow-lg flex-shrink-0"
               >
                 Analyze
               </button>
@@ -493,14 +493,14 @@ export default function AdvisorPage() {
           </div>
 
           {/* Bottom info bar */}
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
-            <p className="text-white/50 text-xs font-[family-name:var(--font-body)] text-center sm:text-left">
+          <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-1 sm:px-2">
+            <p className="text-white/50 text-[10px] sm:text-xs font-[family-name:var(--font-body)] text-center sm:text-left">
               This demo uses a curated knowledge base. The full platform integrates satellite imagery,
               real-time climate APIs, and advanced ML models.
             </p>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
               {["Satellite AI", "Carbon Tracking", "5 Regions"].map((tag, i) => (
-                <span key={i} className="text-[#4ade80]/70 text-xs font-medium border border-[#4ade80]/20 rounded-full px-3 py-1 font-[family-name:var(--font-body)]">
+                <span key={i} className="text-[#4ade80]/70 text-[10px] sm:text-xs font-medium border border-[#4ade80]/20 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 font-[family-name:var(--font-body)]">
                   {tag}
                 </span>
               ))}

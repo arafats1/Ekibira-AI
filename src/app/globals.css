@@ -36,6 +36,28 @@ body {
   background: #f8faf5;
   color: #1a2e1a;
   font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+/* Prevent horizontal overflow on mobile */
+html {
+  overflow-x: hidden;
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 640px) {
+  a, button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Reduce heavy animations on mobile for performance */
+  .animate-float {
+    animation: none;
+  }
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -109,7 +131,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+}
+@media (min-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
 }
 ::-webkit-scrollbar-track {
   background: var(--background);
