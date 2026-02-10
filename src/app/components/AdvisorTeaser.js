@@ -54,7 +54,7 @@ export default function AdvisorTeaser() {
               🌿
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm font-[family-name:var(--font-display)]">KijaniAI Advisor</h3>
+              <h3 className="text-white font-bold text-sm font-[family-name:var(--font-display)]">EkibiraAI Advisor</h3>
               <p className="text-[#a7f3d0]/70 text-[10px] font-[family-name:var(--font-body)]">AI-Powered Intelligence</p>
             </div>
             <div className="ml-auto flex items-center gap-1.5">

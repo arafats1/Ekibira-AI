@@ -338,7 +338,7 @@ export default function Demo() {
               🌿
             </div>
             <div>
-              <h3 className="text-white font-bold font-[family-name:var(--font-display)]">KijaniAI Advisor</h3>
+              <h3 className="text-white font-bold font-[family-name:var(--font-display)]">EkibiraAI Advisor</h3>
               <p className="text-white/70 text-xs font-[family-name:var(--font-body)]">AI-Powered Reforestation Intelligence</p>
             </div>
             <div className="ml-auto flex items-center gap-1.5">
@@ -356,7 +356,7 @@ export default function Demo() {
               </div>
               <div className="bg-[#eef2e6] rounded-2xl rounded-bl-sm px-4 py-3 max-w-[85%]">
                 <p className="text-sm text-[#1a2e1a] leading-relaxed font-[family-name:var(--font-body)]">
-                  Welcome to <strong>KijaniAI</strong>! I&rsquo;m your AI-powered reforestation advisor.
+                  Welcome to <strong>EkibiraAI</strong>! I&rsquo;m your AI-powered reforestation advisor.
                   Tell me a location in Africa and I&rsquo;ll provide:
                 </p>
                 <ul className="text-sm text-[#6b7c6b] mt-2 space-y-1 font-[family-name:var(--font-body)]">

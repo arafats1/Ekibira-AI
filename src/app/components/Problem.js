@@ -89,7 +89,7 @@ export default function Problem() {
           <p className="text-white/80 text-lg max-w-2xl mx-auto font-[family-name:var(--font-body)]">
             Smallholder farmers, local governments, and conservation groups need accessible,
             intelligent tools to understand their environment and make climate-smart decisions.
-            That&rsquo;s where KijaniAI comes in.
+            That&rsquo;s where EkibiraAI comes in.
           </p>
         </div>
       </div>

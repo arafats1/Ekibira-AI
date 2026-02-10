@@ -10,7 +10,7 @@ export default function Navbar() {
         <a href="#" className="flex items-center gap-2">
           <span className="text-2xl">🌿</span>
           <span className="font-[family-name:var(--font-display)] text-xl font-bold text-[#1b4332] tracking-tight">
-            KijaniAI
+            EkibiraAI
           </span>
         </a>
 

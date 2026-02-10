@@ -321,7 +321,7 @@ export default function AdvisorPage() {
           <Link href="/" className="flex items-center gap-2 group">
             <span className="text-2xl">🌿</span>
             <span className="font-[family-name:var(--font-display)] text-xl font-bold text-white tracking-tight group-hover:text-[#4ade80] transition-colors">
-              KijaniAI
+              EkibiraAI
             </span>
           </Link>
           <Link
@@ -348,7 +348,7 @@ export default function AdvisorPage() {
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight mb-4 drop-shadow-lg font-[family-name:var(--font-display)]">
-              KijaniAI <span className="text-[#4ade80]">Advisor</span>
+              EkibiraAI <span className="text-[#4ade80]">Advisor</span>
             </h1>
             <p className="text-white/75 text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
               Enter any location in Africa to receive an AI-driven deforestation risk analysis,
@@ -386,7 +386,7 @@ export default function AdvisorPage() {
                 🌿
               </div>
               <div className="flex-1">
-                <h3 className="text-white font-bold font-[family-name:var(--font-display)] text-lg">KijaniAI Advisor</h3>
+                <h3 className="text-white font-bold font-[family-name:var(--font-display)] text-lg">EkibiraAI Advisor</h3>
                 <p className="text-[#a7f3d0]/80 text-xs font-[family-name:var(--font-body)]">Smart Reforestation & Land-Use Intelligence</p>
               </div>
               <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1">
@@ -404,7 +404,7 @@ export default function AdvisorPage() {
                 </div>
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-[#a7f3d0]/30 shadow-sm">
                   <p className="text-sm text-[#1a2e1a] leading-relaxed font-[family-name:var(--font-body)]">
-                    Welcome to <strong className="text-[#2d6a4f]">KijaniAI</strong>! I&rsquo;m your AI-powered reforestation advisor.
+                    Welcome to <strong className="text-[#2d6a4f]">EkibiraAI</strong>! I&rsquo;m your AI-powered reforestation advisor.
                     Tell me a location in Africa and I&rsquo;ll provide a comprehensive analysis:
                   </p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
