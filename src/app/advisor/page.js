@@ -279,11 +279,11 @@ export default function AdvisorPage() {
   };
 
   const quickOptions = [
-    { label: "Uganda", icon: "🇺🇬" },
-    { label: "Ghana - West Africa", icon: "🇬🇭" },
+    { label: "Uganda", icon: "�️" },
+    { label: "Ghana - West Africa", icon: "🌴" },
     { label: "Congo Basin", icon: "🌿" },
-    { label: "South Africa", icon: "🇿🇦" },
-    { label: "Morocco & North Africa", icon: "🇲🇦" },
+    { label: "South Africa", icon: "🦁" },
+    { label: "Morocco & North Africa", icon: "🏜️" },
   ];
 
   return (
