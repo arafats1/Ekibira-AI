@@ -2,7 +2,7 @@ import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Problem from "./components/Problem";
 import Solution from "./components/Solution";
-import Demo from "./components/Demo";
+import AdvisorTeaser from "./components/AdvisorTeaser";
 import Impact from "./components/Impact";
 import Footer from "./components/Footer";
 
@@ -13,7 +13,7 @@ export default function Home() {
       <Hero />
       <Problem />
       <Solution />
-      <Demo />
+      <AdvisorTeaser />
       <Impact />
       <Footer />
     </>

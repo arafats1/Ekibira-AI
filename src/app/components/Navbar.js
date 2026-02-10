@@ -18,7 +18,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#1a2e1a]/80">
           <a href="#problem" className="hover:text-[#2d6a4f] transition-colors">The Problem</a>
           <a href="#solution" className="hover:text-[#2d6a4f] transition-colors">Solution</a>
-          <a href="#demo" className="hover:text-[#2d6a4f] transition-colors">Try Demo</a>
+          <a href="/advisor" className="hover:text-[#2d6a4f] transition-colors">Try Advisor</a>
           <a href="#impact" className="hover:text-[#2d6a4f] transition-colors">Impact</a>
           <a
             href="#support"
@@ -49,7 +49,7 @@ export default function Navbar() {
         <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-[#eef2e6] px-6 py-4 flex flex-col gap-4 text-sm font-medium">
           <a href="#problem" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f]">The Problem</a>
           <a href="#solution" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f]">Solution</a>
-          <a href="#demo" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f]">Try Demo</a>
+          <a href="/advisor" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f]">Try Advisor</a>
           <a href="#impact" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f]">Impact</a>
           <a
             href="#support"

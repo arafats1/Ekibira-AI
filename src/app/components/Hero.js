@@ -49,7 +49,7 @@ export default function Hero() {
         {/* CTAs */}
         <div className="animate-fade-in-up delay-300 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
-            href="#demo"
+            href="/advisor"
             className="bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13] font-bold px-8 py-4 rounded-full text-lg transition-all hover:scale-105 shadow-lg shadow-[#4ade80]/25"
           >
             Try the AI Advisor →
