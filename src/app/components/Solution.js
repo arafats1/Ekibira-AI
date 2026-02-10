@@ -71,7 +71,7 @@ export default function Solution() {
   ];
 
   return (
-    <section id="solution" className="py-24 md:py-32 px-6 bg-[#eef2e6]">
+    <section id="solution" className="relative py-24 md:py-32 px-6 bg-gradient-to-b from-[#ecfdf5] to-[#d1fae5] overflow-hidden">
       <div className="max-w-6xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-16">
@@ -94,7 +94,7 @@ export default function Solution() {
           {features.map((feature, i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl p-8 border border-white hover:border-[#2d6a4f]/20 transition-all duration-300 hover:shadow-[var(--card-shadow-hover)]"
+              className="bg-white rounded-2xl p-8 border border-[#a7f3d0] hover:border-[#34d399] transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-[#34d399]/10"
               style={{ boxShadow: "var(--card-shadow)" }}
             >
               <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl ${feature.color} mb-5`}>

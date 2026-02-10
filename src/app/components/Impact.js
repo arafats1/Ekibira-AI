@@ -48,7 +48,9 @@ export default function Impact() {
   ];
 
   return (
-    <section id="impact" className="py-24 md:py-32 px-6 bg-[#eef2e6]">
+    <section id="impact" className="relative py-24 md:py-32 px-6 bg-gradient-to-b from-[#ecfdf5] via-[#d1fae5] to-[#ecfdf5] overflow-hidden">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-[#4ade80]/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#d4a843]/10 rounded-full blur-3xl" />
       <div className="max-w-6xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-16">
@@ -69,7 +71,7 @@ export default function Impact() {
           {metrics.map((metric, i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl p-6 border border-white hover:border-[#2d6a4f]/20 transition-all duration-300 text-center hover:shadow-[var(--card-shadow-hover)]"
+              className="bg-white rounded-2xl p-6 border border-[#a7f3d0] hover:border-[#34d399] transition-all duration-300 text-center shadow-md hover:shadow-xl hover:shadow-[#34d399]/10"
               style={{ boxShadow: "var(--card-shadow)" }}
             >
               <div className="text-3xl mb-3">{metric.icon}</div>

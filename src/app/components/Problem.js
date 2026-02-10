@@ -31,8 +31,10 @@ export default function Problem() {
   ];
 
   return (
-    <section id="problem" className="py-24 md:py-32 px-6 bg-white">
-      <div className="max-w-6xl mx-auto">
+    <section id="problem" className="relative py-24 md:py-32 px-6 bg-gradient-to-b from-white to-[#f0fdf4] overflow-hidden">
+      {/* Tree silhouette pattern */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 10 L25 35 L30 35 L20 55 L60 55 L50 35 L55 35 Z' fill='%23166534'/%3E%3Crect x='37' y='55' width='6' height='10' fill='%23166534'/%3E%3C/svg%3E")`, backgroundSize: '80px 80px'}} />
+      <div className="max-w-6xl mx-auto relative z-10">
         {/* Section header */}
         <div className="text-center mb-16">
           <span className="inline-block text-[#2d6a4f] font-semibold text-sm tracking-widest uppercase mb-4 font-[family-name:var(--font-body)]">
@@ -55,7 +57,7 @@ export default function Problem() {
           {problems.map((problem, i) => (
             <div
               key={i}
-              className="group relative bg-white rounded-2xl p-8 border border-[#eef2e6] hover:border-[#2d6a4f]/20 transition-all duration-300 hover:shadow-[var(--card-shadow-hover)]"
+              className="group relative bg-white rounded-2xl p-8 border border-[#bbf7d0] hover:border-[#4ade80] transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-[#4ade80]/10"
               style={{ boxShadow: "var(--card-shadow)" }}
             >
               <div className="flex items-start gap-5">
@@ -80,11 +82,11 @@ export default function Problem() {
         </div>
 
         {/* Callout */}
-        <div className="mt-16 bg-gradient-to-r from-[#e8f5e9] to-[#f1f8e9] rounded-3xl p-8 md:p-12 text-center border border-[#2d6a4f]/10">
-          <h3 className="text-2xl md:text-3xl font-bold mb-4 font-[family-name:var(--font-display)] text-[#1b4332]">
+        <div className="mt-16 bg-gradient-to-r from-[#14532d] to-[#166534] rounded-3xl p-8 md:p-12 text-center shadow-2xl shadow-[#14532d]/20">
+          <h3 className="text-2xl md:text-3xl font-bold mb-4 font-[family-name:var(--font-display)] text-white">
             The gap? Communities lack the tools and data to act.
           </h3>
-          <p className="text-[#4a6741] text-lg max-w-2xl mx-auto font-[family-name:var(--font-body)]">
+          <p className="text-white/80 text-lg max-w-2xl mx-auto font-[family-name:var(--font-body)]">
             Smallholder farmers, local governments, and conservation groups need accessible,
             intelligent tools to understand their environment and make climate-smart decisions.
             That&rsquo;s where KijaniAI comes in.

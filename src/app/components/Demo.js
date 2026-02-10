@@ -309,7 +309,10 @@ export default function Demo() {
   ];
 
   return (
-    <section id="demo" className="py-24 md:py-32 px-6 bg-white">
+    <section id="demo" className="relative py-24 md:py-32 px-6 bg-gradient-to-b from-white via-[#f0fdf4] to-white overflow-hidden">
+      {/* Decorative blobs */}
+      <div className="absolute top-10 right-0 w-80 h-80 bg-[#4ade80]/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-10 left-0 w-80 h-80 bg-[#d4a843]/10 rounded-full blur-3xl" />
       <div className="max-w-4xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-12">
