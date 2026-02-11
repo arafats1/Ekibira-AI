@@ -34,16 +34,14 @@ export default function Hero() {
 
         {/* Main headline */}
         <h1 className="animate-fade-in-up delay-100 text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.08] tracking-tight mb-6 sm:mb-8 drop-shadow-lg">
-          Restoring Africa&rsquo;s Forests
+          Restoring Africa’s Climate
           <br />
           <span className="text-[#4ade80]">with Intelligence</span>
         </h1>
 
         {/* Subheadline */}
         <p className="animate-fade-in-up delay-200 text-base sm:text-lg md:text-xl text-white/85 max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-12 font-[family-name:var(--font-body)]">
-          KibiraAI uses artificial intelligence to analyze deforestation patterns,
-          recommend native reforestation strategies, and track carbon sequestration
-          — empowering communities across Africa to fight climate change.
+         KibiraAI uses artificial intelligence to analyze deforestation patterns,  emerging urban climate challenges, recommend native reforestation strategies, and track carbon sequestration — empowering communities across Africa to fight climate change
         </p>
 
         {/* CTAs */}

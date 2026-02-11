@@ -41,9 +41,9 @@ export default function Impact() {
   const sdgs = [
     { number: 13, title: "Climate Action", color: "bg-green-600" },
     { number: 15, title: "Life on Land", color: "bg-emerald-600" },
-    { number: 1, title: "No Poverty", color: "bg-red-600" },
+    { number: 11, title: "Sustainable Cities", color: "bg-orange-600" },
     { number: 2, title: "Zero Hunger", color: "bg-amber-600" },
-    { number: 8, title: "Decent Work", color: "bg-rose-600" },
+    { number: 6, title: "Clean Water", color: "bg-blue-600" },
     { number: 17, title: "Partnerships", color: "bg-blue-800" },
   ];
 

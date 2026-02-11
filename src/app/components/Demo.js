@@ -113,10 +113,37 @@ const REGION_DATA = {
     ],
     carbonCredits: "$6-12 per tonne CO₂e — lower density but long-duration credits, $400-800/ha over 10 years",
   },
+  "urban resilience": {
+    countries: "Lagos, Nairobi, Kinshasa, Addis Ababa, Johannesburg, Accra (Major Hubs)",
+    riskLevel: "Urgent",
+    riskScore: 88,
+    annualLoss: "High service vulnerability to heat and floods",
+    primaryDrivers: "Rapid urbanization, lack of green space, data gaps, informal settlement challenges",
+    nativeTrees: [
+      { name: "Grevillea robusta", use: "Urban shade, fast-growing, excellent for street lining and timber" },
+      { name: "Spathodea campanulata (Nandi Flame)", use: "Ornamental, high biodiversity value for urban birds/insects" },
+      { name: "Terminalia mantaly", use: "Layered shade — ideal for parking lots and heat-island mitigation" },
+      { name: "Callistemon citrinus (Bottlebrush)", use: "Small footprint — suitable for narrow urban streets and vertical gardens" },
+      { name: "Fruit Trees (Mango/Avocado)", use: "Urban food security — provides nutrition while reducing heat" },
+    ],
+    carbonPotential: "12.0 - 18.2 tonnes CO₂/hectare/year (Urban Forest equivalent)",
+    farmingTips: [
+      "Launch Community-led Vertical Farming & Urban Garden Advisory to tackle food insecurity",
+      "Deploy AI-driven Flood Risk Analytics to provide early warning services for dense neighborhoods",
+      "Develop Digital Green Corridors planning to reduce the Urban Heat Island effect by up to 5°C",
+      "Integrate AI-driven Water Scarcity Monitoring services for smart distribution and leakage detection",
+    ],
+    carbonCredits: "$20-35 per tonne CO₂e — high value 'Social Impact' credits due to direct community benefits",
+  },
 };
 
 function getRegionData(input) {
   const lower = input.toLowerCase();
+  
+  // Specific check for urban/city keywords
+  if (lower.includes("urban") || lower.includes("city") || lower.includes("services") || lower.includes("resilience")) {
+    return { region: "urban resilience", ...REGION_DATA["urban resilience"] };
+  }
 
   // Direct region match
   for (const [region, data] of Object.entries(REGION_DATA)) {

@@ -114,10 +114,38 @@ const REGION_DATA = {
     ],
     carbonCredits: "$6-12 per tonne CO₂e — lower density but long-duration credits, $400-800/ha over 10 years",
   },
+  "urban resilience": {
+    countries: "Lagos, Nairobi, Kinshasa, Addis Ababa, Johannesburg, Accra (Major Hubs)",
+    riskLevel: "Urgent",
+    riskScore: 88,
+    annualLoss: "High service vulnerability to heat and floods",
+    primaryDrivers: "Rapid urbanization, lack of green space, data gaps, informal settlement challenges",
+    nativeTrees: [
+      { name: "Grevillea robusta", use: "Urban shade, fast-growing, excellent for street lining and timber" },
+      { name: "Spathodea campanulata (Nandi Flame)", use: "Ornamental, high biodiversity value for urban birds/insects" },
+      { name: "Terminalia mantaly", use: "Layered shade — ideal for parking lots and heat-island mitigation" },
+      { name: "Callistemon citrinus (Bottlebrush)", use: "Small footprint — suitable for narrow urban streets and vertical gardens" },
+      { name: "Fruit Trees (Mango/Avocado)", use: "Urban food security — provides nutrition while reducing heat" },
+    ],
+    carbonPotential: "12.0 - 18.2 tonnes CO₂/hectare/year (Urban Forest equivalent)",
+    farmingTips: [
+      "Launch Community-led Vertical Farming & Urban Garden Advisory to tackle food insecurity",
+      "Deploy AI-driven Flood Risk Analytics to provide early warning services for dense neighborhoods",
+      "Develop Digital Green Corridors planning to reduce the Urban Heat Island effect by up to 5°C",
+      "Integrate AI-driven Water Scarcity Monitoring services for smart distribution and leakage detection",
+    ],
+    carbonCredits: "$20-35 per tonne CO₂e — high value 'Social Impact' credits due to direct community benefits",
+  },
 };
 
 function getRegionData(input) {
   const lower = input.toLowerCase();
+  
+  // Specific check for urban/city keywords
+  if (lower.includes("urban") || lower.includes("city") || lower.includes("services") || lower.includes("resilience")) {
+    return { region: "urban resilience", ...REGION_DATA["urban resilience"] };
+  }
+
   for (const [region, data] of Object.entries(REGION_DATA)) {
     if (lower.includes(region.replace(" africa", ""))) return { region, ...data };
   }
@@ -171,12 +199,14 @@ function TypingIndicator() {
 
 function AIResponse({ data }) {
   const colors = getRiskColor(data.riskScore);
+  const isUrban = data.region === "urban resilience";
+
   return (
     <div className="space-y-3 sm:space-y-4 animate-fade-in">
       {/* Risk Assessment */}
       <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
         <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
-          <span className="text-lg">📊</span> Deforestation Risk Assessment
+          <span className="text-lg">📊</span> {isUrban ? "Urban Climate Risk Assessment" : "Deforestation Risk Assessment"}
         </h4>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
           <div className={`px-3 py-1 rounded-full text-sm font-bold ${colors.bg} ${colors.text}`}>
@@ -188,8 +218,8 @@ function AIResponse({ data }) {
           <div className={`h-full rounded-full ${colors.bar} transition-all duration-1000`} style={{ width: `${data.riskScore}%` }} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-[#6b7c6b] font-[family-name:var(--font-body)]">
-          <div><span className="font-semibold text-[#1a2e1a]">Region:</span> {data.countries}</div>
-          <div><span className="font-semibold text-[#1a2e1a]">Annual Loss:</span> {data.annualLoss}</div>
+          <div><span className="font-semibold text-[#1a2e1a]">Location:</span> {data.countries}</div>
+          <div><span className="font-semibold text-[#1a2e1a]">{isUrban ? "Primary Vulnerability:" : "Annual Loss:"} </span> {data.annualLoss}</div>
           <div className="sm:col-span-2"><span className="font-semibold text-[#1a2e1a]">Primary Drivers:</span> {data.primaryDrivers}</div>
         </div>
       </div>
@@ -197,7 +227,7 @@ function AIResponse({ data }) {
       {/* Native Trees */}
       <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
         <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
-          <span className="text-lg">🌳</span> Recommended Native Trees
+          <span className="text-lg">🌳</span> {isUrban ? "Trees for Urban Cooling & Resilience" : "Recommended Native Trees"}
         </h4>
         <div className="space-y-2.5">
           {data.nativeTrees.map((tree, i) => (
@@ -215,13 +245,13 @@ function AIResponse({ data }) {
       {/* Carbon Potential */}
       <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
         <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
-          <span className="text-lg">🌍</span> Carbon Sequestration Potential
+          <span className="text-lg">🌍</span> {isUrban ? "Urban Carbon Value" : "Carbon Sequestration Potential"}
         </h4>
         <div className="bg-gradient-to-r from-[#f0fdf4] to-[#fefce8] rounded-lg p-3 sm:p-4 font-[family-name:var(--font-body)]">
           <div className="text-xl sm:text-2xl font-bold text-[#2d6a4f] font-[family-name:var(--font-display)]">{data.carbonPotential}</div>
           <p className="text-sm text-[#6b7c6b] mt-1">Estimated annual sequestration with recommended species</p>
           <div className="mt-3 text-sm">
-            <span className="font-semibold text-[#1a2e1a]">Carbon Credit Value:</span>{" "}
+            <span className="font-semibold text-[#1a2e1a]">{isUrban ? "Social Impact Credit Value:" : "Carbon Credit Value:"}</span>{" "}
             <span className="text-[#2d6a4f] font-semibold">{data.carbonCredits}</span>
           </div>
         </div>
@@ -230,7 +260,7 @@ function AIResponse({ data }) {
       {/* Farming Tips */}
       <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
         <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
-          <span className="text-lg">🌾</span> Climate-Smart Recommendations
+          <span className="text-lg">🌾</span> {isUrban ? "Climate Resilience Services" : "Climate-Smart Recommendations"}
         </h4>
         <div className="space-y-2 font-[family-name:var(--font-body)]">
           {data.farmingTips.map((tip, i) => (
@@ -279,11 +309,11 @@ export default function AdvisorPage() {
   };
 
   const quickOptions = [
+    { label: "Urban Centers (Flood & Heat Risk)", icon: "🏙️" },
     { label: "Uganda", icon: "🏔️" },
     { label: "Ghana - West Africa", icon: "🌴" },
     { label: "Congo Basin", icon: "🌿" },
     { label: "South Africa", icon: "🦁" },
-    { label: "Morocco & North Africa", icon: "🏜️" },
   ];
 
   return (
@@ -344,15 +374,15 @@ export default function AdvisorPage() {
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 sm:px-5 py-1.5 sm:py-2 mb-4 sm:mb-6">
               <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse-soft" />
               <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide font-[family-name:var(--font-body)]">
-                AI-Powered Reforestation Intelligence
+                AI-Powered Climate & Forest Intelligence
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight mb-3 sm:mb-4 drop-shadow-lg font-[family-name:var(--font-display)]">
               KibiraAI <span className="text-[#4ade80]">Advisor</span>
             </h1>
             <p className="text-white/75 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-              Enter any location in Africa to receive an AI-driven deforestation risk analysis,
-              native tree recommendations, carbon sequestration estimates, and climate-smart strategies.
+              Enter any location in Africa to receive an AI-driven analysis for reforestation 
+              strategies or urban climate resilience services.
             </p>
           </div>
 
@@ -369,7 +399,7 @@ export default function AdvisorPage() {
                       if (form) form.requestSubmit();
                     }, 100);
                   }}
-                  className={`group bg-white/10 backdrop-blur-md border border-white/15 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center hover:bg-white/20 hover:border-[#4ade80]/40 transition-all hover:scale-[1.03] active:scale-[0.98] ${i === 4 ? 'col-span-2 sm:col-span-1' : ''}`}
+                  className={`group bg-white/10 backdrop-blur-md border border-white/15 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center hover:bg-white/20 hover:border-[#4ade80]/40 transition-all hover:scale-[1.03] active:scale-[0.98] ${i === 0 ? 'col-span-2 sm:col-span-1 border-[#4ade80]/30' : ''}`}
                 >
                   <span className="text-xl sm:text-2xl block mb-1 sm:mb-2 group-hover:scale-110 transition-transform">{option.icon}</span>
                   <span className="text-white/90 text-[10px] sm:text-xs font-medium font-[family-name:var(--font-body)] leading-tight">{option.label}</span>
@@ -387,7 +417,7 @@ export default function AdvisorPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-white font-bold font-[family-name:var(--font-display)] text-base sm:text-lg">KibiraAI Advisor</h3>
-                <p className="text-[#a7f3d0]/80 text-[10px] sm:text-xs font-[family-name:var(--font-body)] truncate">Smart Reforestation Intelligence</p>
+                <p className="text-[#a7f3d0]/80 text-[10px] sm:text-xs font-[family-name:var(--font-body)] truncate">Climate & Forest Intelligence</p>
               </div>
               <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1">
                 <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse" />
@@ -404,15 +434,15 @@ export default function AdvisorPage() {
                 </div>
                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-sm px-3 sm:px-5 py-3 sm:py-4 max-w-[88%] sm:max-w-[85%] border border-[#a7f3d0]/30 shadow-sm">
                   <p className="text-xs sm:text-sm text-[#1a2e1a] leading-relaxed font-[family-name:var(--font-body)]">
-                    Welcome to <strong className="text-[#2d6a4f]">KibiraAI</strong>! I&rsquo;m your AI-powered reforestation advisor.
-                    Tell me a location in Africa and I&rsquo;ll provide a comprehensive analysis:
+                    Welcome to <strong className="text-[#2d6a4f]">KibiraAI</strong>! I&rsquo;m your AI advisor for reforestation and 
+                    urban climate resilience services. Tell me any location in Africa to evaluate:
                   </p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {[
-                      { icon: "📊", label: "Risk Assessment" },
-                      { icon: "🌳", label: "Native Trees" },
-                      { icon: "🌍", label: "Carbon Estimates" },
-                      { icon: "🌾", label: "Smart Strategies" },
+                      { icon: "🏙️", label: "Urban Heat & Floods" },
+                      { icon: "🌳", label: "Reforestation" },
+                      { icon: "🌍", label: "Carbon Potential" },
+                      { icon: "🌾", label: "Climate Services" },
                     ].map((item, i) => (
                       <div key={i} className="flex items-center gap-2 bg-[#f0fdf4] rounded-lg px-3 py-2">
                         <span>{item.icon}</span>

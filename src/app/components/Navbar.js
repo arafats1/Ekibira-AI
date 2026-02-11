@@ -16,10 +16,10 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#1a2e1a]/80">
-          <a href="#problem" className="hover:text-[#2d6a4f] transition-colors">The Problem</a>
-          <a href="#solution" className="hover:text-[#2d6a4f] transition-colors">Solution</a>
+          <a href="/#problem" className="hover:text-[#2d6a4f] transition-colors">The Problem</a>
+          <a href="/solution" className="hover:text-[#2d6a4f] transition-colors font-bold text-[#204a37]">Solution</a>
           <a href="/advisor" className="hover:text-[#2d6a4f] transition-colors">Try Advisor</a>
-          <a href="#impact" className="hover:text-[#2d6a4f] transition-colors">Impact</a>
+          <a href="/#impact" className="hover:text-[#2d6a4f] transition-colors">Impact</a>
           <a
             href="#support"
             className="bg-[#2d6a4f] text-white px-5 py-2.5 rounded-full hover:bg-[#1b4332] transition-colors font-semibold"
@@ -47,10 +47,10 @@ export default function Navbar() {
       {/* Mobile nav */}
       {open && (
         <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-[#eef2e6] px-4 sm:px-6 py-3 flex flex-col gap-1 text-sm font-medium">
-          <a href="#problem" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">The Problem</a>
-          <a href="#solution" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Solution</a>
+          <a href="/#problem" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">The Problem</a>
+          <a href="/solution" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] font-bold">Solution</a>
           <a href="/advisor" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Try Advisor</a>
-          <a href="#impact" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Impact</a>
+          <a href="/#impact" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Impact</a>
           <a
             href="#support"
             onClick={() => setOpen(false)}

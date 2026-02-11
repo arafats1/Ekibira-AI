@@ -45,6 +45,17 @@ export default function Solution() {
         "Designed for accessibility — works in low-bandwidth environments with simple interfaces. Empowers local leaders, farmers, and NGOs with actionable climate intelligence.",
       color: "bg-amber-50 text-amber-600",
     },
+    {
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+        </svg>
+      ),
+      title: "Resilient Urban Services",
+      description:
+        "Innovative AI-powered services to help urban communities adapt to heat stress, flooding, food insecurity, and water scarcity through data-driven advisory and digital planning.",
+      color: "bg-purple-50 text-purple-600",
+    },
   ];
 
   const steps = [
@@ -138,6 +149,19 @@ export default function Solution() {
               <p className="text-white/60 text-xs sm:text-sm font-[family-name:var(--font-body)]">{step.description}</p>
             </div>
           ))}
+        </div>
+
+        {/* Link to detail page */}
+        <div className="mt-16 sm:mt-24 text-center">
+          <a 
+            href="/solution"
+            className="inline-flex items-center gap-2 text-[#4ade80] hover:text-white transition-colors font-bold text-lg sm:text-xl group"
+          >
+            Explore the Detailed Digital Solution
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="group-hover:translate-x-1 transition-transform">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </a>
         </div>
       </div>
     </section>

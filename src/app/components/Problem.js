@@ -28,6 +28,13 @@ export default function Problem() {
         "Land-use change in Africa contributes 15-20% of global carbon emissions. Yet African nations receive less than 3% of global climate finance to address this crisis.",
       stat: "<3% climate finance",
     },
+    {
+      icon: "🏙️",
+      title: "Urban Vulnerability",
+      description:
+        "African cities face acute risks from heat stress, flash flooding, and water scarcity. Without resilient services and digital planning, 100M+ urban dwellers face extreme climate displacement.",
+      stat: "100M+ at risk",
+    },
   ];
 
   return (
