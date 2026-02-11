@@ -105,41 +105,42 @@ export default function SolutionPage() {
               <div className="grid gap-4">
                 <div className="bg-white/90 rounded-2xl p-5 border border-[#dce9dc] shadow-sm">
                   <p className="text-xs uppercase tracking-widest text-[#2d6a4f] font-semibold">Forest Intelligence</p>
-                  <h3 className="text-lg font-bold text-[#1a2e1a] mt-2">Stop deforestation before it starts</h3>
-                  <p className="text-sm text-[#5d6f5d] mt-2">AI identifies high-risk zones, recommends native species, and verifies carbon impact.</p>
+                  <h3 className="text-lg font-bold text-[#1a2e1a] mt-2">Predict risk, plant smarter, verify carbon</h3>
+                  <p className="text-sm text-[#5d6f5d] mt-2">AI maps vulnerable zones, generates native-species plans, and tracks sequestration for carbon credits.</p>
                 </div>
                 <div className="bg-white/90 rounded-2xl p-5 border border-[#dce9dc] shadow-sm">
                   <p className="text-xs uppercase tracking-widest text-[#2d6a4f] font-semibold">Urban Services</p>
-                  <h3 className="text-lg font-bold text-[#1a2e1a] mt-2">Climate resilience without heavy infrastructure</h3>
-                  <p className="text-sm text-[#5d6f5d] mt-2">Heat mapping, flood alerts, food advisory, and water monitoring as digital services.</p>
+                  <h3 className="text-lg font-bold text-[#1a2e1a] mt-2">Cool, protect, feed &amp; hydrate cities</h3>
+                  <p className="text-sm text-[#5d6f5d] mt-2">Heat mapping, flood early-warnings, food-garden advisory, and smart water monitoring — delivered digitally.</p>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Deforestation Section */}
+          {/* Forest Intelligence Section */}
           <section id="solution-detail" className="mb-20 sm:mb-28">
             <div className="grid lg:grid-cols-2 gap-12 items-center mb-14">
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-[#2d6a4f] font-semibold mb-4">Deforestation Challenge</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-[#2d6a4f] font-semibold mb-4 font-[family-name:var(--font-body)]">Pillar 1 &mdash; Forest Intelligence</p>
                 <h2 className="text-3xl sm:text-4xl font-bold text-[#1a2e1a] mb-6 font-[family-name:var(--font-display)]">
-                  Reforestation Intelligence for Africa's Wild Landscapes
+                  AI That Predicts, Plants &amp; Verifies
                 </h2>
                 <div className="space-y-6 text-[#5d6f5d] font-[family-name:var(--font-body)] text-lg">
                   <p>
-                    Africa loses 3.9 million hectares of forest each year. The loss accelerates emissions,
-                    erodes water systems, and threatens livelihoods dependent on land and biodiversity.
+                    KibiraAI uses satellite imagery, land-use data, and ecological models to pinpoint
+                    where forests are most at risk — then generates region-specific reforestation plans
+                    using native species matched to local soil and rainfall.
                   </p>
                   <p>
-                    KibiraAI replaces guesswork with AI-driven decisions, identifying where to act, what to
-                    plant, and how to sustain growth through verified monitoring.
+                    Every intervention is tracked with science-backed biomass monitoring, producing
+                    verifiable carbon-credit reports that create direct revenue for communities.
                   </p>
                 </div>
               </div>
               <div className="bg-white rounded-[2.5rem] p-2 shadow-2xl shadow-[#14532d]/10 overflow-hidden border border-[#cfe6d4]">
                 <img 
                   src="/deforestation.jpg" 
-                  alt="Deforestation in Africa" 
+                  alt="AI-driven reforestation in Africa" 
                   className="rounded-2xl w-full h-full object-cover aspect-[4/3]"
                 />
               </div>
@@ -169,18 +170,19 @@ export default function SolutionPage() {
                   />
                 </div>
                 <div className="order-1 lg:order-2">
-                  <p className="text-xs uppercase tracking-[0.3em] text-[#2d6a4f] font-semibold mb-4">Urban Challenges</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-[#2d6a4f] font-semibold mb-4 font-[family-name:var(--font-body)]">Pillar 2 &mdash; Urban Resilience</p>
                   <h2 className="text-3xl sm:text-4xl font-bold text-[#1a2e1a] mb-6 font-[family-name:var(--font-display)]">
-                    Climate-Resilient Services for Expanding Cities
+                    Digital Services That Cool, Protect &amp; Feed Cities
                   </h2>
                   <div className="space-y-6 text-[#5d6f5d] font-[family-name:var(--font-body)] text-lg">
                     <p>
-                      Rapid urban growth amplifies heat stress, flooding, food insecurity, and water scarcity.
-                      KibiraAI delivers digital services that help communities adapt without heavy infrastructure.
+                      KibiraAI delivers lightweight, data-driven services that help urban communities
+                      manage heat, avoid floods, grow food, and secure water — all without heavy
+                      capital infrastructure.
                     </p>
                     <p>
-                      Our platform focuses on early-warning analytics, localized advisories, and data-driven
-                      planning to protect people, assets, and urban ecosystems.
+                      Through early-warning analytics, localized advisories, and AI-powered planning,
+                      city leaders and residents get the intelligence they need to act before crises hit.
                     </p>
                   </div>
                 </div>
