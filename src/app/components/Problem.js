@@ -93,11 +93,20 @@ export default function Problem() {
           <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 font-[family-name:var(--font-display)] text-white">
             The gap? Communities lack the tools and data to act.
           </h3>
-          <p className="text-white/80 text-base sm:text-lg max-w-2xl mx-auto font-[family-name:var(--font-body)]">
+          <p className="text-white/80 text-base sm:text-lg max-w-2xl mx-auto font-[family-name:var(--font-body)] mb-6">
             From rural forests to urban centers, farmers, city planners, and local leaders
             need accessible, intelligent tools to protect ecosystems and build climate-resilient
             services. That&rsquo;s where KibiraAI comes in.
           </p>
+          <a
+            href="/problem"
+            className="inline-flex items-center gap-2 text-[#4ade80] hover:text-white transition-colors font-bold text-lg group"
+          >
+            Explore the Full Problem Analysis
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="group-hover:translate-x-1 transition-transform">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </a>
         </div>
       </div>
     </section>
