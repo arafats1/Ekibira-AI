@@ -14,6 +14,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://kibira-ai.vercel.app"),
   title: "KibiraAI — AI-Powered Reforestation for Africa",
   description:
     "KibiraAI uses artificial intelligence to combat deforestation in Africa by providing smart reforestation plans, carbon sequestration estimates, and climate-smart land-use recommendations for communities across the continent.",
@@ -26,11 +27,36 @@ export const metadata = {
     "carbon credits",
     "sustainability",
   ],
+  icons: {
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     title: "KibiraAI — AI-Powered Reforestation for Africa",
     description:
       "Combating deforestation across Africa with AI-driven reforestation planning and carbon tracking.",
     type: "website",
+    url: "https://kibira-ai.vercel.app/",
+    siteName: "KibiraAI",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "KibiraAI — AI-Powered Reforestation for Africa",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KibiraAI — AI-Powered Reforestation for Africa",
+    description:
+      "Combating deforestation across Africa with AI-driven reforestation planning and carbon tracking.",
+    creator: "@KibiraAI",
+    images: ["/logo.png"],
   },
 };
 
