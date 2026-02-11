@@ -138,8 +138,8 @@ export default function SolutionPage() {
               </div>
               <div className="bg-white rounded-[2.5rem] p-2 shadow-2xl shadow-[#14532d]/10 overflow-hidden border border-[#cfe6d4]">
                 <img 
-                  src="https://images.unsplash.com/photo-1511497584788-876760111969?w=800&q=80" 
-                  alt="Reforestation" 
+                  src="/deforestation.jpg" 
+                  alt="Deforestation in Africa" 
                   className="rounded-2xl w-full h-full object-cover aspect-[4/3]"
                 />
               </div>
@@ -163,8 +163,8 @@ export default function SolutionPage() {
               <div className="grid lg:grid-cols-2 gap-12 items-center mb-14">
                 <div className="order-2 lg:order-1 bg-white rounded-[2.5rem] p-2 shadow-2xl shadow-black/10 overflow-hidden border border-[#cfe6d4]">
                   <img 
-                    src="https://images.unsplash.com/photo-1518391846015-55a9cc003b25?w=800&q=80" 
-                    alt="Urban centers in Africa" 
+                    src="/kampala.jpg" 
+                    alt="Kampala city" 
                     className="rounded-2xl w-full h-full object-cover aspect-[4/3]"
                   />
                 </div>
