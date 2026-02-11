@@ -43,7 +43,7 @@ export const metadata = {
     siteName: "KibiraAI",
     images: [
       {
-        url: "/logo.png",
+        url: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&q=80",
         width: 1200,
         height: 630,
         alt: "KibiraAI — AI-Powered Reforestation for Africa",
@@ -56,7 +56,7 @@ export const metadata = {
     description:
       "Combating deforestation across Africa with AI-driven reforestation planning and carbon tracking.",
     creator: "@KibiraAI",
-    images: ["/logo.png"],
+    images: ["https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&q=80"],
   },
 };
 
