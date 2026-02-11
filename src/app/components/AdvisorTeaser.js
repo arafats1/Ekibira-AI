@@ -25,17 +25,20 @@ export default function AdvisorTeaser() {
           Try the <span className="text-[#4ade80]">AI Advisor</span>
         </h2>
         <p className="text-white/75 text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-10 font-[family-name:var(--font-body)]">
-          Get AI-powered deforestation risk assessments, native tree recommendations,
-          carbon sequestration estimates, and climate-smart strategies for any location in Africa.
+          Get AI-powered deforestation risk assessments, reforestation plans, urban heat
+          and flood analysis, food &amp; water security strategies, and climate-resilient
+          service recommendations for any location in Africa.
         </p>
 
         {/* Feature pills */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-8 sm:mb-10">
           {[
-            { icon: "📊", label: "Risk Analysis" },
-            { icon: "🌳", label: "Native Trees" },
-            { icon: "🌍", label: "Carbon Estimates" },
-            { icon: "🌾", label: "Smart Farming" },
+            { icon: "🌳", label: "Forest Restoration" },
+            { icon: "🌡️", label: "Urban Heat" },
+            { icon: "🌊", label: "Flood Resilience" },
+            { icon: "🌾", label: "Food Security" },
+            { icon: "💧", label: "Water Access" },
+            { icon: "📊", label: "Carbon Tracking" },
           ].map((item, i) => (
             <div
               key={i}
@@ -66,18 +69,18 @@ export default function AdvisorTeaser() {
             <div className="flex gap-2">
               <div className="w-7 h-7 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs flex-shrink-0">🌿</div>
               <div className="bg-white/80 rounded-xl rounded-bl-sm px-3 py-2 text-xs text-[#1a2e1a] font-[family-name:var(--font-body)]">
-                Welcome! Tell me a location in Africa...
+                Welcome! Ask about forests or urban climate challenges anywhere in Africa...
               </div>
             </div>
             <div className="flex justify-end">
               <div className="bg-[#2d6a4f] text-white rounded-xl rounded-br-sm px-3 py-2 text-xs font-[family-name:var(--font-body)]">
-                Uganda 🏔️
+                Kampala, Uganda 🏙️
               </div>
             </div>
             <div className="flex gap-2">
               <div className="w-7 h-7 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs flex-shrink-0">🌿</div>
               <div className="bg-white/80 rounded-xl rounded-bl-sm px-3 py-2 text-xs text-[#2d6a4f] font-semibold font-[family-name:var(--font-body)]">
-                📊 Risk: High (78/100) &bull; 🌳 5 native trees &bull; 🌍 8.2-14.5 t CO₂/ha/yr
+                🌡️ Heat Risk: High &bull; 🌊 Flood Zone: 3 wards &bull; 🌳 Tree Cover: -12% &bull; 💧 Water Stress: Moderate
               </div>
             </div>
           </div>

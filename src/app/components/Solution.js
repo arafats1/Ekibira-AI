@@ -67,17 +67,17 @@ export default function Solution() {
     {
       step: "02",
       title: "AI Analyzes Data",
-      description: "Our AI processes climate, soil, and deforestation data",
+      description: "Our AI processes climate, satellite, land-use, and urban risk data",
     },
     {
       step: "03",
       title: "Get Recommendations",
-      description: "Receive tailored reforestation and land-use strategies",
+      description: "Receive tailored reforestation, urban resilience, and adaptation strategies",
     },
     {
       step: "04",
       title: "Track & Report",
-      description: "Monitor progress and generate carbon credit reports",
+      description: "Monitor forest recovery and urban climate outcomes in real time",
     },
   ];
 
@@ -96,11 +96,12 @@ export default function Solution() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6">
             Intelligence That
             <br />
-            <span className="text-[#4ade80]">Grows Forests</span>
+            <span className="text-[#4ade80]">Restores Forests &amp; Resilient Cities</span>
           </h2>
           <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
             KibiraAI combines cutting-edge AI with local ecological knowledge to give
-            communities the tools they need to restore and protect Africa&rsquo;s forests.
+            communities the tools to restore Africa&rsquo;s forests and build climate-resilient
+            urban services — from heat and flood response to food and water security.
           </p>
         </div>
 

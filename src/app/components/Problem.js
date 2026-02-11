@@ -48,14 +48,14 @@ export default function Problem() {
             The Crisis
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#1a2e1a] leading-tight mb-4 sm:mb-6">
-            Africa&rsquo;s Forests Are
+            Africa&rsquo;s Climate Crisis:
             <br />
-            <span className="gradient-text">Disappearing Fast</span>
+            <span className="gradient-text">Forests &amp; Cities Under Threat</span>
           </h2>
           <p className="text-[#6b7c6b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            While Africa contributes the least to global emissions, it bears the greatest
-            burden of climate change. Deforestation is both a cause and a consequence of
-            this crisis.
+            Africa loses millions of hectares of forest every year while its fastest-growing
+            cities face devastating heat stress, flooding, food insecurity, and water scarcity.
+            Communities on both fronts lack the data and tools to respond.
           </p>
         </div>
 
@@ -94,9 +94,9 @@ export default function Problem() {
             The gap? Communities lack the tools and data to act.
           </h3>
           <p className="text-white/80 text-base sm:text-lg max-w-2xl mx-auto font-[family-name:var(--font-body)]">
-            Smallholder farmers, local governments, and conservation groups need accessible,
-            intelligent tools to understand their environment and make climate-smart decisions.
-            That&rsquo;s where KibiraAI comes in.
+            From rural forests to urban centers, farmers, city planners, and local leaders
+            need accessible, intelligent tools to protect ecosystems and build climate-resilient
+            services. That&rsquo;s where KibiraAI comes in.
           </p>
         </div>
       </div>
