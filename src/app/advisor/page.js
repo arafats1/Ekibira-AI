@@ -189,10 +189,10 @@ function getRiskColor(score) {
 
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-1.5 px-4 py-3 bg-white/60 backdrop-blur rounded-2xl rounded-bl-sm w-fit">
-      <div className="w-2 h-2 rounded-full bg-[#2d6a4f]/50 typing-dot" />
-      <div className="w-2 h-2 rounded-full bg-[#2d6a4f]/50 typing-dot" />
-      <div className="w-2 h-2 rounded-full bg-[#2d6a4f]/50 typing-dot" />
+    <div className="flex items-center gap-1.5 py-2">
+      <div className="w-2 h-2 rounded-full bg-[#2d6a4f]/40 typing-dot" />
+      <div className="w-2 h-2 rounded-full bg-[#2d6a4f]/40 typing-dot" />
+      <div className="w-2 h-2 rounded-full bg-[#2d6a4f]/40 typing-dot" />
     </div>
   );
 }
@@ -202,53 +202,57 @@ function AIResponse({ data }) {
   const isUrban = data.region === "urban resilience";
 
   return (
-    <div className="space-y-3 sm:space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in font-[family-name:var(--font-body)]">
       {/* Risk Assessment */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
-        <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
-          <span className="text-lg">📊</span> {isUrban ? "Urban Climate Risk Assessment" : "Deforestation Risk Assessment"}
+      <div>
+        <h4 className="font-bold text-[#1a2e1a] mb-3 flex items-center gap-2 text-base font-[family-name:var(--font-display)]">
+          📊 {isUrban ? "Urban Climate Risk Assessment" : "Deforestation Risk Assessment"}
         </h4>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+        <div className="flex flex-wrap items-center gap-3 mb-3">
           <div className={`px-3 py-1 rounded-full text-sm font-bold ${colors.bg} ${colors.text}`}>
             {data.riskLevel} Risk
           </div>
           <span className="text-[#6b7c6b] text-sm">Score: {data.riskScore}/100</span>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3">
+        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
           <div className={`h-full rounded-full ${colors.bar} transition-all duration-1000`} style={{ width: `${data.riskScore}%` }} />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-[#6b7c6b] font-[family-name:var(--font-body)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-[#5d6f5d]">
           <div><span className="font-semibold text-[#1a2e1a]">Location:</span> {data.countries}</div>
-          <div><span className="font-semibold text-[#1a2e1a]">{isUrban ? "Primary Vulnerability:" : "Annual Loss:"} </span> {data.annualLoss}</div>
+          <div><span className="font-semibold text-[#1a2e1a]">{isUrban ? "Vulnerability:" : "Annual Loss:"}</span> {data.annualLoss}</div>
           <div className="sm:col-span-2"><span className="font-semibold text-[#1a2e1a]">Primary Drivers:</span> {data.primaryDrivers}</div>
         </div>
       </div>
 
+      <hr className="border-[#e5e7eb]" />
+
       {/* Native Trees */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
-        <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
-          <span className="text-lg">🌳</span> {isUrban ? "Trees for Urban Cooling & Resilience" : "Recommended Native Trees"}
+      <div>
+        <h4 className="font-bold text-[#1a2e1a] mb-3 flex items-center gap-2 text-base font-[family-name:var(--font-display)]">
+          🌳 {isUrban ? "Trees for Urban Cooling & Resilience" : "Recommended Native Trees"}
         </h4>
-        <div className="space-y-2.5">
+        <div className="space-y-1">
           {data.nativeTrees.map((tree, i) => (
-            <div key={i} className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-[#f0fdf4]/80 rounded-lg">
-              <span className="text-[#2d6a4f] font-bold text-sm mt-0.5">{i + 1}.</span>
-              <div className="font-[family-name:var(--font-body)]">
+            <div key={i} className="flex items-start gap-3 py-2">
+              <span className="text-[#2d6a4f] font-bold text-sm mt-0.5 w-5 text-right flex-shrink-0">{i + 1}.</span>
+              <div>
                 <span className="font-semibold text-[#1a2e1a] text-sm">{tree.name}</span>
-                <p className="text-[#6b7c6b] text-xs mt-0.5">{tree.use}</p>
+                <p className="text-[#6b7c6b] text-sm mt-0.5">{tree.use}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
+      <hr className="border-[#e5e7eb]" />
+
       {/* Carbon Potential */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
-        <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
-          <span className="text-lg">🌍</span> {isUrban ? "Urban Carbon Value" : "Carbon Sequestration Potential"}
+      <div>
+        <h4 className="font-bold text-[#1a2e1a] mb-3 flex items-center gap-2 text-base font-[family-name:var(--font-display)]">
+          🌍 {isUrban ? "Urban Carbon Value" : "Carbon Sequestration Potential"}
         </h4>
-        <div className="bg-gradient-to-r from-[#f0fdf4] to-[#fefce8] rounded-lg p-3 sm:p-4 font-[family-name:var(--font-body)]">
-          <div className="text-xl sm:text-2xl font-bold text-[#2d6a4f] font-[family-name:var(--font-display)]">{data.carbonPotential}</div>
+        <div className="bg-[#f0fdf4] rounded-xl p-4 border border-[#dcfce7]">
+          <div className="text-2xl font-bold text-[#2d6a4f] font-[family-name:var(--font-display)]">{data.carbonPotential}</div>
           <p className="text-sm text-[#6b7c6b] mt-1">Estimated annual sequestration with recommended species</p>
           <div className="mt-3 text-sm">
             <span className="font-semibold text-[#1a2e1a]">{isUrban ? "Social Impact Credit Value:" : "Carbon Credit Value:"}</span>{" "}
@@ -257,19 +261,21 @@ function AIResponse({ data }) {
         </div>
       </div>
 
+      <hr className="border-[#e5e7eb]" />
+
       {/* Farming Tips */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 sm:p-5 border border-[#a7f3d0]/40 shadow-sm">
-        <h4 className="font-bold text-[#1a2e1a] mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base font-[family-name:var(--font-display)]">
-          <span className="text-lg">🌾</span> {isUrban ? "Climate Resilience Services" : "Climate-Smart Recommendations"}
+      <div>
+        <h4 className="font-bold text-[#1a2e1a] mb-3 flex items-center gap-2 text-base font-[family-name:var(--font-display)]">
+          🌾 {isUrban ? "Climate Resilience Services" : "Climate-Smart Recommendations"}
         </h4>
-        <div className="space-y-2 font-[family-name:var(--font-body)]">
+        <ul className="space-y-2">
           {data.farmingTips.map((tip, i) => (
-            <div key={i} className="flex items-start gap-3 text-sm">
-              <span className="text-[#d4a843] font-bold flex-shrink-0">✦</span>
-              <span className="text-[#6b7c6b] leading-relaxed">{tip}</span>
-            </div>
+            <li key={i} className="flex items-start gap-3 text-sm">
+              <span className="text-[#2d6a4f] mt-1 flex-shrink-0">•</span>
+              <span className="text-[#374151] leading-relaxed">{tip}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </div>
   );
@@ -279,7 +285,9 @@ export default function AdvisorPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -308,236 +316,256 @@ export default function AdvisorPage() {
     setLoading(false);
   };
 
-  const quickOptions = [
-    { label: "Urban Centers (Flood & Heat Risk)", icon: "🏙️" },
-    { label: "Uganda", icon: "🏔️" },
-    { label: "Ghana - West Africa", icon: "🌴" },
-    { label: "Congo Basin", icon: "🌿" },
-    { label: "South Africa", icon: "🦁" },
+  const handleNewChat = () => {
+    setMessages([]);
+    setInput("");
+    setSidebarOpen(false);
+  };
+
+  const sidebarRegions = [
+    { label: "Urban Centers", icon: "🏙️", query: "Urban Centers (Flood & Heat Risk)" },
+    { label: "East Africa", icon: "🏔️", query: "Uganda" },
+    { label: "West Africa", icon: "🌴", query: "Ghana - West Africa" },
+    { label: "Central Africa", icon: "🌿", query: "Congo Basin" },
+    { label: "Southern Africa", icon: "🦁", query: "South Africa" },
+    { label: "North Africa", icon: "🏜️", query: "Morocco" },
   ];
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Full-page forest background */}
-      <div className="fixed inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1511497584788-876760111969?w=1920&q=80"
-          alt="Forest canopy"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f13]/60 via-[#0a1f13]/40 to-[#0a1f13]/70" />
-      </div>
+    <div className="h-screen flex bg-[#f7faf6] overflow-hidden">
 
-      {/* Floating tree particles / decorative elements */}
-      <div className="fixed inset-0 z-[1] pointer-events-none overflow-hidden">
-        <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-[#4ade80]/8 rounded-full blur-3xl animate-float" />
-        <div className="absolute top-[30%] right-[8%] w-48 h-48 bg-[#d4a843]/10 rounded-full blur-3xl animate-float delay-300" />
-        <div className="absolute bottom-[15%] left-[15%] w-56 h-56 bg-[#2d6a4f]/10 rounded-full blur-3xl animate-float delay-500" />
-        {/* Falling leaf SVGs */}
-        <svg className="absolute top-[5%] left-[20%] w-6 h-6 text-[#4ade80]/30 animate-float" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
-        </svg>
-        <svg className="absolute top-[15%] right-[25%] w-5 h-5 text-[#a7f3d0]/25 animate-float delay-200" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
-        </svg>
-        <svg className="absolute bottom-[30%] right-[12%] w-7 h-7 text-[#4ade80]/20 animate-float delay-700" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
-        </svg>
-      </div>
+      {/* ── Sidebar ── */}
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
 
-      {/* Top navigation bar */}
-      <nav className="relative z-20 px-4 sm:px-6 py-3 sm:py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <aside className={`fixed md:relative z-50 md:z-auto flex flex-col w-[260px] h-full bg-[#0f2618] text-white transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+        {/* Sidebar header */}
+        <div className="p-4 flex items-center justify-between border-b border-white/10">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-xl sm:text-2xl">🌿</span>
-            <span className="font-[family-name:var(--font-display)] text-lg sm:text-xl font-bold text-white tracking-tight group-hover:text-[#4ade80] transition-colors">
+            <span className="text-lg">🌿</span>
+            <span className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight group-hover:text-[#4ade80] transition-colors">
               KibiraAI
             </span>
           </Link>
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 sm:gap-2 text-white/70 hover:text-white text-xs sm:text-sm font-medium transition-colors font-[family-name:var(--font-body)]"
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 hover:bg-white/10 rounded-lg">
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M6 6l12 12M6 18L18 6" />
+            </svg>
+          </button>
+        </div>
+
+        {/* New chat button */}
+        <div className="p-3">
+          <button
+            onClick={handleNewChat}
+            className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/15 hover:bg-white/10 transition-colors text-sm font-[family-name:var(--font-body)]"
           >
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New Analysis
+          </button>
+        </div>
+
+        {/* Quick regions */}
+        <div className="px-3 mb-2">
+          <p className="text-[10px] uppercase tracking-widest text-white/40 font-semibold px-2 mb-2 font-[family-name:var(--font-body)]">
+            Quick Analyze
+          </p>
+          <div className="space-y-0.5">
+            {sidebarRegions.map((region, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setInput(region.query);
+                  setSidebarOpen(false);
+                  setTimeout(() => {
+                    const form = document.getElementById("advisor-form");
+                    if (form) form.requestSubmit();
+                  }, 100);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/8 transition-colors text-left group"
+              >
+                <span className="text-sm">{region.icon}</span>
+                <span className="text-sm text-white/70 group-hover:text-white/90 font-[family-name:var(--font-body)] truncate">{region.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Sidebar footer */}
+        <div className="p-4 border-t border-white/10 space-y-2">
+          <Link
+            href="/"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/8 transition-colors text-sm text-white/60 hover:text-white/90 font-[family-name:var(--font-body)]"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
             </svg>
             Back to Home
           </Link>
-        </div>
-      </nav>
-
-      {/* Main content */}
-      <main className="relative z-10 px-3 sm:px-6 pb-8 sm:pb-12 pt-1 sm:pt-2">
-        <div className="max-w-5xl mx-auto">
-          {/* Hero header */}
-          <div className="text-center mb-6 sm:mb-8 animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 sm:px-5 py-1.5 sm:py-2 mb-4 sm:mb-6">
-              <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse-soft" />
-              <span className="text-white/90 text-xs sm:text-sm font-medium tracking-wide font-[family-name:var(--font-body)]">
-                AI-Powered Climate & Forest Intelligence
-              </span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight mb-3 sm:mb-4 drop-shadow-lg font-[family-name:var(--font-display)]">
-              KibiraAI <span className="text-[#4ade80]">Advisor</span>
-            </h1>
-            <p className="text-white/75 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-              Enter any location in Africa to receive an AI-driven analysis for reforestation 
-              strategies or urban climate resilience services.
-            </p>
+          <div className="flex items-center gap-2 px-3 py-2 text-[10px] text-white/30 font-[family-name:var(--font-body)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
+            Powered by KibiraAI
           </div>
+        </div>
+      </aside>
 
-          {/* Region quick-select cards */}
-          {messages.length === 0 && (
-            <div className="animate-fade-in-up delay-200 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-6 sm:mb-8">
-              {quickOptions.map((option, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    setInput(option.label);
-                    setTimeout(() => {
-                      const form = document.getElementById("advisor-form");
-                      if (form) form.requestSubmit();
-                    }, 100);
-                  }}
-                  className={`group bg-white/10 backdrop-blur-md border border-white/15 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center hover:bg-white/20 hover:border-[#4ade80]/40 transition-all hover:scale-[1.03] active:scale-[0.98] ${i === 0 ? 'col-span-2 sm:col-span-1 border-[#4ade80]/30' : ''}`}
-                >
-                  <span className="text-xl sm:text-2xl block mb-1 sm:mb-2 group-hover:scale-110 transition-transform">{option.icon}</span>
-                  <span className="text-white/90 text-[10px] sm:text-xs font-medium font-[family-name:var(--font-body)] leading-tight">{option.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
+      {/* ── Main Chat Area ── */}
+      <div className="flex-1 flex flex-col min-w-0 h-full">
 
-          {/* Chat container */}
-          <div className="animate-fade-in-up delay-300 bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-white/15 overflow-hidden shadow-2xl shadow-black/20">
-            {/* Chat header */}
-            <div className="bg-gradient-to-r from-[#14532d]/90 to-[#166534]/90 backdrop-blur-sm px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-3 border-b border-white/10">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-[#4ade80]/20 flex items-center justify-center text-lg sm:text-xl border border-[#4ade80]/30">
-                🌿
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-white font-bold font-[family-name:var(--font-display)] text-base sm:text-lg">KibiraAI Advisor</h3>
-                <p className="text-[#a7f3d0]/80 text-[10px] sm:text-xs font-[family-name:var(--font-body)] truncate">Climate & Forest Intelligence</p>
-              </div>
-              <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1">
-                <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse" />
-                <span className="text-white/80 text-xs font-[family-name:var(--font-body)]">Online</span>
-              </div>
-            </div>
+        {/* Top bar */}
+        <header className="flex items-center gap-3 px-4 py-3 border-b border-[#e5e7eb] bg-white/80 backdrop-blur-sm flex-shrink-0">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="md:hidden p-2 -ml-1 hover:bg-[#f0fdf4] rounded-lg transition-colors"
+          >
+            <svg width="20" height="20" fill="none" stroke="#1a2e1a" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🌿</span>
+            <h1 className="text-base font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">KibiraAI Advisor</h1>
+          </div>
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#4ade80]" />
+            <span className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Online</span>
+          </div>
+        </header>
 
-            {/* Messages area */}
-            <div className="h-[360px] sm:h-[420px] md:h-[520px] overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-[#f0fdf4]/95 to-[#fafcf7]/95 backdrop-blur-sm">
-              {/* Welcome message */}
-              <div className="flex gap-2 sm:gap-3">
-                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 border border-[#2d6a4f]/20">
+        {/* Messages scroll area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+            {/* Empty state */}
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center pt-8 sm:pt-16 pb-8 animate-fade-in">
+                <div className="w-14 h-14 rounded-2xl bg-[#2d6a4f] flex items-center justify-center text-2xl mb-6 shadow-lg shadow-[#2d6a4f]/20">
                   🌿
                 </div>
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-sm px-3 sm:px-5 py-3 sm:py-4 max-w-[88%] sm:max-w-[85%] border border-[#a7f3d0]/30 shadow-sm">
-                  <p className="text-xs sm:text-sm text-[#1a2e1a] leading-relaxed font-[family-name:var(--font-body)]">
-                    Welcome to <strong className="text-[#2d6a4f]">KibiraAI</strong>! I&rsquo;m your AI advisor for reforestation and 
-                    urban climate resilience services. Tell me any location in Africa to evaluate:
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {[
-                      { icon: "🏙️", label: "Urban Heat & Floods" },
-                      { icon: "🌳", label: "Reforestation" },
-                      { icon: "🌍", label: "Carbon Potential" },
-                      { icon: "🌾", label: "Climate Services" },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-2 bg-[#f0fdf4] rounded-lg px-3 py-2">
-                        <span>{item.icon}</span>
-                        <span className="text-xs text-[#2d6a4f] font-medium font-[family-name:var(--font-body)]">{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">
+                  How can I help you today?
+                </h2>
+                <p className="text-[#6b7c6b] text-sm sm:text-base text-center max-w-md mb-8 font-[family-name:var(--font-body)]">
+                  Enter any location in Africa to receive AI-driven analysis for reforestation strategies or urban climate resilience services.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
+                  {[
+                    { icon: "🏙️", title: "Urban Heat & Floods", desc: "Analyze climate risks in African cities", query: "Urban Centers (Flood & Heat Risk)" },
+                    { icon: "🌳", title: "Forest Intelligence", desc: "Deforestation risk & reforestation plans", query: "Uganda" },
+                    { icon: "🌍", title: "Carbon Potential", desc: "Sequestration estimates & credit value", query: "Congo Basin" },
+                    { icon: "🌾", title: "Climate Services", desc: "Smart farming & resilience strategies", query: "Ghana - West Africa" },
+                  ].map((card, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setInput(card.query);
+                        setTimeout(() => {
+                          const form = document.getElementById("advisor-form");
+                          if (form) form.requestSubmit();
+                        }, 100);
+                      }}
+                      className="text-left p-4 rounded-xl border border-[#dce9dc] hover:border-[#4ade80]/50 bg-white hover:bg-[#f0fdf4] transition-all group"
+                    >
+                      <span className="text-lg">{card.icon}</span>
+                      <p className="text-sm font-semibold text-[#1a2e1a] mt-2 font-[family-name:var(--font-display)]">{card.title}</p>
+                      <p className="text-xs text-[#6b7c6b] mt-0.5 font-[family-name:var(--font-body)]">{card.desc}</p>
+                    </button>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Chat messages */}
-              {messages.map((msg, i) => (
-                <div key={i}>
-                  {msg.type === "user" && (
-                    <div className="flex justify-end">
-                      <div className="bg-gradient-to-br from-[#2d6a4f] to-[#1b4332] text-white rounded-2xl rounded-br-sm px-3 sm:px-5 py-2 sm:py-3 max-w-[88%] sm:max-w-[85%] shadow-md">
-                        <p className="text-xs sm:text-sm font-[family-name:var(--font-body)]">{msg.text}</p>
-                      </div>
+            {/* Message list */}
+            {messages.map((msg, i) => (
+              <div key={i}>
+                {/* User message */}
+                {msg.type === "user" && (
+                  <div className="flex gap-4 justify-end">
+                    <div className="bg-[#2d6a4f] text-white rounded-2xl rounded-br-sm px-5 py-3 max-w-[80%] shadow-sm">
+                      <p className="text-sm leading-relaxed font-[family-name:var(--font-body)]">{msg.text}</p>
                     </div>
-                  )}
-                  {msg.type === "ai" && (
-                    <div className="flex gap-2 sm:gap-3">
-                      <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 border border-[#2d6a4f]/20">
-                        🌿
-                      </div>
-                      <div className="max-w-[92%] sm:max-w-[90%]">
-                        <AIResponse data={msg.data} />
-                      </div>
+                    <div className="w-8 h-8 rounded-full bg-[#1a2e1a] flex items-center justify-center text-white text-xs font-bold flex-shrink-0 font-[family-name:var(--font-body)]">
+                      You
                     </div>
-                  )}
-                  {msg.type === "ai-text" && (
-                    <div className="flex gap-2 sm:gap-3">
-                      <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 border border-[#2d6a4f]/20">
-                        🌿
-                      </div>
-                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-sm px-3 sm:px-5 py-2 sm:py-3 max-w-[88%] sm:max-w-[85%] border border-[#a7f3d0]/30 shadow-sm">
-                        <p className="text-xs sm:text-sm text-[#1a2e1a] font-[family-name:var(--font-body)]">{msg.text}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {loading && (
-                <div className="flex gap-2 sm:gap-3">
-                  <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#2d6a4f]/10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 border border-[#2d6a4f]/20">
-                    🌿
                   </div>
-                  <TypingIndicator />
+                )}
+                {/* AI data response */}
+                {msg.type === "ai" && (
+                  <div className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-[#2d6a4f] flex items-center justify-center text-sm flex-shrink-0 shadow-sm">
+                      🌿
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <AIResponse data={msg.data} />
+                    </div>
+                  </div>
+                )}
+                {/* AI text response */}
+                {msg.type === "ai-text" && (
+                  <div className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-[#2d6a4f] flex items-center justify-center text-sm flex-shrink-0 shadow-sm">
+                      🌿
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#374151] leading-relaxed font-[family-name:var(--font-body)]">{msg.text}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Typing indicator */}
+            {loading && (
+              <div className="flex gap-4">
+                <div className="w-8 h-8 rounded-full bg-[#2d6a4f] flex items-center justify-center text-sm flex-shrink-0 shadow-sm">
+                  🌿
                 </div>
-              )}
+                <TypingIndicator />
+              </div>
+            )}
 
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input area */}
-            <form
-              id="advisor-form"
-              onSubmit={handleSubmit}
-              className="p-2.5 sm:p-4 bg-white/90 backdrop-blur-sm border-t border-[#a7f3d0]/30 flex gap-2 sm:gap-3"
-            >
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Enter a location (e.g., Uganda, Lagos)..."
-                className="flex-1 min-w-0 px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-lg sm:rounded-xl border border-[#a7f3d0]/40 bg-[#f0fdf4]/50 text-[#1a2e1a] text-xs sm:text-sm focus:outline-none focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/20 transition-all font-[family-name:var(--font-body)] placeholder:text-[#6b7c6b]/60"
-                disabled={loading}
-              />
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="bg-gradient-to-r from-[#2d6a4f] to-[#1b4332] text-white px-4 sm:px-7 py-2.5 sm:py-3.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm hover:from-[#1b4332] hover:to-[#14532d] transition-all disabled:opacity-40 disabled:cursor-not-allowed font-[family-name:var(--font-body)] shadow-md hover:shadow-lg flex-shrink-0"
-              >
-                Analyze
-              </button>
-            </form>
-          </div>
-
-          {/* Bottom info bar */}
-          <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-1 sm:px-2">
-            <p className="text-white/50 text-[10px] sm:text-xs font-[family-name:var(--font-body)] text-center sm:text-left">
-              This demo uses a curated knowledge base. The full platform integrates satellite imagery,
-              real-time climate APIs, and advanced ML models.
-            </p>
-            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-              {["Satellite AI", "Carbon Tracking", "5 Regions"].map((tag, i) => (
-                <span key={i} className="text-[#4ade80]/70 text-[10px] sm:text-xs font-medium border border-[#4ade80]/20 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 font-[family-name:var(--font-body)]">
-                  {tag}
-                </span>
-              ))}
-            </div>
+            <div ref={messagesEndRef} />
           </div>
         </div>
-      </main>
+
+        {/* Input area — pinned bottom */}
+        <div className="flex-shrink-0 border-t border-[#e5e7eb] bg-white/80 backdrop-blur-sm px-4 py-3 sm:py-4">
+          <form
+            id="advisor-form"
+            onSubmit={handleSubmit}
+            className="max-w-3xl mx-auto flex items-center gap-3 bg-white border border-[#d1d5db] rounded-2xl px-4 py-2 focus-within:border-[#2d6a4f] focus-within:ring-2 focus-within:ring-[#2d6a4f]/15 transition-all shadow-sm"
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Enter a location (e.g., Uganda, Kampala, Lagos)..."
+              className="flex-1 min-w-0 py-2 text-sm text-[#1a2e1a] focus:outline-none bg-transparent font-[family-name:var(--font-body)] placeholder:text-[#9ca3af]"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#2d6a4f] hover:bg-[#1b4332] text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </button>
+          </form>
+          <p className="text-center text-[10px] text-[#9ca3af] mt-2 font-[family-name:var(--font-body)]">
+            KibiraAI uses a curated knowledge base. The full platform integrates satellite imagery, real-time climate APIs, and advanced ML models.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
