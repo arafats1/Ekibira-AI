@@ -14,9 +14,9 @@ const fraunces = Fraunces({
 });
 
 export const metadata = {
-  title: "EkibiraAI — AI-Powered Reforestation for Africa",
+  title: "KibiraAI — AI-Powered Reforestation for Africa",
   description:
-    "EkibiraAI uses artificial intelligence to combat deforestation in Africa by providing smart reforestation plans, carbon sequestration estimates, and climate-smart land-use recommendations for communities across the continent.",
+    "KibiraAI uses artificial intelligence to combat deforestation in Africa by providing smart reforestation plans, carbon sequestration estimates, and climate-smart land-use recommendations for communities across the continent.",
   keywords: [
     "climate change",
     "Africa",
@@ -27,7 +27,7 @@ export const metadata = {
     "sustainability",
   ],
   openGraph: {
-    title: "EkibiraAI — AI-Powered Reforestation for Africa",
+    title: "KibiraAI — AI-Powered Reforestation for Africa",
     description:
       "Combating deforestation across Africa with AI-driven reforestation planning and carbon tracking.",
     type: "website",

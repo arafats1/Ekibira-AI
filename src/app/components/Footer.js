@@ -8,7 +8,7 @@ export default function Footer() {
             <div className="flex items-center gap-2 mb-3">
               <span className="text-2xl">🌿</span>
               <span className="font-[family-name:var(--font-display)] text-xl font-bold text-white">
-                EkibiraAI
+                KibiraAI
               </span>
             </div>
             <p className="text-sm leading-relaxed font-[family-name:var(--font-body)]">
@@ -33,7 +33,7 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-3 font-[family-name:var(--font-display)]">Get in Touch</h4>
             <div className="space-y-2 text-sm font-[family-name:var(--font-body)]">
-              <p>📧 hello@ekibiraai.org</p>
+              <p>📧 hello@KibiraAI.org</p>
               <p>📍 Kampala, Uganda</p>
               <p>🌍 Serving communities across Africa</p>
             </div>
@@ -41,7 +41,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/10 pt-4 sm:pt-6 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 text-[10px] sm:text-xs text-[#a7f3d0]/60 font-[family-name:var(--font-body)]">
-          <p>&copy; {new Date().getFullYear()} EkibiraAI by Abram Group. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} KibiraAI by Abram Group. All rights reserved.</p>
           <p>
             Built with 💚 in Uganda for Africa &bull; Powered by AI
           </p>

@@ -88,7 +88,7 @@ export default function Solution() {
             <span className="text-[#4ade80]">Grows Forests</span>
           </h2>
           <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            EkibiraAI combines cutting-edge AI with local ecological knowledge to give
+            KibiraAI combines cutting-edge AI with local ecological knowledge to give
             communities the tools they need to restore and protect Africa&rsquo;s forests.
           </p>
         </div>

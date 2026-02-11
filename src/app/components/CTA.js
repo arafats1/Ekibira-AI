@@ -56,7 +56,7 @@ export default function CTA() {
             <span className="text-[#4ade80]">Africa&rsquo;s Green Future</span>
           </h2>
           <p className="text-white/70 text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            We are seeking grant funding and partnerships to bring EkibiraAI from concept to
+            We are seeking grant funding and partnerships to bring KibiraAI from concept to
             continental impact. Your support will directly fund AI development, community
             programs, and reforestation efforts across Africa.
           </p>
@@ -124,7 +124,7 @@ export default function CTA() {
         <div className="text-center">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <a
-              href="mailto:hello@ekibiraai.org?subject=Grant%20Partnership%20Inquiry%20-%20EkibiraAI&body=I%20am%20interested%20in%20supporting%20EkibiraAI.%20Please%20share%20more%20details%20about%20partnership%20opportunities."
+              href="mailto:hello@KibiraAI.org?subject=Grant%20Partnership%20Inquiry%20-%20KibiraAI&body=I%20am%20interested%20in%20supporting%20KibiraAI.%20Please%20share%20more%20details%20about%20partnership%20opportunities."
               className="bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13] font-bold px-10 py-4 rounded-full text-lg transition-all hover:scale-105 shadow-lg shadow-[#4ade80]/25 font-[family-name:var(--font-body)]"
             >
               Contact Us for Partnership
@@ -137,7 +137,7 @@ export default function CTA() {
             </a>
           </div>
           <p className="text-white/40 text-sm font-[family-name:var(--font-body)]">
-            EkibiraAI is an initiative by Abram Group &bull; Built with purpose in Uganda 🇺🇬
+            KibiraAI is an initiative by Abram Group &bull; Built with purpose in Uganda 🇺🇬
           </p>
         </div>
       </div>

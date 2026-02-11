@@ -61,7 +61,7 @@ export default function Impact() {
             Measurable <span className="gradient-text">Climate Impact</span>
           </h2>
           <p className="text-[#6b7c6b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            EkibiraAI isn&rsquo;t just a tool — it&rsquo;s a movement. Here&rsquo;s what we aim to achieve
+            KibiraAI isn&rsquo;t just a tool — it&rsquo;s a movement. Here&rsquo;s what we aim to achieve
             with your support in the first 5 years.
           </p>
         </div>
@@ -95,7 +95,7 @@ export default function Impact() {
               Aligned with the UN Sustainable Development Goals
             </h3>
             <p className="text-[#6b7c6b] font-[family-name:var(--font-body)]">
-              EkibiraAI directly contributes to 6 SDGs, creating interconnected positive impact
+              KibiraAI directly contributes to 6 SDGs, creating interconnected positive impact
             </p>
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">

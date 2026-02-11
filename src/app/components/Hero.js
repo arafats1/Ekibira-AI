@@ -41,7 +41,7 @@ export default function Hero() {
 
         {/* Subheadline */}
         <p className="animate-fade-in-up delay-200 text-base sm:text-lg md:text-xl text-white/85 max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-12 font-[family-name:var(--font-body)]">
-          EkibiraAI uses artificial intelligence to analyze deforestation patterns,
+          KibiraAI uses artificial intelligence to analyze deforestation patterns,
           recommend native reforestation strategies, and track carbon sequestration
           — empowering communities across Africa to fight climate change.
         </p>
