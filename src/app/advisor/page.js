@@ -433,9 +433,20 @@ export default function AdvisorPage() {
             <span className="text-lg">🌿</span>
             <h1 className="text-base font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">KibiraAI Advisor</h1>
           </div>
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#4ade80]" />
-            <span className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Online</span>
+          <div className="ml-auto flex items-center gap-3">
+            <Link
+              href="/"
+              className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[#f0fdf4] transition-colors"
+              title="Back to Home"
+            >
+              <svg width="18" height="18" fill="none" stroke="#2d6a4f" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
+              </svg>
+            </Link>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#4ade80]" />
+              <span className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Online</span>
+            </div>
           </div>
         </header>
 
