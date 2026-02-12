@@ -429,7 +429,7 @@ export default function ForestSentinelPage() {
                   ${activeTab === tab.key ? "bg-white text-[#1a2e1a] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <span>{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
