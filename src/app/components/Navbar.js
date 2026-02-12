@@ -30,7 +30,6 @@ export default function Navbar() {
           <a href="/plant-a-tree" className="hover:text-[#2d6a4f] transition-colors flex items-center gap-1">
             🌱 Plant a Tree
           </a>
-          <a href="/#impact" className="hover:text-[#2d6a4f] transition-colors">Impact</a>
           <a
             href="#support"
             className="bg-[#2d6a4f] text-white px-5 py-2.5 rounded-full hover:bg-[#1b4332] transition-colors font-semibold"
@@ -72,7 +71,6 @@ export default function Navbar() {
           <a href="/plant-a-tree" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] flex items-center gap-2">
             🌱 Plant a Tree
           </a>
-          <a href="/#impact" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Impact</a>
           <a
             href="#support"
             onClick={() => setOpen(false)}
