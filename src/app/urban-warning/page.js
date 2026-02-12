@@ -131,22 +131,36 @@ const NEIGHBORHOODS = [
   },
 ];
 
-// ─── Simulated weather forecast data ───
-function generateForecast() {
+// ─── Seeded random for consistent daily forecasts ───
+function seededRandom(seed) {
+  let s = seed;
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+// ─── Simulated weather forecast data (deterministic per day + neighborhood) ───
+function generateForecast(neighborhoodId) {
   const days = [];
   const conditions = ["Sunny", "Partly Cloudy", "Overcast", "Light Rain", "Heavy Rain", "Thunderstorm"];
   const today = new Date();
+  // Seed based on today's date + neighborhood so it's stable per day but varies by area
+  const dateSeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  const idHash = (neighborhoodId || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const rand = seededRandom(dateSeed + idHash);
+
   for (let i = 0; i < 5; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
-    const condIndex = Math.floor(Math.random() * conditions.length);
+    const condIndex = Math.floor(rand() * conditions.length);
     days.push({
       date: date.toLocaleDateString("en-UG", { weekday: "short", month: "short", day: "numeric" }),
       condition: conditions[condIndex],
-      tempHigh: 28 + Math.floor(Math.random() * 6),
-      tempLow: 17 + Math.floor(Math.random() * 4),
-      rainfall: condIndex >= 3 ? (10 + Math.random() * 50).toFixed(0) : 0,
-      humidity: 55 + Math.floor(Math.random() * 35),
+      tempHigh: 28 + Math.floor(rand() * 6),
+      tempLow: 17 + Math.floor(rand() * 4),
+      rainfall: condIndex >= 3 ? (10 + rand() * 50).toFixed(0) : 0,
+      humidity: 55 + Math.floor(rand() * 35),
       floodTrigger: condIndex >= 4,
     });
   }
@@ -215,7 +229,7 @@ export default function UrbanWarningPage() {
   const mapRef = useRef(null);
 
   useEffect(() => {
-    setForecast(generateForecast());
+    setForecast(generateForecast(selectedArea.id));
     setAlertSent(false);
     setShowActionPlan(false);
     setSimulationResult(null);
