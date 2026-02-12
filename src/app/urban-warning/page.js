@@ -225,6 +225,45 @@ export default function UrbanWarningPage() {
   const maxRainfall = Math.max(...forecast.map((d) => Number(d.rainfall) || 0));
   const avgHumidity = forecast.length > 0 ? Math.round(forecast.reduce((s, d) => s + d.humidity, 0) / forecast.length) : 0;
 
+  // ─── Download helpers ───
+  const downloadCSV = (data, filename) => {
+    const blob = new Blob([data], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadRiskReport = () => {
+    const headers = "Neighborhood,Division,Population,Flood Risk,Heat Risk,Elevation,Drainage,Flood History,Heat Drivers\n";
+    const rows = NEIGHBORHOODS.map((n) =>
+      `"${n.name}","${n.division}","${n.population}",${n.floodRisk},${n.heatRisk},"${n.elevation}","${n.drainage}","${n.floodHistory}","${n.heatDrivers}"`
+    ).join("\n");
+    downloadCSV(headers + rows, `kibira-urban-risk-report-${new Date().toISOString().slice(0,10)}.csv`);
+  };
+
+  const downloadActionPlan = () => {
+    const report = [
+      `Action Plan — ${selectedArea.name}, ${selectedArea.division} Division, Kampala`,
+      `Generated: ${new Date().toLocaleString()}`,
+      `Flood Risk: ${selectedArea.floodRisk}/100, Heat Risk: ${selectedArea.heatRisk}/100`,
+      "",
+      "INTERVENTIONS",
+      ...selectedArea.interventions.map((int, i) => `${i+1}. ${int}`),
+      "",
+      "TREE PLANTING PRESCRIPTION",
+      "Species,Count,Purpose",
+      ...selectedArea.treeRecommendations.map((t) => `"${t.name}",${t.count},"${t.purpose}"`),
+      "",
+      "FORECAST (5-day)",
+      "Date,Condition,High°C,Low°C,Rainfall mm,Humidity %,Flood Trigger",
+      ...forecast.map((d) => `"${d.date}","${d.condition}",${d.tempHigh},${d.tempLow},${d.rainfall},${d.humidity},${d.floodTrigger}`),
+    ].join("\n");
+    downloadCSV(report, `kibira-action-plan-${selectedArea.id}-${new Date().toISOString().slice(0,10)}.csv`);
+  };
+
   const simulateAlert = () => {
     setSimulating(true);
     setTimeout(() => {
@@ -256,6 +295,7 @@ export default function UrbanWarningPage() {
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-white/70">
             <Link href="/solution" className="hover:text-white transition-colors">← Back to Solutions</Link>
+            <Link href="/plant-a-tree" className="hover:text-white transition-colors">🌱 Plant a Tree</Link>
             <Link href="/advisor" className="hover:text-white transition-colors">AI Advisor</Link>
             <Link href="/" className="bg-blue-500 text-white px-5 py-2 rounded-full hover:bg-blue-600 transition-colors font-semibold text-sm">
               Home
@@ -285,18 +325,18 @@ export default function UrbanWarningPage() {
                   AI-powered hyperlocal climate monitoring for Kampala&apos;s most vulnerable neighborhoods. Select an area below to view real-time risk analysis, forecasts, and actionable intervention plans.
                 </p>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-                  <p className="text-3xl font-bold text-blue-400 font-[family-name:var(--font-display)]">5</p>
-                  <p className="text-white/50 text-xs mt-1 font-[family-name:var(--font-body)]">Neighborhoods Monitored</p>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-blue-400 font-[family-name:var(--font-display)]">5</p>
+                  <p className="text-white/50 text-[10px] sm:text-xs mt-1 font-[family-name:var(--font-body)]">Neighborhoods Monitored</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-                  <p className="text-3xl font-bold text-red-400 font-[family-name:var(--font-display)]">225K+</p>
-                  <p className="text-white/50 text-xs mt-1 font-[family-name:var(--font-body)]">People Protected</p>
+                <div className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-red-400 font-[family-name:var(--font-display)]">225K+</p>
+                  <p className="text-white/50 text-[10px] sm:text-xs mt-1 font-[family-name:var(--font-body)]">People Protected</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-                  <p className="text-3xl font-bold text-green-400 font-[family-name:var(--font-display)]">72h</p>
-                  <p className="text-white/50 text-xs mt-1 font-[family-name:var(--font-body)]">Advance Warning</p>
+                <div className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-green-400 font-[family-name:var(--font-display)]">72h</p>
+                  <p className="text-white/50 text-[10px] sm:text-xs mt-1 font-[family-name:var(--font-body)]">Advance Warning</p>
                 </div>
               </div>
             </div>
@@ -316,7 +356,7 @@ export default function UrbanWarningPage() {
                   <button
                     key={area.id}
                     onClick={() => setSelectedArea(area)}
-                    className={`flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all font-[family-name:var(--font-body)]
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-semibold transition-all font-[family-name:var(--font-body)]
                       ${isActive
                         ? "bg-[#0c2d48] text-white shadow-lg shadow-[#0c2d48]/30"
                         : "bg-white text-gray-700 border border-gray-200 hover:border-[#0c2d48]/30 hover:shadow-sm"
@@ -332,7 +372,7 @@ export default function UrbanWarningPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
+          <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-full sm:w-fit overflow-x-auto">
             {[
               { key: "overview", label: "Risk Overview", icon: "📊" },
               { key: "forecast", label: "Weather Forecast", icon: "🌦️" },
@@ -342,7 +382,7 @@ export default function UrbanWarningPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all font-[family-name:var(--font-body)]
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all font-[family-name:var(--font-body)] whitespace-nowrap flex-shrink-0
                   ${activeTab === tab.key ? "bg-white text-[#0c2d48] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <span>{tab.icon}</span>
@@ -354,6 +394,15 @@ export default function UrbanWarningPage() {
           {/* ═══ TAB: OVERVIEW ═══ */}
           {activeTab === "overview" && (
             <div className="space-y-6 animate-fade-in">
+              {/* Download bar */}
+              <div className="flex justify-end">
+                <button
+                  onClick={downloadRiskReport}
+                  className="text-xs bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-full font-semibold hover:bg-gray-50 transition-colors font-[family-name:var(--font-body)] flex items-center gap-1.5 shadow-sm"
+                >
+                  📥 Download Risk Report (CSV)
+                </button>
+              </div>
               {/* Risk Gauges */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <RiskGauge value={selectedArea.floodRisk} label="Flood Risk" type="flood" />
@@ -505,7 +554,7 @@ export default function UrbanWarningPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 {forecast.map((day, i) => (
                   <div key={i} className={`bg-white rounded-2xl p-5 border text-center transition-all
                     ${day.floodTrigger ? "border-red-200 shadow-md shadow-red-100" : "border-gray-100 shadow-sm"}`}>
@@ -563,16 +612,24 @@ export default function UrbanWarningPage() {
           {activeTab === "action" && (
             <div className="space-y-6 animate-fade-in">
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-2xl">📋</span>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800 font-[family-name:var(--font-display)]">
-                      AI-Generated Climate Action Plan — {selectedArea.name}
-                    </h2>
-                    <p className="text-sm text-gray-500 font-[family-name:var(--font-body)]">
-                      {selectedArea.division} Division, Kampala · Generated by KibiraAI
-                    </p>
+                <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📋</span>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800 font-[family-name:var(--font-display)]">
+                        AI-Generated Climate Action Plan — {selectedArea.name}
+                      </h2>
+                      <p className="text-sm text-gray-500 font-[family-name:var(--font-body)]">
+                        {selectedArea.division} Division, Kampala · Generated by KibiraAI
+                      </p>
+                    </div>
                   </div>
+                  <button
+                    onClick={downloadActionPlan}
+                    className="text-xs bg-[#0c2d48] text-white px-4 py-2 rounded-full font-semibold hover:bg-[#0a2035] transition-colors font-[family-name:var(--font-body)] flex items-center gap-1.5"
+                  >
+                    📥 Download Action Plan
+                  </button>
                 </div>
 
                 <div className="grid lg:grid-cols-2 gap-8">

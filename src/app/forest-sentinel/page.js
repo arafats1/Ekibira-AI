@@ -281,6 +281,42 @@ export default function ForestSentinelPage() {
   const threatEvents = events.filter((e) => e.isThreat);
   const safeEvents = events.filter((e) => !e.isThreat);
 
+  // ─── Download helpers ───
+  const downloadCSV = (data, filename) => {
+    const blob = new Blob([data], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadEventLog = () => {
+    const headers = "Timestamp,Forest,Zone,Sound,Threat,Confidence,Sensor,dB Level,Alert Sent,Latitude,Longitude\n";
+    const rows = events.map((e) =>
+      `"${e.timestamp}","${e.forestName}","${e.zoneName}","${e.soundClass.label}",${e.isThreat},${e.confidence}%,"${e.sensorId}",${e.audioDbLevel},${e.alertSent},${e.lat.toFixed(6)},${e.lng.toFixed(6)}`
+    ).join("\n");
+    downloadCSV(headers + rows, `kibira-sentinel-events-${selectedForest.id}-${new Date().toISOString().slice(0,10)}.csv`);
+  };
+
+  const downloadForestReport = () => {
+    const report = [
+      "Forest,Region,Area,Threat Level,Carbon Stock,Annual Loss,Biodiversity Score",
+      ...FORESTS.map((f) =>
+        `"${f.name}","${f.region}","${f.area}",${f.threatLevel},"${f.carbonStock}","${f.annualLoss}",${f.biodiversityScore}`
+      ),
+      "",
+      "Zone,Forest,Risk Score,Latitude,Longitude,Description",
+      ...FORESTS.flatMap((f) =>
+        f.sensorZones.map((z) =>
+          `"${z.name}","${f.name}",${z.riskScore},${z.lat},${z.lng},"${z.description}"`
+        )
+      ),
+    ].join("\n");
+    downloadCSV(report, `kibira-sentinel-forest-report-${new Date().toISOString().slice(0,10)}.csv`);
+  };
+
   return (
     <div className="min-h-screen bg-[#f4f7f2]">
       {/* Header */}
@@ -303,6 +339,7 @@ export default function ForestSentinelPage() {
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-white/70">
             <Link href="/solution" className="hover:text-white transition-colors">← Back to Solutions</Link>
             <Link href="/urban-warning" className="hover:text-white transition-colors">Urban Warning</Link>
+            <Link href="/plant-a-tree" className="hover:text-white transition-colors">🌱 Plant a Tree</Link>
             <Link href="/advisor" className="hover:text-white transition-colors">AI Advisor</Link>
             <Link href="/" className="bg-[#4ade80] text-[#0a1f13] px-5 py-2 rounded-full hover:bg-[#22c55e] transition-colors font-semibold text-sm">
               Home
@@ -332,18 +369,18 @@ export default function ForestSentinelPage() {
                   IoT sound sensors powered by neural networks detect illegal logging across Uganda&apos;s critical forests in real-time. Select a forest below to monitor sensor zones, view detection events, and simulate live listening.
                 </p>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-                  <p className="text-3xl font-bold text-[#4ade80] font-[family-name:var(--font-display)]">4</p>
-                  <p className="text-white/50 text-xs mt-1 font-[family-name:var(--font-body)]">Forests Monitored</p>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-[#4ade80] font-[family-name:var(--font-display)]">4</p>
+                  <p className="text-white/50 text-[10px] sm:text-xs mt-1 font-[family-name:var(--font-body)]">Forests Monitored</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-                  <p className="text-3xl font-bold text-amber-400 font-[family-name:var(--font-display)]">16</p>
-                  <p className="text-white/50 text-xs mt-1 font-[family-name:var(--font-body)]">Sensor Zones</p>
+                <div className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-amber-400 font-[family-name:var(--font-display)]">16</p>
+                  <p className="text-white/50 text-[10px] sm:text-xs mt-1 font-[family-name:var(--font-body)]">Sensor Zones</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-                  <p className="text-3xl font-bold text-red-400 font-[family-name:var(--font-display)]">{totalAlerts}</p>
-                  <p className="text-white/50 text-xs mt-1 font-[family-name:var(--font-body)]">Threats Detected</p>
+                <div className="bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-red-400 font-[family-name:var(--font-display)]">{totalAlerts}</p>
+                  <p className="text-white/50 text-[10px] sm:text-xs mt-1 font-[family-name:var(--font-body)]">Threats Detected</p>
                 </div>
               </div>
             </div>
@@ -362,7 +399,7 @@ export default function ForestSentinelPage() {
                   <button
                     key={forest.id}
                     onClick={() => setSelectedForest(forest)}
-                    className={`flex items-center gap-2 px-5 py-3 rounded-full text-sm font-semibold transition-all font-[family-name:var(--font-body)]
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-semibold transition-all font-[family-name:var(--font-body)]
                       ${isActive
                         ? "bg-[#1a2e1a] text-white shadow-lg shadow-[#1a2e1a]/30"
                         : "bg-white text-gray-700 border border-gray-200 hover:border-[#2d6a4f]/30 hover:shadow-sm"
@@ -378,7 +415,7 @@ export default function ForestSentinelPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
+          <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-full sm:w-fit overflow-x-auto">
             {[
               { key: "dashboard", label: "Dashboard", icon: "📊" },
               { key: "listen", label: "Live Detection", icon: "🎙️" },
@@ -388,7 +425,7 @@ export default function ForestSentinelPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all font-[family-name:var(--font-body)]
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all font-[family-name:var(--font-body)] whitespace-nowrap flex-shrink-0
                   ${activeTab === tab.key ? "bg-white text-[#1a2e1a] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <span>{tab.icon}</span>
@@ -400,6 +437,15 @@ export default function ForestSentinelPage() {
           {/* ═══ TAB: DASHBOARD ═══ */}
           {activeTab === "dashboard" && (
             <div className="space-y-6 animate-fade-in">
+              {/* Download bar */}
+              <div className="flex justify-end">
+                <button
+                  onClick={downloadForestReport}
+                  className="text-xs bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-full font-semibold hover:bg-gray-50 transition-colors font-[family-name:var(--font-body)] flex items-center gap-1.5 shadow-sm"
+                >
+                  📥 Download Forest Report (CSV)
+                </button>
+              </div>
               {/* Forest overview cards */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
@@ -647,7 +693,7 @@ export default function ForestSentinelPage() {
               {/* Sound classification reference */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                 <p className="text-sm font-bold text-gray-800 mb-4 font-[family-name:var(--font-display)]">🔊 Sound Classification Model — 9 Categories</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
                   {SOUND_CLASSES.map((sc) => (
                     <div key={sc.id} className={`rounded-xl p-3 border text-center transition-all hover:shadow-sm
                       ${sc.threat ? "bg-red-50 border-red-100" : "bg-green-50 border-green-100"}`}
@@ -670,11 +716,17 @@ export default function ForestSentinelPage() {
           {/* ═══ TAB: EVENT LOG ═══ */}
           {activeTab === "events" && (
             <div className="space-y-4 animate-fade-in">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <p className="text-sm font-bold text-gray-800 font-[family-name:var(--font-display)]">
                   Detection Event Log — {selectedForest.name.split("(")[0].trim()}
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={downloadEventLog}
+                    className="text-xs bg-[#2d6a4f] text-white px-3 py-1.5 rounded-full font-semibold hover:bg-[#1b4332] transition-colors font-[family-name:var(--font-body)] flex items-center gap-1"
+                  >
+                    📥 Download CSV
+                  </button>
                   <span className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold font-[family-name:var(--font-body)]">
                     {threatEvents.length} threats
                   </span>
@@ -692,7 +744,7 @@ export default function ForestSentinelPage() {
                 ) : (
                   <div className="divide-y divide-gray-50">
                     {events.map((evt) => (
-                      <div key={evt.id} className={`flex items-center gap-4 px-5 py-3.5 transition-all hover:bg-gray-50/50
+                      <div key={evt.id} className={`flex items-center gap-2 sm:gap-4 px-3 sm:px-5 py-3 sm:py-3.5 transition-all hover:bg-gray-50/50
                         ${evt.isThreat ? "border-l-4 border-l-red-400" : "border-l-4 border-l-green-300"}`}
                       >
                         <span className="text-xl flex-shrink-0">{evt.soundClass.icon}</span>
