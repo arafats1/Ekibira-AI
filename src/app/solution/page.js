@@ -20,6 +20,33 @@ export default function SolutionPage() {
     }
   ];
 
+  const forestSentinelFeatures = [
+    {
+      title: "Acoustic Detection",
+      description: "Solar-powered IoT microphones deployed across at-risk forests use a trained neural network to classify chainsaw and axe sounds in real-time, distinguishing logging from natural forest sounds like thunder or animal calls.",
+      icon: "🎙️",
+      stat: "95% detection accuracy"
+    },
+    {
+      title: "GPS Triangulation & Alerts",
+      description: "Multiple sensor nodes triangulate the exact GPS location of detected logging activity. Instant SMS and WhatsApp alerts are pushed to community forest rangers and Uganda's National Forestry Authority within seconds.",
+      icon: "📍",
+      stat: "< 30 second alert time"
+    },
+    {
+      title: "Evidence & Dashboard Logging",
+      description: "Every detection event is logged on the KibiraAI dashboard with timestamp, GPS coordinates, confidence score, and audio classification. Optional drone dispatch captures photographic evidence for prosecution.",
+      icon: "🛰️",
+      stat: "100% event traceability"
+    },
+    {
+      title: "Predictive Feedback Loop",
+      description: "Detection data flows back into KibiraAI's deforestation risk model, making future predictions sharper. Patrol routes are optimized based on hotspot patterns, reducing ranger workload by up to 60%.",
+      icon: "🔄",
+      stat: "Self-improving AI model"
+    }
+  ];
+
   const urbanResilienceServices = [
     {
       title: "Heat Stress Mitigation",
@@ -43,6 +70,33 @@ export default function SolutionPage() {
     }
   ];
 
+  const urbanFloodHeatFeatures = [
+    {
+      title: "Hyperlocal Heat Island Mapping",
+      description: "Satellite thermal imagery (Landsat Band 10) combined with ground-level data maps neighborhood-level heat intensity across African cities, identifying which informal settlements like Bwaise, Katanga, and Namuwongo are dangerously hot.",
+      icon: "🌡️",
+      stat: "50m resolution heat maps"
+    },
+    {
+      title: "72-Hour Flood Prediction Engine",
+      description: "An ML model processes real-time weather forecasts, soil saturation levels, and urban drainage topology to predict flash floods 24–72 hours ahead, pushing SMS and WhatsApp alerts to residents in flood-prone zones.",
+      icon: "🌊",
+      stat: "24–72h advance warning"
+    },
+    {
+      title: "Parish-Level Climate Action Plans",
+      description: "AI generates specific intervention plans per neighborhood — e.g., 'Plant 200 Terminalia mantaly trees along Jinja Road to reduce heat by 3°C and intercept 40% of stormwater runoff' — ready for KCCA and NGO implementation.",
+      icon: "📋",
+      stat: "Actionable per-ward plans"
+    },
+    {
+      title: "Climate Justice Evidence",
+      description: "Maps and data proving which communities bear the worst climate impact help NGOs and city authorities direct adaptation funding equitably — supporting advocacy, policy change, and international climate finance applications.",
+      icon: "⚖️",
+      stat: "Data-backed equity reports"
+    }
+  ];
+
   const solutionPillars = [
     {
       title: "Data-to-Action",
@@ -60,9 +114,17 @@ export default function SolutionPage() {
 
   const outcomeMetrics = [
     { value: "3.9M", label: "Hectares protected yearly", note: "Risk mapped to prevent loss" },
+    { value: "95%", label: "Logging detection rate", note: "Acoustic AI forest sentinel" },
     { value: "5°C", label: "Urban cooling potential", note: "Heat corridors + tree placement" },
     { value: "72h", label: "Flood early warning", note: "Preparedness for dense neighborhoods" },
     { value: "40%", label: "Higher survival", note: "Native species optimization" },
+    { value: "< 30s", label: "Alert response time", note: "Real-time ranger notification" },
+  ];
+
+  const dataToActionPipeline = [
+    { layer: "Educate & Advise", tool: "AI Climate Advisor", description: "Users query the AI for region-specific data on deforestation, native species, carbon potential, and climate-smart farming practices.", color: "bg-emerald-500" },
+    { layer: "Detect & Protect", tool: "Forest Acoustic Sentinel", description: "IoT sound sensors detect illegal logging in real-time, alert rangers, and feed data back into the deforestation risk model.", color: "bg-amber-500" },
+    { layer: "Predict & Prepare", tool: "Urban Heat & Flood AI", description: "Satellite and weather data predict heat extremes and flash floods, push early warnings, and generate neighborhood-level climate action plans.", color: "bg-blue-500" },
   ];
 
   return (
@@ -157,6 +219,72 @@ export default function SolutionPage() {
             </div>
           </section>
 
+          {/* === PRACTICAL INNOVATION: Forest Acoustic Sentinel === */}
+          <section className="mb-20 sm:mb-28">
+            <div className="bg-gradient-to-br from-[#1a2e1a] to-[#14532d] rounded-[3rem] p-8 sm:p-14 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-[#4ade80]/8 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-72 h-72 bg-amber-500/8 rounded-full blur-3xl" />
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="inline-flex items-center gap-2 bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full font-[family-name:var(--font-body)]">
+                    🔊 Practical Innovation
+                  </span>
+                </div>
+                <h2 className="text-3xl sm:text-5xl font-bold text-white mb-4 font-[family-name:var(--font-display)]">
+                  AI Forest Acoustic Sentinel
+                </h2>
+                <p className="text-white/70 text-lg max-w-3xl mb-6 font-[family-name:var(--font-body)]">
+                  Beyond data — real-time forest protection. Low-cost IoT sound sensors deployed across Uganda&apos;s at-risk forests (Mabira, Bugoma, Bwindi buffer zones) use a trained neural network to detect illegal logging activity and alert rangers within seconds.
+                </p>
+                <p className="text-white/50 text-sm max-w-2xl mb-10 font-[family-name:var(--font-body)]">
+                  Inspired by sound-based illegal logging detection research in Kenya. KibiraAI&apos;s deforestation risk model tells you <em className="text-[#4ade80]">where</em> forests are at risk — the Acoustic Sentinel catches loggers <em className="text-[#4ade80]">in the act</em>.
+                </p>
+
+                <div className="grid sm:grid-cols-2 gap-5">
+                  {forestSentinelFeatures.map((feature, i) => (
+                    <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all group">
+                      <div className="flex items-start gap-4">
+                        <span className="text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">{feature.icon}</span>
+                        <div>
+                          <h3 className="text-lg font-bold text-white mb-2 font-[family-name:var(--font-display)]">{feature.title}</h3>
+                          <p className="text-white/60 text-sm leading-relaxed font-[family-name:var(--font-body)]">{feature.description}</p>
+                          <span className="inline-block mt-3 text-[#4ade80] text-xs font-semibold tracking-wide uppercase font-[family-name:var(--font-body)]">{feature.stat}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* How it works flow */}
+                <div className="mt-10 border-t border-white/10 pt-8">
+                  <p className="text-xs uppercase tracking-[0.3em] text-[#a7f3d0] font-semibold mb-6 font-[family-name:var(--font-body)]">Detection Pipeline</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {[
+                      { step: "1", label: "Sound Captured", desc: "IoT mic detects chainsaw/axe audio" },
+                      { step: "2", label: "AI Classifies", desc: "TensorFlow Lite model on-device" },
+                      { step: "3", label: "Alert Dispatched", desc: "SMS/WhatsApp to rangers in < 30s" },
+                      { step: "4", label: "Evidence Logged", desc: "GPS, timestamp, audio on dashboard" },
+                    ].map((item, i) => (
+                      <div key={i} className="text-center">
+                        <div className="w-10 h-10 rounded-full bg-[#4ade80]/20 text-[#4ade80] font-bold text-sm flex items-center justify-center mx-auto mb-3">{item.step}</div>
+                        <p className="text-white text-sm font-semibold font-[family-name:var(--font-display)]">{item.label}</p>
+                        <p className="text-white/50 text-xs mt-1 font-[family-name:var(--font-body)]">{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Scale note */}
+                <div className="mt-8 bg-white/5 border border-white/10 rounded-xl p-5">
+                  <p className="text-white/80 text-sm font-[family-name:var(--font-body)]">
+                    <span className="text-[#4ade80] font-semibold">Africa-wide scalability:</span> Replicable across the Congo Basin (1.5M ha lost/year), Kenya&apos;s community forests, and Ghana&apos;s cocoa-belt forests. Tech stack: TensorFlow Lite on Raspberry Pi Zero + solar panel + LoRaWAN for low-power, long-range connectivity in remote areas.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Urban Resilience Section */}
           <section className="relative mb-24">
             <div className="absolute inset-0 bg-gradient-to-br from-[#e9f5ed] to-[#f6fbf7] rounded-[3rem]" />
@@ -197,6 +325,103 @@ export default function SolutionPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </section>
+
+          {/* === PRACTICAL INNOVATION: Urban Heat & Flood Early Warning === */}
+          <section className="mb-20 sm:mb-28">
+            <div className="bg-gradient-to-br from-[#0c2d48] to-[#1a1a2e] rounded-[3rem] p-8 sm:p-14 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-80 h-80 bg-blue-500/8 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 right-0 w-72 h-72 bg-red-500/8 rounded-full blur-3xl" />
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full font-[family-name:var(--font-body)]">
+                    🏙️ Practical Innovation
+                  </span>
+                </div>
+                <h2 className="text-3xl sm:text-5xl font-bold text-white mb-4 font-[family-name:var(--font-display)]">
+                  Urban Heat &amp; Flood Early Warning System
+                </h2>
+                <p className="text-white/70 text-lg max-w-3xl mb-4 font-[family-name:var(--font-body)]">
+                  Beyond data — predictive urban protection. A hyperlocal AI system for Kampala and African cities that combines satellite thermal imagery, weather data, and drainage topology to predict heat extremes and flash floods before they strike.
+                </p>
+                <p className="text-white/50 text-sm max-w-2xl mb-6 font-[family-name:var(--font-body)]">
+                  Inspired by flood justice mapping in the Rio Grande Valley and smart building energy optimization from CityLearn. Kampala&apos;s Bwaise floods displace thousands every rainy season — yet there&apos;s <em className="text-blue-400">no public early warning system</em> for informal settlements.
+                </p>
+                
+                <a 
+                  href="/urban-warning" 
+                  className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-3 rounded-full transition-all hover:scale-105 shadow-lg shadow-blue-500/25 mb-10"
+                >
+                  🚀 Launch Live System →
+                </a>
+
+                <div className="grid sm:grid-cols-2 gap-5">
+                  {urbanFloodHeatFeatures.map((feature, i) => (
+                    <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all group">
+                      <div className="flex items-start gap-4">
+                        <span className="text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">{feature.icon}</span>
+                        <div>
+                          <h3 className="text-lg font-bold text-white mb-2 font-[family-name:var(--font-display)]">{feature.title}</h3>
+                          <p className="text-white/60 text-sm leading-relaxed font-[family-name:var(--font-body)]">{feature.description}</p>
+                          <span className="inline-block mt-3 text-blue-400 text-xs font-semibold tracking-wide uppercase font-[family-name:var(--font-body)]">{feature.stat}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* How the urban system works */}
+                <div className="mt-10 border-t border-white/10 pt-8">
+                  <p className="text-xs uppercase tracking-[0.3em] text-blue-300 font-semibold mb-6 font-[family-name:var(--font-body)]">Early Warning Pipeline</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {[
+                      { step: "1", label: "Satellite Scan", desc: "Landsat thermal + Sentinel-1 radar" },
+                      { step: "2", label: "AI Analysis", desc: "ML predicts heat/flood risk per ward" },
+                      { step: "3", label: "Alert Pushed", desc: "SMS/WhatsApp to at-risk residents" },
+                      { step: "4", label: "Action Plan", desc: "Per-parish interventions generated" },
+                    ].map((item, i) => (
+                      <div key={i} className="text-center">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 font-bold text-sm flex items-center justify-center mx-auto mb-3">{item.step}</div>
+                        <p className="text-white text-sm font-semibold font-[family-name:var(--font-display)]">{item.label}</p>
+                        <p className="text-white/50 text-xs mt-1 font-[family-name:var(--font-body)]">{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Target cities */}
+                <div className="mt-8 bg-white/5 border border-white/10 rounded-xl p-5">
+                  <p className="text-white/80 text-sm font-[family-name:var(--font-body)]">
+                    <span className="text-blue-400 font-semibold">Target cities:</span> Kampala (primary), Lagos, Nairobi (Mathare/Kibera), Dar es Salaam, Accra (Odaw River basin). Uses freely available Sentinel-1 radar for flood detection and Landsat thermal bands for heat mapping — no hardware deployment needed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* === DATA → DETECTION → ACTION Pipeline === */}
+          <section className="mb-20 sm:mb-28">
+            <div className="text-center mb-12">
+              <p className="text-xs uppercase tracking-[0.3em] text-[#2d6a4f] font-semibold mb-4 font-[family-name:var(--font-body)]">The Complete Pipeline</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
+                Data → Detection → Action
+              </h2>
+              <p className="text-[#5d6f5d] text-lg mt-4 max-w-2xl mx-auto font-[family-name:var(--font-body)]">
+                Three integrated layers that transform climate intelligence into measurable impact across Africa&apos;s forests and cities.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-6">
+              {dataToActionPipeline.map((item, i) => (
+                <div key={i} className="relative bg-white rounded-3xl border border-[#dce9dc] p-8 shadow-sm hover:shadow-lg transition-all group overflow-hidden">
+                  <div className={`absolute top-0 left-0 w-full h-1.5 ${item.color}`} />
+                  <p className="text-xs uppercase tracking-widest text-[#5d6f5d] font-semibold mb-3 font-[family-name:var(--font-body)]">Layer {i + 1}</p>
+                  <h3 className="text-2xl font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">{item.layer}</h3>
+                  <p className={`text-sm font-semibold mb-3 font-[family-name:var(--font-body)] ${item.color === 'bg-emerald-500' ? 'text-emerald-600' : item.color === 'bg-amber-500' ? 'text-amber-600' : 'text-blue-600'}`}>{item.tool}</p>
+                  <p className="text-[#5d6f5d] text-sm leading-relaxed font-[family-name:var(--font-body)]">{item.description}</p>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -247,7 +472,7 @@ export default function SolutionPage() {
 
           {/* Outcomes */}
           <section className="mb-24">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {outcomeMetrics.map((metric, i) => (
                 <div key={i} className="bg-white rounded-2xl p-6 border border-[#dce9dc] shadow-sm">
                   <p className="text-3xl font-bold text-[#2d6a4f] font-[family-name:var(--font-display)]">{metric.value}</p>
