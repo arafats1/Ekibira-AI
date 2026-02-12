@@ -41,7 +41,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-white/10 pt-4 sm:pt-6 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4 text-[10px] sm:text-xs text-[#a7f3d0]/60 font-[family-name:var(--font-body)]">
-          <p>&copy; {new Date().getFullYear()} KibiraAI by Abram Group. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} KibiraAI All rights reserved.</p>
           <p>
             Built with 💚 in Uganda for Africa &bull; Powered by AI
           </p>
