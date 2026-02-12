@@ -386,7 +386,7 @@ export default function UrbanWarningPage() {
                   ${activeTab === tab.key ? "bg-white text-[#0c2d48] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <span>{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
