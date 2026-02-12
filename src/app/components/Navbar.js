@@ -19,6 +19,10 @@ export default function Navbar() {
           <a href="/problem" className="hover:text-[#2d6a4f] transition-colors">The Problem</a>
           <a href="/solution" className="hover:text-[#2d6a4f] transition-colors">Solution</a>
           <a href="/advisor" className="hover:text-[#2d6a4f] transition-colors">Try Advisor</a>
+          <a href="/forest-sentinel" className="hover:text-[#2d6a4f] transition-colors flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Forest Sentinel
+          </a>
           <a href="/urban-warning" className="hover:text-[#2d6a4f] transition-colors flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
             Urban Warning
@@ -54,6 +58,10 @@ export default function Navbar() {
           <a href="/problem" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">The Problem</a>
           <a href="/solution" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Solution</a>
           <a href="/advisor" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Try Advisor</a>
+          <a href="/forest-sentinel" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Forest Sentinel
+          </a>
           <a href="/urban-warning" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
             Urban Warning

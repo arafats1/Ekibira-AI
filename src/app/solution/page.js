@@ -237,9 +237,16 @@ export default function SolutionPage() {
                 <p className="text-white/70 text-lg max-w-3xl mb-6 font-[family-name:var(--font-body)]">
                   Beyond data — real-time forest protection. Low-cost IoT sound sensors deployed across Uganda&apos;s at-risk forests (Mabira, Bugoma, Bwindi buffer zones) use a trained neural network to detect illegal logging activity and alert rangers within seconds.
                 </p>
-                <p className="text-white/50 text-sm max-w-2xl mb-10 font-[family-name:var(--font-body)]">
+                <p className="text-white/50 text-sm max-w-2xl mb-6 font-[family-name:var(--font-body)]">
                   Inspired by sound-based illegal logging detection research in Kenya. KibiraAI&apos;s deforestation risk model tells you <em className="text-[#4ade80]">where</em> forests are at risk — the Acoustic Sentinel catches loggers <em className="text-[#4ade80]">in the act</em>.
                 </p>
+
+                <a 
+                  href="/forest-sentinel" 
+                  className="inline-flex items-center gap-2 bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13] font-bold px-6 py-3 rounded-full transition-all hover:scale-105 shadow-lg shadow-[#4ade80]/25 mb-10"
+                >
+                  🔊 Launch Forest Sentinel →
+                </a>
 
                 <div className="grid sm:grid-cols-2 gap-5">
                   {forestSentinelFeatures.map((feature, i) => (
