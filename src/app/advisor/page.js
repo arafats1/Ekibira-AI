@@ -6,6 +6,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer,
 } from "recharts";
+import { useAuth } from "../context/AuthContext";
 
 /* ── Default chart palette ── */
 const DEFAULT_COLORS = ["#2d6a4f", "#4ade80", "#d97706", "#dc2626", "#2563eb", "#8b5cf6", "#06b6d4", "#f59e0b"];
@@ -261,6 +262,42 @@ export default function AdvisorPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const hydrated = useRef(false);
+  const sessionIdRef = useRef("");
+  const { user } = useAuth();
+
+  // Generate session ID on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem("kibira_session_id");
+    if (stored) {
+      sessionIdRef.current = stored;
+    } else {
+      sessionIdRef.current = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      sessionStorage.setItem("kibira_session_id", sessionIdRef.current);
+    }
+  }, []);
+
+  // Load persisted chat on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("kibira_chat");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+        }
+      }
+    } catch {}
+    hydrated.current = true;
+  }, []);
+
+  // Persist chat on change
+  useEffect(() => {
+    if (!hydrated.current) return;
+    try {
+      localStorage.setItem("kibira_chat", JSON.stringify(messages));
+    } catch {}
+  }, [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -281,7 +318,13 @@ export default function AdvisorPage() {
       const res = await fetch("/api/advisor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage, history }),
+        body: JSON.stringify({
+          message: userMessage,
+          history,
+          userEmail: user?.email || "",
+          userName: user?.fullName || "",
+          sessionId: sessionIdRef.current,
+        }),
       });
 
       const data = await res.json();
@@ -308,6 +351,7 @@ export default function AdvisorPage() {
     setMessages([]);
     setInput("");
     setSidebarOpen(false);
+    try { localStorage.removeItem("kibira_chat"); } catch {}
   };
 
   const sidebarQueries = [
@@ -441,10 +485,10 @@ export default function AdvisorPage() {
                   🌿
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">
-                  Ask me about any location
+                  Hello! I&apos;m Dr. Kibira
                 </h2>
                 <p className="text-[#6b7c6b] text-sm sm:text-base text-center max-w-md mb-8 font-[family-name:var(--font-body)]">
-                  Enter any location or ask a question about climate, deforestation, or urban resilience anywhere in Africa. I&apos;ll provide detailed analysis and future predictions.
+                  Your dedicated climate researcher. Ask me about any location, and I&apos;ll share my analysis on deforestation, urban resilience, carbon markets, and future projections across Africa.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
                   {[
@@ -487,11 +531,14 @@ export default function AdvisorPage() {
                 )}
                 {msg.role === "assistant" && (
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#2d6a4f] flex items-center justify-center text-sm flex-shrink-0 shadow-sm">
-                      🌿
+                    <div className="w-8 h-8 rounded-full bg-[#2d6a4f] flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm font-[family-name:var(--font-body)]">
+                      DK
                     </div>
-                    <div className="flex-1 min-w-0 bg-white rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm border border-[#e5e7eb]">
-                      <FormattedResponse text={msg.content} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-[#6b7c6b] mb-1 font-[family-name:var(--font-body)]">Dr. Kibira &middot; Climate Researcher</p>
+                      <div className="bg-white rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm border border-[#e5e7eb]">
+                        <FormattedResponse text={msg.content} />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -500,11 +547,14 @@ export default function AdvisorPage() {
 
             {loading && (
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#2d6a4f] flex items-center justify-center text-sm flex-shrink-0 shadow-sm">
-                  🌿
+                <div className="w-8 h-8 rounded-full bg-[#2d6a4f] flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm font-[family-name:var(--font-body)]">
+                  DK
                 </div>
-                <div className="bg-white rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm border border-[#e5e7eb]">
-                  <TypingIndicator />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-[#6b7c6b] mb-1 font-[family-name:var(--font-body)]">Dr. Kibira is getting insights...</p>
+                  <div className="bg-white rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm border border-[#e5e7eb]">
+                    <TypingIndicator />
+                  </div>
                 </div>
               </div>
             )}

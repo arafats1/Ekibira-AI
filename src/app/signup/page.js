@@ -63,21 +63,30 @@ function SignupForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f0fdf4] via-[#f8faf5] to-[#ecfdf5] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 py-8">
+      {/* Forest background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f13] via-[#122a1a] to-[#0f2618]" />
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Cg fill='%234ade80' opacity='0.15'%3E%3Cpath d='M100 600 L130 400 L80 420 L110 250 L70 280 L100 150 L130 280 L90 250 L120 420 L70 400Z'/%3E%3Cpath d='M250 600 L280 380 L230 400 L260 220 L220 250 L250 100 L280 250 L240 220 L270 400 L220 380Z'/%3E%3Cpath d='M400 600 L430 350 L380 370 L410 200 L370 230 L400 80 L430 230 L390 200 L420 370 L370 350Z'/%3E%3Cpath d='M550 600 L580 390 L530 410 L560 240 L520 270 L550 120 L580 270 L540 240 L570 410 L520 390Z'/%3E%3Cpath d='M700 600 L730 370 L680 390 L710 210 L670 240 L700 90 L730 240 L690 210 L720 390 L670 370Z'/%3E%3C/g%3E%3Cg fill='%232d6a4f' opacity='0.1'%3E%3Cpath d='M170 600 L200 430 L150 450 L180 300 L140 330 L170 200 L200 330 L160 300 L190 450 L140 430Z'/%3E%3Cpath d='M470 600 L500 410 L450 430 L480 260 L440 290 L470 140 L500 290 L460 260 L490 430 L440 410Z'/%3E%3Cpath d='M620 600 L650 420 L600 440 L630 280 L590 310 L620 160 L650 310 L610 280 L640 440 L590 420Z'/%3E%3C/g%3E%3C/svg%3E")`, backgroundSize: 'cover', backgroundPosition: 'bottom' }} />
+      {/* Floating particles */}
+      <div className="absolute top-20 left-[10%] w-2 h-2 bg-[#4ade80]/20 rounded-full animate-pulse" />
+      <div className="absolute top-40 right-[15%] w-3 h-3 bg-[#4ade80]/15 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-60 left-[30%] w-1.5 h-1.5 bg-[#4ade80]/25 rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
+      <div className="absolute bottom-40 right-[25%] w-2 h-2 bg-[#4ade80]/20 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
             <span className="text-3xl">🌿</span>
-            <span className="font-[family-name:var(--font-display)] text-2xl font-bold text-[#1b4332]">KibiraAI</span>
+            <span className="font-[family-name:var(--font-display)] text-2xl font-bold text-[#4ade80]">KibiraAI</span>
           </Link>
-          <p className="text-sm text-[#6b7c6b] mt-2 font-[family-name:var(--font-body)]">
+          <p className="text-sm text-white/60 mt-2 font-[family-name:var(--font-body)]">
             Create your account to access Forest Sentinel and more
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-lg shadow-[#2d6a4f]/5 border border-[#e5e7eb] p-6 sm:p-8">
+        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/20 border border-white/20 p-6 sm:p-8">
           <h1 className="text-xl font-bold text-[#1a2e1a] mb-6 font-[family-name:var(--font-display)]">
             Create Account
           </h1>
@@ -210,7 +219,7 @@ function SignupForm() {
           </p>
         </div>
 
-        <p className="text-center text-xs text-[#9ca3af] mt-4 font-[family-name:var(--font-body)]">
+        <p className="text-center text-xs text-white/40 mt-4 font-[family-name:var(--font-body)]">
           By creating an account, you agree to KibiraAI&apos;s Terms of Service and Privacy Policy.
         </p>
       </div>

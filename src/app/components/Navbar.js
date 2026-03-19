@@ -6,6 +6,7 @@ import Link from "next/link";
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
+  const isAdmin = user && ["arafat@abramgroup.org", "admin@kibira.ai"].includes(user.email);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#2d6a4f]/10">
@@ -34,15 +35,23 @@ export default function Navbar() {
             🌱 Plant a Tree
           </a>
           {user ? (
-            <Link
-              href="/dashboard"
-              className="bg-[#2d6a4f] text-white px-5 py-2.5 rounded-full hover:bg-[#1b4332] transition-colors font-semibold flex items-center gap-2"
-            >
-              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
-                {user.fullName?.charAt(0)?.toUpperCase() || "U"}
-              </span>
-              Dashboard
-            </Link>
+            <div className="flex items-center gap-3">
+              {isAdmin && (
+                <Link href="/admin" className="text-[#d97706] hover:text-[#b45309] font-semibold transition-colors flex items-center gap-1">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><circle cx="12" cy="12" r="3" /></svg>
+                  Admin
+                </Link>
+              )}
+              <Link
+                href="/dashboard"
+                className="bg-[#2d6a4f] text-white px-5 py-2.5 rounded-full hover:bg-[#1b4332] transition-colors font-semibold flex items-center gap-2"
+              >
+                <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
+                  {user.fullName?.charAt(0)?.toUpperCase() || "U"}
+                </span>
+                Dashboard
+              </Link>
+            </div>
           ) : (
             <div className="flex items-center gap-3">
               <Link href="/login" className="text-[#2d6a4f] hover:text-[#1b4332] font-semibold transition-colors">
@@ -92,13 +101,20 @@ export default function Navbar() {
             🌱 Plant a Tree
           </a>
           {user ? (
-            <Link
-              href="/dashboard"
-              onClick={() => setOpen(false)}
-              className="bg-[#2d6a4f] text-white px-5 py-3 rounded-full text-center hover:bg-[#1b4332] transition-colors font-semibold mt-2"
-            >
-              Dashboard
-            </Link>
+            <>
+              {isAdmin && (
+                <Link href="/admin" onClick={() => setOpen(false)} className="hover:text-[#d97706] py-3 border-b border-[#eef2e6] flex items-center gap-2 text-[#d97706] font-semibold">
+                  ⚙️ Admin Dashboard
+                </Link>
+              )}
+              <Link
+                href="/dashboard"
+                onClick={() => setOpen(false)}
+                className="bg-[#2d6a4f] text-white px-5 py-3 rounded-full text-center hover:bg-[#1b4332] transition-colors font-semibold mt-2"
+              >
+                Dashboard
+              </Link>
+            </>
           ) : (
             <>
               <Link href="/login" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] font-semibold text-[#2d6a4f]">
