@@ -6,7 +6,7 @@ import Link from "next/link";
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
-  const isAdmin = user && ["arafat@abramgroup.org", "admin@kibira.ai"].includes(user.email);
+  const isAdmin = user && user.role === "admin";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#2d6a4f]/10">

@@ -154,7 +154,7 @@ export default function SolutionPage() {
                     href="/advisor"
                     className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-semibold px-6 py-3 rounded-full transition-colors"
                   >
-                    Try the AI Advisor
+                    Try the AI Researcher →
                   </a>
                   <a
                     href="#solution-detail"

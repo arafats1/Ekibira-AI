@@ -66,6 +66,7 @@ export function AuthProvider({ children }) {
       phone,
       company,
       position,
+      role: profileData?.data?.role || "user",
       profileId: profileData?.data?.id || null,
     };
 
@@ -111,6 +112,7 @@ export function AuthProvider({ children }) {
       phone: profile?.phone || "",
       company: profile?.company || "",
       position: profile?.position || "",
+      role: profile?.role || "user",
       profileId: profile?.id || null,
     };
 

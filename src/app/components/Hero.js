@@ -50,7 +50,7 @@ export default function Hero() {
             href="/advisor"
             className="bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13] font-bold px-6 sm:px-8 py-3.5 sm:py-4 rounded-full text-base sm:text-lg transition-all hover:scale-105 shadow-lg shadow-[#4ade80]/25 w-full sm:w-auto text-center"
           >
-            Try the AI Advisor →
+            Try the AI Researcher →
           </a>
           <a
             href="#problem"

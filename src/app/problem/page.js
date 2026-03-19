@@ -399,7 +399,7 @@ export default function ProblemPage() {
                 href="/advisor"
                 className="border-2 border-[#2d6a4f]/20 text-[#2d6a4f] hover:bg-[#2d6a4f]/10 font-bold px-10 py-5 rounded-full text-lg transition-all w-full sm:w-auto"
               >
-                Try the AI Advisor
+                Try the AI Researcher →
               </a>
             </div>
           </div>

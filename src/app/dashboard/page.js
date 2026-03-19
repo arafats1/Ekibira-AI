@@ -27,7 +27,7 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
-  const isAdmin = ["arafat@abramgroup.org", "admin@kibira.ai"].includes(user.email);
+  const isAdmin = user.role === "admin";
 
   const systems = [
     {

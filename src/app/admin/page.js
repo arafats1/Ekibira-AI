@@ -5,23 +5,27 @@ import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
-const ADMIN_EMAILS = ["arafat@abramgroup.org", "admin@kibira.ai"];
 
 function useAdminGuard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   useEffect(() => {
-    if (!loading && (!user || !ADMIN_EMAILS.includes(user.email))) {
-      router.push("/dashboard");
+    if (!loading) {
+      if (!user) {
+        router.push("/login?redirect=/admin");
+      } else if (user.role !== "admin") {
+        router.push("/dashboard");
+      }
     }
   }, [user, loading, router]);
-  return { user, loading, isAdmin: user && ADMIN_EMAILS.includes(user.email) };
+  return { user, loading, isAdmin: user && user.role === "admin" };
 }
 
 /* ── Users Tab ── */
-function UsersTab({ token }) {
+function UsersTab({ token, currentUser }) {
   const [users, setUsers] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [togglingId, setTogglingId] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -34,6 +38,21 @@ function UsersTab({ token }) {
   }, [token]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const handleToggleRole = async (userEntry) => {
+    const newRole = userEntry.role === "admin" ? "user" : "admin";
+    const action = newRole === "admin" ? "promote to Admin" : "demote to User";
+    if (!confirm(`Are you sure you want to ${action}: ${userEntry.fullName || userEntry.email}?`)) return;
+    setTogglingId(userEntry.id);
+    try {
+      const res = await fetch(`${STRAPI_URL}/api/kibira-users/${userEntry.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ data: { role: newRole } }),
+      });
+      if (res.ok) fetchUsers();
+    } catch {} finally { setTogglingId(null); }
+  };
 
   return (
     <div>
@@ -53,6 +72,7 @@ function UsersTab({ token }) {
               <tr className="border-b border-[#e5e7eb]">
                 <th className="text-left py-3 px-4 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)]">Name</th>
                 <th className="text-left py-3 px-4 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)]">Email</th>
+                <th className="text-left py-3 px-4 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)]">Role</th>
                 <th className="text-left py-3 px-4 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] hidden md:table-cell">Company</th>
                 <th className="text-left py-3 px-4 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] hidden md:table-cell">Position</th>
                 <th className="text-left py-3 px-4 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] hidden sm:table-cell">Phone</th>
@@ -60,25 +80,43 @@ function UsersTab({ token }) {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#f0fdf4]/50 transition-colors">
-                  <td className="py-3 px-4 font-[family-name:var(--font-body)]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-[#2d6a4f] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        {(u.fullName || "?")[0].toUpperCase()}
+              {users.map((u) => {
+                const isSelf = u.email === currentUser?.email;
+                const isAdmin = u.role === "admin";
+                return (
+                  <tr key={u.id} className="border-b border-[#f0f0f0] hover:bg-[#f0fdf4]/50 transition-colors">
+                    <td className="py-3 px-4 font-[family-name:var(--font-body)]">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${isAdmin ? "bg-[#d97706]" : "bg-[#2d6a4f]"}`}>
+                          {(u.fullName || "?")[0].toUpperCase()}
+                        </div>
+                        <span className="font-medium text-[#1a2e1a]">{u.fullName || "—"}</span>
                       </div>
-                      <span className="font-medium text-[#1a2e1a]">{u.fullName || "—"}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)]">{u.email}</td>
-                  <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden md:table-cell">{u.company || "—"}</td>
-                  <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden md:table-cell">{u.position || "—"}</td>
-                  <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden sm:table-cell">{u.phone || "—"}</td>
-                  <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] text-xs">
-                    {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)]">{u.email}</td>
+                    <td className="py-3 px-4 font-[family-name:var(--font-body)]">
+                      <button
+                        onClick={() => handleToggleRole(u)}
+                        disabled={isSelf || togglingId === u.id}
+                        title={isSelf ? "You cannot change your own role" : `Click to ${isAdmin ? "demote to user" : "promote to admin"}`}
+                        className={`text-[11px] px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+                          isAdmin
+                            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        } ${isSelf ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${togglingId === u.id ? "opacity-50" : ""}`}
+                      >
+                        {togglingId === u.id ? "..." : isAdmin ? "Admin" : "User"}
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden md:table-cell">{u.company || "—"}</td>
+                    <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden md:table-cell">{u.position || "—"}</td>
+                    <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden sm:table-cell">{u.phone || "—"}</td>
+                    <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] text-xs">
+                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -175,6 +213,9 @@ function KnowledgeTab({ token }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: "", content: "", category: "other", source: "" });
   const [saving, setSaving] = useState(false);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [extracting, setExtracting] = useState(false);
+  const [pdfInfo, setPdfInfo] = useState(null);
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -200,6 +241,8 @@ function KnowledgeTab({ token }) {
       });
       if (res.ok) {
         setForm({ title: "", content: "", category: "other", source: "" });
+        setPdfFile(null);
+        setPdfInfo(null);
         setShowForm(false);
         fetchEntries();
       }
@@ -226,6 +269,31 @@ function KnowledgeTab({ token }) {
       });
       fetchEntries();
     } catch {}
+  };
+
+  const handlePdfExtract = async () => {
+    if (!pdfFile) return;
+    setExtracting(true);
+    setPdfInfo(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", pdfFile);
+      const res = await fetch("/api/extract-pdf", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to extract PDF");
+        return;
+      }
+      setForm((prev) => ({
+        ...prev,
+        content: data.text,
+        title: prev.title || data.title || pdfFile.name.replace(/\.pdf$/i, ""),
+        source: prev.source || pdfFile.name,
+      }));
+      setPdfInfo({ pages: data.pages, chars: data.text.length });
+    } catch {
+      alert("Failed to process PDF. Please try again.");
+    } finally { setExtracting(false); }
   };
 
   const categories = ["deforestation", "climate", "urban", "carbon", "biodiversity", "policy", "research", "other"];
@@ -275,6 +343,56 @@ function KnowledgeTab({ token }) {
               required
             />
           </div>
+
+          {/* PDF Upload */}
+          <div className="border border-dashed border-[#b5c9b5] rounded-xl p-4 bg-white/60">
+            <label className="block text-sm font-medium text-[#1a2e1a] mb-2 font-[family-name:var(--font-body)]">
+              Upload PDF <span className="font-normal text-[#6b7c6b]">(optional — extracts text automatically)</span>
+            </label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#d1d5db] bg-white hover:bg-[#f9fafb] cursor-pointer transition-colors text-sm font-[family-name:var(--font-body)]">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="12" y1="18" x2="12" y2="12" />
+                  <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+                {pdfFile ? pdfFile.name : "Choose PDF..."}
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={(e) => { setPdfFile(e.target.files?.[0] || null); setPdfInfo(null); }}
+                />
+              </label>
+              {pdfFile && (
+                <button
+                  type="button"
+                  onClick={handlePdfExtract}
+                  disabled={extracting}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-sm font-semibold transition-colors disabled:opacity-50 font-[family-name:var(--font-body)]"
+                >
+                  {extracting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                      Extracting...
+                    </>
+                  ) : "Extract Text"}
+                </button>
+              )}
+              {pdfFile && !extracting && (
+                <button type="button" onClick={() => { setPdfFile(null); setPdfInfo(null); }} className="text-xs text-[#9ca3af] hover:text-red-500 transition-colors">
+                  Remove
+                </button>
+              )}
+            </div>
+            {pdfInfo && (
+              <p className="mt-2 text-xs text-[#2d6a4f] font-[family-name:var(--font-body)]">
+                Extracted {pdfInfo.chars.toLocaleString()} characters from {pdfInfo.pages} page{pdfInfo.pages !== 1 ? "s" : ""}. Review content below.
+              </p>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-[#1a2e1a] mb-1 font-[family-name:var(--font-body)]">
               Knowledge Content * <span className="font-normal text-[#6b7c6b]">(paste text, data, or key findings)</span>
@@ -495,7 +613,7 @@ export default function AdminPage() {
 
         {/* Tab Content */}
         <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
-          {tab === "users" && <UsersTab token={token} />}
+          {tab === "users" && <UsersTab token={token} currentUser={user} />}
           {tab === "chats" && <ChatsTab token={token} />}
           {tab === "knowledge" && <KnowledgeTab token={token} />}
         </div>

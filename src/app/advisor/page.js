@@ -551,7 +551,7 @@ export default function AdvisorPage() {
                   DK
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-[#6b7c6b] mb-1 font-[family-name:var(--font-body)]">Dr. Kibira is getting insights...</p>
+                  <p className="text-[10px] text-[#6b7c6b] mb-1 font-[family-name:var(--font-body)]">Dr. Kibira is curating your response...</p>
                   <div className="bg-white rounded-2xl rounded-tl-sm px-5 py-3 shadow-sm border border-[#e5e7eb]">
                     <TypingIndicator />
                   </div>
