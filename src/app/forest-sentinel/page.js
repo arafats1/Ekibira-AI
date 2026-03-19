@@ -1,6 +1,63 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../context/AuthContext";
+
+// Auth gate — redirects to signup if not logged in
+function AuthGate({ children }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/signup?redirect=/forest-sentinel");
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a1a0f] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-emerald-400/60 text-sm font-[family-name:var(--font-body)]">Loading Forest Sentinel...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#0a1a0f] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-4xl mb-4">🌲</div>
+          <h2 className="text-xl font-bold text-white mb-2 font-[family-name:var(--font-display)]">
+            Forest Sentinel Requires an Account
+          </h2>
+          <p className="text-emerald-400/60 mb-6 text-sm font-[family-name:var(--font-body)]">
+            Create a free account to access real-time forest monitoring, acoustic threat detection, and sensor data.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Link
+              href="/signup?redirect=/forest-sentinel"
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm transition-colors font-[family-name:var(--font-body)]"
+            >
+              Create Account
+            </Link>
+            <Link
+              href="/login?redirect=/forest-sentinel"
+              className="px-6 py-2.5 border border-emerald-600/30 text-emerald-400 rounded-xl font-semibold text-sm hover:bg-emerald-600/10 transition-colors font-[family-name:var(--font-body)]"
+            >
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
+}
 
 // ─── Uganda's at-risk forests with real data ───
 const FORESTS = [
@@ -318,6 +375,7 @@ export default function ForestSentinelPage() {
   };
 
   return (
+    <AuthGate>
     <div className="min-h-screen bg-[#f4f7f2]">
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#1a2e1a]/95 backdrop-blur-md border-b border-white/10">
@@ -970,5 +1028,6 @@ export default function ForestSentinelPage() {
         </div>
       </main>
     </div>
+    </AuthGate>
   );
 }

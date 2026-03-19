@@ -1,8 +1,11 @@
 "use client";
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import Link from "next/link";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#2d6a4f]/10">
@@ -30,12 +33,29 @@ export default function Navbar() {
           <a href="/plant-a-tree" className="hover:text-[#2d6a4f] transition-colors flex items-center gap-1">
             🌱 Plant a Tree
           </a>
-          <a
-            href="#support"
-            className="bg-[#2d6a4f] text-white px-5 py-2.5 rounded-full hover:bg-[#1b4332] transition-colors font-semibold"
-          >
-            Support This Initiative
-          </a>
+          {user ? (
+            <Link
+              href="/dashboard"
+              className="bg-[#2d6a4f] text-white px-5 py-2.5 rounded-full hover:bg-[#1b4332] transition-colors font-semibold flex items-center gap-2"
+            >
+              <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
+                {user.fullName?.charAt(0)?.toUpperCase() || "U"}
+              </span>
+              Dashboard
+            </Link>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link href="/login" className="text-[#2d6a4f] hover:text-[#1b4332] font-semibold transition-colors">
+                Sign In
+              </Link>
+              <Link
+                href="/signup"
+                className="bg-[#2d6a4f] text-white px-5 py-2.5 rounded-full hover:bg-[#1b4332] transition-colors font-semibold"
+              >
+                Get Started
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -71,13 +91,28 @@ export default function Navbar() {
           <a href="/plant-a-tree" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] flex items-center gap-2">
             🌱 Plant a Tree
           </a>
-          <a
-            href="#support"
-            onClick={() => setOpen(false)}
-            className="bg-[#2d6a4f] text-white px-5 py-3 rounded-full text-center hover:bg-[#1b4332] transition-colors font-semibold mt-2"
-          >
-            Support This Initiative
-          </a>
+          {user ? (
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className="bg-[#2d6a4f] text-white px-5 py-3 rounded-full text-center hover:bg-[#1b4332] transition-colors font-semibold mt-2"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link href="/login" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] font-semibold text-[#2d6a4f]">
+                Sign In
+              </Link>
+              <Link
+                href="/signup"
+                onClick={() => setOpen(false)}
+                className="bg-[#2d6a4f] text-white px-5 py-3 rounded-full text-center hover:bg-[#1b4332] transition-colors font-semibold mt-2"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       )}
     </nav>

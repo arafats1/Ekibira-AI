@@ -1,5 +1,6 @@
 import { Space_Grotesk, Fraunces } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "./context/AuthContext";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-body",
@@ -66,7 +67,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${spaceGrotesk.variable} ${fraunces.variable} antialiased`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
