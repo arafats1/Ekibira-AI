@@ -347,7 +347,7 @@ export default function Demo() {
             Interactive Demo
           </span>
           <h2 className="text-4xl md:text-5xl font-bold text-[#1a2e1a] leading-tight mb-6">
-            Try the <span className="gradient-text">AI Advisor</span>
+            Try the <span className="gradient-text">Dr. Kibira AI</span>
           </h2>
           <p className="text-[#6b7c6b] text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
             Enter any African location to get an AI-powered deforestation risk assessment,
@@ -365,7 +365,7 @@ export default function Demo() {
               🌿
             </div>
             <div>
-              <h3 className="text-white font-bold font-[family-name:var(--font-display)]">KibiraAI Advisor</h3>
+              <h3 className="text-white font-bold font-[family-name:var(--font-display)]">Dr. Kibira AI</h3>
               <p className="text-white/70 text-xs font-[family-name:var(--font-body)]">AI-Powered Reforestation Intelligence</p>
             </div>
             <div className="ml-auto flex items-center gap-1.5">

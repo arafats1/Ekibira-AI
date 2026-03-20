@@ -136,7 +136,7 @@ export default function PlantATreePage() {
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-[#1a2e1a]/80">
             <Link href="/solution" className="hover:text-[#2d6a4f] transition-colors">Solutions</Link>
-            <Link href="/advisor" className="hover:text-[#2d6a4f] transition-colors">AI Advisor</Link>
+            <Link href="/advisor" className="hover:text-[#2d6a4f] transition-colors">Dr. Kibira AI</Link>
             <Link href="/" className="hover:text-[#2d6a4f] transition-colors">Home</Link>
           </div>
         </div>

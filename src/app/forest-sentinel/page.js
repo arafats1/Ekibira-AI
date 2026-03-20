@@ -398,7 +398,7 @@ export default function ForestSentinelPage() {
             <Link href="/solution" className="hover:text-white transition-colors">← Back to Solutions</Link>
             <Link href="/urban-warning" className="hover:text-white transition-colors">Urban Warning</Link>
             <Link href="/plant-a-tree" className="hover:text-white transition-colors">🌱 Plant a Tree</Link>
-            <Link href="/advisor" className="hover:text-white transition-colors">AI Advisor</Link>
+            <Link href="/advisor" className="hover:text-white transition-colors">Dr. Kibira AI</Link>
             <Link href="/" className="bg-[#4ade80] text-[#0a1f13] px-5 py-2 rounded-full hover:bg-[#22c55e] transition-colors font-semibold text-sm">
               Home
             </Link>
@@ -1014,7 +1014,7 @@ export default function ForestSentinelPage() {
                   href="/advisor"
                   className="bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13] font-bold px-8 py-4 rounded-full text-lg transition-all hover:scale-105 shadow-lg shadow-[#4ade80]/25 w-full sm:w-auto"
                 >
-                  Try AI Advisor →
+                  Try Dr. Kibira AI →
                 </Link>
                 <Link
                   href="/solution"

@@ -456,7 +456,7 @@ export default function AdvisorPage() {
           </button>
           <div className="flex items-center gap-2">
             <span className="text-lg">🌿</span>
-            <h1 className="text-base font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">KibiraAI Advisor</h1>
+            <h1 className="text-base font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">Climate Research Assistant</h1>
           </div>
           <div className="ml-auto flex items-center gap-3">
             <Link
@@ -590,7 +590,7 @@ export default function AdvisorPage() {
             </button>
           </form>
           <p className="text-center text-[10px] text-[#9ca3af] mt-2 font-[family-name:var(--font-body)]">
-            KibiraAI Advisor is powered by GPT-4o with specialized African climate and environmental knowledge.
+            Climate Research Assistant is powered by GPT-4o with specialized African climate and environmental knowledge.
           </p>
         </div>
       </div>

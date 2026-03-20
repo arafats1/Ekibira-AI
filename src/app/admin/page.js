@@ -277,8 +277,12 @@ function KnowledgeTab({ token }) {
     setPdfInfo(null);
     try {
       const formData = new FormData();
-      formData.append("file", pdfFile);
-      const res = await fetch("/api/extract-pdf", { method: "POST", body: formData });
+      formData.append("files", pdfFile);
+      const res = await fetch(`${STRAPI_URL}/api/extract-pdf`, {
+        method: "POST",
+        body: formData,
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || "Failed to extract PDF");
@@ -291,7 +295,7 @@ function KnowledgeTab({ token }) {
         source: prev.source || pdfFile.name,
       }));
       setPdfInfo({ pages: data.pages, chars: data.text.length });
-    } catch {
+    } catch (err) {
       alert("Failed to process PDF. Please try again.");
     } finally { setExtracting(false); }
   };

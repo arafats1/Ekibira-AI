@@ -45,7 +45,7 @@ export default function DashboardPage() {
       features: ["Chainsaw & axe detection", "GPS triangulation", "Real-time alerts", "Event logging"],
     },
     {
-      title: "AI Advisor",
+      title: "Dr. Kibira AI",
       desc: "Get AI-powered climate analysis for any location in Africa. Deforestation risk, carbon potential, and future predictions.",
       icon: "🌿",
       href: "/advisor",

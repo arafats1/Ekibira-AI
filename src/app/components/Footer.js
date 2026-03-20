@@ -23,7 +23,7 @@ export default function Footer() {
             <div className="space-y-2 text-sm font-[family-name:var(--font-body)]">
               <a href="/#problem" className="block hover:text-[#4ade80] transition-colors">The Problem</a>
               <a href="/solution" className="block hover:text-[#4ade80] transition-colors">Our Solution</a>
-              <a href="/advisor" className="block hover:text-[#4ade80] transition-colors">AI Advisor</a>
+              <a href="/advisor" className="block hover:text-[#4ade80] transition-colors">Dr. Kibira AI</a>
               <a href="/#impact" className="block hover:text-[#4ade80] transition-colors">Projected Impact</a>
               <a href="/#support" className="block hover:text-[#4ade80] transition-colors">Support Us</a>
             </div>

@@ -122,7 +122,7 @@ export default function SolutionPage() {
   ];
 
   const dataToActionPipeline = [
-    { layer: "Educate & Advise", tool: "AI Climate Advisor", description: "Users query the AI for region-specific data on deforestation, native species, carbon potential, and climate-smart farming practices.", color: "bg-emerald-500" },
+    { layer: "Educate & Advise", tool: "Dr. Kibira AI", description: "Users query the AI for region-specific data on deforestation, native species, carbon potential, and climate-smart farming practices.", color: "bg-emerald-500" },
     { layer: "Detect & Protect", tool: "Forest Acoustic Sentinel", description: "IoT sound sensors detect illegal logging in real-time, alert rangers, and feed data back into the deforestation risk model.", color: "bg-amber-500" },
     { layer: "Predict & Prepare", tool: "Urban Heat & Flood AI", description: "Satellite and weather data predict heat extremes and flash floods, push early warnings, and generate neighborhood-level climate action plans.", color: "bg-blue-500" },
   ];
@@ -495,7 +495,7 @@ export default function SolutionPage() {
                 href="/advisor" 
                 className="bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13] font-bold px-10 py-5 rounded-full text-lg transition-all hover:scale-105 shadow-xl shadow-black/10 w-full sm:w-auto"
                >
-                 Launch AI Advisor →
+                 Try Dr. Kibira AI →
                </a>
                <a 
                 href="/#support" 

@@ -22,7 +22,7 @@ export default function AdvisorTeaser() {
           Interactive AI
         </span>
         <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6 font-[family-name:var(--font-display)] drop-shadow-lg">
-          Try the <span className="text-[#4ade80]">AI Advisor</span>
+          Try the <span className="text-[#4ade80]">Dr. Kibira AI</span>
         </h2>
         <p className="text-white/75 text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-10 font-[family-name:var(--font-body)]">
           Get AI-powered deforestation risk assessments, reforestation plans, urban heat
@@ -57,7 +57,7 @@ export default function AdvisorTeaser() {
               🌿
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm font-[family-name:var(--font-display)]">KibiraAI Advisor</h3>
+              <h3 className="text-white font-bold text-sm font-[family-name:var(--font-display)]">Dr. Kibira AI</h3>
               <p className="text-[#a7f3d0]/70 text-[10px] font-[family-name:var(--font-body)]">AI-Powered Intelligence</p>
             </div>
             <div className="ml-auto flex items-center gap-1.5">
@@ -91,7 +91,7 @@ export default function AdvisorTeaser() {
           href="/advisor"
           className="inline-flex items-center gap-3 bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13] font-bold px-8 sm:px-10 py-4 sm:py-5 rounded-full text-base sm:text-lg transition-all hover:scale-105 shadow-lg shadow-[#4ade80]/25"
         >
-          Launch AI Advisor
+          Launch Dr. Kibira AI
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>

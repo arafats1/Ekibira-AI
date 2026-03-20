@@ -310,7 +310,7 @@ export default function UrbanWarningPage() {
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-white/70">
             <Link href="/solution" className="hover:text-white transition-colors">← Back to Solutions</Link>
             <Link href="/plant-a-tree" className="hover:text-white transition-colors">🌱 Plant a Tree</Link>
-            <Link href="/advisor" className="hover:text-white transition-colors">AI Advisor</Link>
+            <Link href="/advisor" className="hover:text-white transition-colors">Dr. Kibira AI</Link>
             <Link href="/" className="bg-blue-500 text-white px-5 py-2 rounded-full hover:bg-blue-600 transition-colors font-semibold text-sm">
               Home
             </Link>
@@ -855,7 +855,7 @@ export default function UrbanWarningPage() {
                   href="/advisor"
                   className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-8 py-4 rounded-full text-lg transition-all hover:scale-105 shadow-lg shadow-blue-500/25 w-full sm:w-auto"
                 >
-                  Try AI Advisor →
+                  Try Dr. Kibira AI →
                 </Link>
                 <Link
                   href="/solution"
