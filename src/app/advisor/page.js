@@ -100,45 +100,155 @@ function AdvisorChart({ chart }) {
   );
 }
 
-/* ── Parse response into text segments and chart blocks ── */
+/* ── Image renderer ── */
+function AdvisorImage({ imageData }) {
+  const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const fetched = useRef(false);
+
+  useEffect(() => {
+    if (fetched.current) return;
+    fetched.current = true;
+
+    async function fetchImage() {
+      try {
+        const res = await fetch("/api/image-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: imageData.query }),
+        });
+        const data = await res.json();
+        if (data.image) {
+          setImage(data.image);
+        } else {
+          setError(true);
+        }
+      } catch {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchImage();
+  }, [imageData.query]);
+
+  if (error) return null;
+
+  return (
+    <div className="my-4 rounded-xl overflow-hidden border border-[#d1e7d1] bg-white shadow-sm">
+      {loading ? (
+        <div className="h-48 bg-[#f0fdf4] flex items-center justify-center">
+          <div className="flex items-center gap-2 text-sm text-[#6b7c6b]">
+            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Loading image...
+          </div>
+        </div>
+      ) : image ? (
+        <>
+          <div className="relative">
+            <img
+              src={image.url}
+              alt={imageData.alt || imageData.caption}
+              className="w-full max-h-72 object-cover"
+              loading="lazy"
+            />
+          </div>
+          <div className="px-4 py-2.5 bg-[#f8faf5] border-t border-[#e5e7eb]">
+            <p className="text-xs text-[#374151] leading-relaxed font-[family-name:var(--font-body)]">
+              📷 {imageData.caption}
+            </p>
+            <p className="text-[10px] text-[#9ca3af] mt-1 font-[family-name:var(--font-body)]">
+              Source: {image.source}
+              {image.attribution && ` · ${image.attribution}`}
+              {image.license && ` · ${image.license}`}
+              {image.pageUrl && (
+                <> · <a href={image.pageUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-[#2d6a4f]">View original</a></>
+              )}
+            </p>
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+/* ── Parse response into text segments, chart blocks, and image blocks ── */
 function parseResponseSegments(text) {
   const segments = [];
   let remaining = text;
 
   while (remaining.length > 0) {
+    // Find the next block of either type
     const chartStart = remaining.indexOf("|||CHART|||");
-    if (chartStart === -1) {
+    const imageStart = remaining.indexOf("|||IMAGE|||");
+
+    // Determine which comes first
+    let nextType = null;
+    let nextPos = -1;
+
+    if (chartStart !== -1 && (imageStart === -1 || chartStart < imageStart)) {
+      nextType = "chart";
+      nextPos = chartStart;
+    } else if (imageStart !== -1) {
+      nextType = "image";
+      nextPos = imageStart;
+    }
+
+    if (nextType === null) {
+      // No more blocks
       segments.push({ type: "text", content: remaining });
       break;
     }
 
-    // Text before chart
-    if (chartStart > 0) {
-      segments.push({ type: "text", content: remaining.slice(0, chartStart) });
+    // Text before the block
+    if (nextPos > 0) {
+      segments.push({ type: "text", content: remaining.slice(0, nextPos) });
     }
 
-    const chartEnd = remaining.indexOf("|||END_CHART|||", chartStart);
-    if (chartEnd === -1) {
-      // Malformed — treat rest as text
-      segments.push({ type: "text", content: remaining.slice(chartStart) });
-      break;
+    if (nextType === "chart") {
+      const endMarker = "|||END_CHART|||";
+      const blockStart = "|||CHART|||";
+      const chartEnd = remaining.indexOf(endMarker, nextPos);
+      if (chartEnd === -1) {
+        segments.push({ type: "text", content: remaining.slice(nextPos) });
+        break;
+      }
+      const jsonStr = remaining.slice(nextPos + blockStart.length, chartEnd).trim();
+      try {
+        const chartData = JSON.parse(jsonStr);
+        segments.push({ type: "chart", content: chartData });
+      } catch {
+        // JSON parse failed — skip the chart block
+      }
+      remaining = remaining.slice(chartEnd + endMarker.length);
+    } else {
+      const endMarker = "|||END_IMAGE|||";
+      const blockStart = "|||IMAGE|||";
+      const imageEnd = remaining.indexOf(endMarker, nextPos);
+      if (imageEnd === -1) {
+        segments.push({ type: "text", content: remaining.slice(nextPos) });
+        break;
+      }
+      const jsonStr = remaining.slice(nextPos + blockStart.length, imageEnd).trim();
+      try {
+        const imageBlockData = JSON.parse(jsonStr);
+        segments.push({ type: "image", content: imageBlockData });
+      } catch {
+        // JSON parse failed — skip the image block
+      }
+      remaining = remaining.slice(imageEnd + endMarker.length);
     }
-
-    const jsonStr = remaining.slice(chartStart + "|||CHART|||".length, chartEnd).trim();
-    try {
-      const chartData = JSON.parse(jsonStr);
-      segments.push({ type: "chart", content: chartData });
-    } catch {
-      // JSON parse failed — skip the chart block
-    }
-
-    remaining = remaining.slice(chartEnd + "|||END_CHART|||".length);
   }
 
   return segments;
 }
 
-/* ── Markdown-like renderer for AI responses (with charts) ── */
+/* ── Markdown-like renderer for AI responses (with charts and images) ── */
 function FormattedResponse({ text }) {
   const segments = parseResponseSegments(text);
 
@@ -147,6 +257,9 @@ function FormattedResponse({ text }) {
       {segments.map((seg, si) => {
         if (seg.type === "chart") {
           return <AdvisorChart key={`chart-${si}`} chart={seg.content} />;
+        }
+        if (seg.type === "image") {
+          return <AdvisorImage key={`image-${si}`} imageData={seg.content} />;
         }
         return <TextBlock key={`text-${si}`} text={seg.content} />;
       })}
@@ -163,46 +276,52 @@ function TextBlock({ text }) {
         const trimmed = line.trim();
         if (!trimmed) return <div key={i} className="h-2" />;
 
+        // Strip markdown image syntax — these are handled by |||IMAGE||| blocks
+        if (/^!\[.*?\]\(.*?\)$/.test(trimmed)) return null;
+        // Also strip inline markdown images from mixed lines
+        const cleanedLine = trimmed.replace(/!\[.*?\]\(.*?\)/g, "").trim();
+        if (!cleanedLine) return null;
+
         // Headers
-        if (trimmed.startsWith("### ")) {
+        if (cleanedLine.startsWith("### ")) {
           return (
             <h4 key={i} className="font-bold text-[#1a2e1a] text-base mt-4 mb-1 font-[family-name:var(--font-display)]">
-              {trimmed.replace("### ", "")}
+              {cleanedLine.replace("### ", "")}
             </h4>
           );
         }
-        if (trimmed.startsWith("## ")) {
+        if (cleanedLine.startsWith("## ")) {
           return (
             <h3 key={i} className="font-bold text-[#1a2e1a] text-lg mt-5 mb-2 font-[family-name:var(--font-display)]">
-              {trimmed.replace("## ", "")}
+              {cleanedLine.replace("## ", "")}
             </h3>
           );
         }
-        if (trimmed.startsWith("# ")) {
+        if (cleanedLine.startsWith("# ")) {
           return (
             <h2 key={i} className="font-bold text-[#1a2e1a] text-xl mt-5 mb-2 font-[family-name:var(--font-display)]">
-              {trimmed.replace("# ", "")}
+              {cleanedLine.replace("# ", "")}
             </h2>
           );
         }
 
         // Horizontal rule
-        if (trimmed === "---" || trimmed === "***") {
+        if (cleanedLine === "---" || cleanedLine === "***") {
           return <hr key={i} className="border-[#e5e7eb] my-3" />;
         }
 
         // Bullet points
-        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+        if (cleanedLine.startsWith("- ") || cleanedLine.startsWith("* ")) {
           return (
             <div key={i} className="flex items-start gap-2 pl-2">
               <span className="mt-2 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#2d6a4f]" />
-              <span>{renderInline(trimmed.slice(2))}</span>
+              <span>{renderInline(cleanedLine.slice(2))}</span>
             </div>
           );
         }
 
         // Numbered list
-        const numMatch = trimmed.match(/^(\d+)\.\s(.+)/);
+        const numMatch = cleanedLine.match(/^(\d+)\.\s(.+)/);
         if (numMatch) {
           return (
             <div key={i} className="flex items-start gap-2 pl-2">
@@ -213,15 +332,19 @@ function TextBlock({ text }) {
         }
 
         // Regular paragraph
-        return <p key={i}>{renderInline(trimmed)}</p>;
+        return <p key={i}>{renderInline(cleanedLine)}</p>;
       })}
     </>
   );
 }
 
 function renderInline(text) {
+  // Strip any remaining markdown image syntax
+  const cleaned = text.replace(/!\[.*?\]\(.*?\)/g, "").trim();
+  if (!cleaned) return null;
+
   const parts = [];
-  let remaining = text;
+  let remaining = cleaned;
   let key = 0;
 
   while (remaining.length > 0) {
@@ -355,12 +478,14 @@ export default function AdvisorPage() {
   };
 
   const sidebarQueries = [
+    { label: "Mabira Deforestation", icon: "🛰️", query: "Analyze the deforestation patterns in Mabira Forest, Uganda. Show historical trends, primary drivers, spatial patterns, and satellite data insights." },
+    { label: "Congo Basin Reforestation", icon: "🌱", query: "Recommend native reforestation strategies for the Congo Basin. Include species selection, restoration approaches, community engagement models, and cost estimates." },
+    { label: "East Africa Carbon Tracking", icon: "📊", query: "Track carbon sequestration potential for reforestation projects in East Africa. Include species-specific rates, carbon pool breakdowns, and 20-year projections." },
+    { label: "West Africa Forest Loss", icon: "🌴", query: "Give me a comprehensive deforestation pattern analysis for Ghana and Côte d'Ivoire, including driver breakdown, rate of change, and tipping point assessment." },
+    { label: "Sahel Great Green Wall", icon: "🏜️", query: "What native reforestation strategies are recommended for Africa's Great Green Wall? Include species suited for arid conditions, FMNR techniques, and carbon credit opportunities." },
+    { label: "Lake Victoria Restoration", icon: "🌊", query: "Analyze deforestation around Lake Victoria's catchment area and recommend restoration strategies with carbon sequestration estimates and community benefits." },
     { label: "Kampala Climate Risk", icon: "🏙️", query: "What is the current climate status and future predictions for Kampala, Uganda? Include flood risk, heat risk, and recommendations." },
-    { label: "Congo Basin Forests", icon: "🌿", query: "Analyze the deforestation situation in the Congo Basin. What are the risks, predictions for the next 10 years, and recommended actions?" },
     { label: "Nairobi Urban Heat", icon: "🌡️", query: "What is the urban heat island effect in Nairobi, Kenya? Provide risk assessment and mitigation strategies." },
-    { label: "West Africa Deforestation", icon: "🌴", query: "Give me a comprehensive analysis of deforestation in West Africa, particularly Ghana and Nigeria. Include carbon credit opportunities." },
-    { label: "Lake Victoria Region", icon: "🌊", query: "What are the climate change impacts around Lake Victoria? Include flooding risks, ecosystem changes, and future predictions." },
-    { label: "Sahel Desertification", icon: "🏜️", query: "Analyze the desertification situation in the Sahel region. What are the predictions and what can communities do?" },
   ];
 
   return (
@@ -488,14 +613,14 @@ export default function AdvisorPage() {
                   Hello! I&apos;m Dr. Kibira
                 </h2>
                 <p className="text-[#6b7c6b] text-sm sm:text-base text-center max-w-md mb-8 font-[family-name:var(--font-body)]">
-                  Your dedicated climate researcher. Ask me about any location, and I&apos;ll share my analysis on deforestation, urban resilience, carbon markets, and future projections across Africa.
+                  Your dedicated climate researcher. Ask me about deforestation patterns, native reforestation strategies, carbon sequestration tracking, and climate resilience — empowering communities across Africa to fight climate change.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
                   {[
-                    { icon: "🏙️", title: "Urban Climate Risk", desc: "Heat islands, floods & green solutions", query: "What is the climate risk assessment for Kampala, Uganda? Include flood risk, heat island effects, and actionable recommendations." },
-                    { icon: "🌳", title: "Forest Analysis", desc: "Deforestation risk & restoration plans", query: "Analyze deforestation in Uganda's forests, particularly Mabira and Bugoma. What are the threats and restoration strategies?" },
-                    { icon: "🌍", title: "Future Predictions", desc: "10-20 year climate projections", query: "What are the climate change predictions for East Africa over the next 20 years? Include temperature, rainfall, and ecosystem impacts." },
-                    { icon: "💰", title: "Carbon Credits", desc: "Sequestration estimates & market value", query: "What is the carbon credit potential for reforestation projects in the Congo Basin? Include species recommendations and market valuations." },
+                    { icon: "🛰️", title: "Deforestation Analysis", desc: "Patterns, drivers & satellite insights", query: "Analyze the deforestation patterns in Uganda's major forests. Show historical trends, primary drivers, spatial patterns, and what satellite data reveals." },
+                    { icon: "🌱", title: "Reforestation Strategies", desc: "Native species & restoration plans", query: "Recommend native reforestation strategies for degraded forests in East Africa. Include species selection, planting design, and community engagement models." },
+                    { icon: "📊", title: "Carbon Sequestration", desc: "Tracking, credits & projections", query: "What is the carbon sequestration potential for a 500-hectare reforestation project in the Congo Basin? Include species-specific rates, 20-year projections, and carbon credit valuation." },
+                    { icon: "🌍", title: "Climate Predictions", desc: "10-20 year regional projections", query: "What are the climate change predictions for East Africa over the next 20 years? Include temperature, rainfall, forest cover, and ecosystem impacts." },
                   ].map((card, i) => (
                     <button
                       key={i}
