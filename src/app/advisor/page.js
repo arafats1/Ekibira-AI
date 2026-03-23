@@ -154,7 +154,7 @@ function AdvisorImage({ imageData }) {
             <img
               src={image.url}
               alt={imageData.alt || imageData.caption}
-              className="w-full max-h-72 object-cover"
+              className="w-full max-h-[500px] object-contain"
               loading="lazy"
             />
           </div>
