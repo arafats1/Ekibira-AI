@@ -34,68 +34,70 @@ function AdvisorChart({ chart }) {
 
   return (
     <div className="my-4 p-4 bg-[#f0fdf4] border border-[#d1e7d1] rounded-xl">
-      {chart.title && (
+        {chart.title && (
         <p className="text-sm font-bold text-[#1a2e1a] mb-3 font-[family-name:var(--font-display)]">
           📊 {chart.title}
         </p>
       )}
-      <ResponsiveContainer width="100%" height={260}>
-        {chart.type === "bar" ? (
-          <BarChart data={chart.data} {...common}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip {...tooltipStyle} />
-            {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
+      <div className="h-[260px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          {chart.type === "pie" ? (
+            <PieChart margin={{ top: 0, right: 30, left: 30, bottom: 0 }}>
+              <Pie
+                data={chart.data}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={80}
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                labelLine={{ stroke: "#9ca3af" }}
+                style={{ fontSize: 10 }}
+              >
+                {chart.data.map((_, i) => (
+                  <Cell key={i} fill={colors[i % colors.length]} />
+                ))}
+              </Pie>
+              <Tooltip {...tooltipStyle} />
+            </PieChart>
+          ) : chart.type === "bar" ? (
+            <BarChart data={chart.data} {...common}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip {...tooltipStyle} />
+              {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
             {yKeys.map((key, i) => (
-              <Bar key={key} dataKey={key} fill={colors[i % colors.length]} radius={[4, 4, 0, 0]} />
-            ))}
-          </BarChart>
-        ) : chart.type === "pie" ? (
-          <PieChart>
-            <Pie
-              data={chart.data}
-              cx="50%"
-              cy="50%"
-              innerRadius={50}
-              outerRadius={90}
-              dataKey="value"
-              nameKey="name"
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              labelLine={{ stroke: "#9ca3af" }}
-              style={{ fontSize: 11 }}
-            >
-              {chart.data.map((_, i) => (
-                <Cell key={i} fill={colors[i % colors.length]} />
+                <Bar key={key} dataKey={key} fill={colors[i % colors.length]} radius={[4, 4, 0, 0]} />
               ))}
-            </Pie>
-            <Tooltip {...tooltipStyle} />
-          </PieChart>
-        ) : chart.type === "area" ? (
-          <AreaChart data={chart.data} {...common}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip {...tooltipStyle} />
-            {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
-            {yKeys.map((key, i) => (
-              <Area key={key} type="monotone" dataKey={key} stroke={colors[i % colors.length]} fill={colors[i % colors.length]} fillOpacity={0.15} strokeWidth={2} />
-            ))}
-          </AreaChart>
-        ) : (
-          /* default: line chart */
-          <LineChart data={chart.data} {...common}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip {...tooltipStyle} />
-            {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
-            {yKeys.map((key, i) => (
-              <Line key={key} type="monotone" dataKey={key} stroke={colors[i % colors.length]} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-            ))}
-          </LineChart>
-        )}
-      </ResponsiveContainer>
+            </BarChart>
+          ) : chart.type === "area" ? (
+            <AreaChart data={chart.data} {...common}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip {...tooltipStyle} />
+              {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
+              {yKeys.map((key, i) => (
+                <Area key={key} type="monotone" dataKey={key} stroke={colors[i % colors.length]} fill={colors[i % colors.length]} fillOpacity={0.15} strokeWidth={2} />
+              ))}
+            </AreaChart>
+          ) : (
+            /* default: line chart */
+            <LineChart data={chart.data} {...common}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip {...tooltipStyle} />
+              {yKeys.length > 1 && <Legend wrapperStyle={{ fontSize: 11 }} />}
+              {yKeys.map((key, i) => (
+                <Line key={key} type="monotone" dataKey={key} stroke={colors[i % colors.length]} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+              ))}
+            </LineChart>
+          )}
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -602,7 +604,7 @@ export default function AdvisorPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+          <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center pt-8 sm:pt-16 pb-8 animate-fade-in">
@@ -701,7 +703,7 @@ export default function AdvisorPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about any location, climate risk, or environmental topic..."
-              className="flex-1 min-w-0 py-2 text-sm text-[#1a2e1a] focus:outline-none bg-transparent font-[family-name:var(--font-body)] placeholder:text-[#9ca3af]"
+              className="flex-1 min-w-0 py-2 text-base sm:text-sm text-[#1a2e1a] focus:outline-none bg-transparent font-[family-name:var(--font-body)] placeholder:text-[#9ca3af]"
               disabled={loading}
             />
             <button
