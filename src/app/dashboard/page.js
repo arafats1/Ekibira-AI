@@ -52,7 +52,7 @@ export default function DashboardPage() {
       status: "Live",
       statusColor: "bg-emerald-500",
       stats: [
-        { label: "AI Model", value: "GPT-4o" },
+        { label: "AI Model", value: "Kibira AI" },
         { label: "Coverage", value: "All Africa" },
         { label: "Data Sources", value: "IPCC+" },
       ],

@@ -562,7 +562,7 @@ export default function AdvisorPage() {
           </Link>
           <div className="flex items-center gap-2 px-3 py-2 text-[10px] text-white/30 font-[family-name:var(--font-body)]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80]" />
-            Powered by KibiraAI + GPT-4o
+            Powered by Kibira AI
           </div>
         </div>
       </aside>
@@ -715,7 +715,7 @@ export default function AdvisorPage() {
             </button>
           </form>
           <p className="text-center text-[10px] text-[#9ca3af] mt-2 font-[family-name:var(--font-body)]">
-            Climate Research Assistant is powered by GPT-4o with specialized African climate and environmental knowledge.
+            Climate Research Assistant is powered by Kibira AI with specialized African climate and environmental knowledge.
           </p>
         </div>
       </div>
