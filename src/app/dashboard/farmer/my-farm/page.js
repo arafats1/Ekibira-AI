@@ -46,6 +46,39 @@ const SEVERITY_STYLES = {
   info: "bg-blue-100 border-blue-300 text-blue-900",
 };
 
+// Crop stage visual: returns emoji + bg color based on crop type and growth stage
+const CROP_ICONS = {
+  maize: "🌽", beans: "🫘", cassava: "🥔", "sweet potatoes": "🍠", rice: "🌾",
+  sorghum: "🌾", millet: "🌾", groundnuts: "🥜", soybeans: "🫘", coffee: "☕",
+  bananas: "🍌", "irish potatoes": "🥔", tomatoes: "🍅", onions: "🧅",
+  cabbage: "🥬", sunflower: "🌻", sesame: "🌱", cotton: "🧶", wheat: "🌾", peas: "🫛",
+};
+const STAGE_CONFIG = {
+  germination: { emoji: "🌱", label: "Sprouting", bg: "from-lime-100 to-lime-50", ring: "ring-lime-300" },
+  seedling: { emoji: "🌿", label: "Seedling", bg: "from-green-100 to-emerald-50", ring: "ring-green-300" },
+  vegetative: { emoji: "🪴", label: "Growing", bg: "from-emerald-100 to-green-50", ring: "ring-emerald-400" },
+  flowering: { emoji: "🌸", label: "Flowering", bg: "from-pink-100 to-rose-50", ring: "ring-pink-300" },
+  fruiting: { emoji: "🍃", label: "Fruiting", bg: "from-amber-100 to-yellow-50", ring: "ring-amber-300" },
+  maturity: { emoji: "🌾", label: "Mature", bg: "from-amber-200 to-orange-100", ring: "ring-amber-400" },
+  harvest: { emoji: "✂️", label: "Ready!", bg: "from-yellow-200 to-amber-100", ring: "ring-yellow-400" },
+};
+function CropStageImage({ cropName, growthStage, size = "md" }) {
+  const stage = (growthStage || "").toLowerCase();
+  const crop = (cropName || "").toLowerCase();
+  const stageKey = Object.keys(STAGE_CONFIG).find(k => stage.includes(k)) || "vegetative";
+  const cfg = STAGE_CONFIG[stageKey];
+  const cropEmoji = CROP_ICONS[crop] || CROP_ICONS[Object.keys(CROP_ICONS).find(k => crop.includes(k))] || "🌱";
+  const dims = size === "sm" ? "w-12 h-12" : "w-16 h-16";
+  const emojiSize = size === "sm" ? "text-lg" : "text-2xl";
+  const stageSize = size === "sm" ? "text-[7px]" : "text-[8px]";
+  return (
+    <div className={`${dims} rounded-xl bg-gradient-to-br ${cfg.bg} ring-2 ${cfg.ring} flex flex-col items-center justify-center flex-shrink-0 shadow-sm`}>
+      <span className={emojiSize}>{stageKey === "harvest" ? cfg.emoji : cropEmoji}</span>
+      <span className={`${stageSize} font-bold text-[#2d6a4f] font-[family-name:var(--font-body)] leading-none mt-0.5`}>{cfg.label}</span>
+    </div>
+  );
+}
+
 // Format YYYY-MM-DD to dd-mm-yyyy
 const fmtDate = (d) => {
   if (!d) return "—";
@@ -857,11 +890,17 @@ export default function MyFarmPage() {
                         return (
                           <div key={i} className="bg-white rounded-xl border border-[#e5e7eb] p-5">
                             <div className="flex items-center justify-between mb-3">
-                              <div>
-                                <h4 className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
-                                  {cs.cropName}{cs.variety && cs.variety.toLowerCase() !== "unknown" ? ` (${cs.variety})` : ""}
-                                </h4>
-                                <p className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">Day {cs.daysSincePlanting}</p>
+                              <div className="flex items-center gap-3">
+                                <CropStageImage cropName={cs.cropName} growthStage={cs.growthStage} />
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
+                                      {cs.cropName}{cs.variety && cs.variety.toLowerCase() !== "unknown" ? ` (${cs.variety})` : ""}
+                                    </h4>
+                                    {i === 0 && <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold border border-blue-200">Free</span>}
+                                  </div>
+                                  <p className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">Day {cs.daysSincePlanting}</p>
+                                </div>
                               </div>
                               <div className="text-right">
                                 <div className={`text-xl font-bold font-[family-name:var(--font-display)] ${healthColor}`}>
@@ -956,10 +995,14 @@ export default function MyFarmPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {growingCrops.map((crop, cropIdx) => (
+                {growingCrops.map((crop, cropIdx) => {
+                  const cs = plan?.cropStatus?.find(s => s.cropName.toLowerCase() === crop.cropName.toLowerCase());
+                  return (
                   <div key={crop.id} className="bg-white rounded-xl border border-[#e5e7eb] p-5">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
+                      <div className="flex gap-3 flex-1">
+                        <CropStageImage cropName={crop.cropName} growthStage={cs?.growthStage} size="sm" />
+                        <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{crop.cropName}</h3>
                           {crop.variety && <span className="text-[10px] bg-gray-100 text-[#6b7c6b] px-2 py-0.5 rounded-full font-[family-name:var(--font-body)]">{crop.variety}</span>}
@@ -998,7 +1041,8 @@ export default function MyFarmPage() {
                             )}
                           </div>
                         )}
-                      </div>
+                      </div>  {/* end flex-1 text content */}
+                      </div>  {/* end flex gap-3 wrapper */}
                       <div className="flex items-center gap-2 ml-4">
                         <button
                           onClick={() => { setHarvestModal(crop); setHarvestForm({ harvestDate: new Date().toISOString().split("T")[0], harvestYield: "", yieldUnit: "kg" }); }}
@@ -1015,7 +1059,8 @@ export default function MyFarmPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
