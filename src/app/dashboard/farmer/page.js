@@ -401,7 +401,17 @@ export default function FarmerDashboard() {
 
         {/* Quick Access Tools */}
         <h2 className="text-lg font-bold text-[#1a2e1a] mb-4 font-[family-name:var(--font-display)]">🛠️ Your Tools</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Link href="/dashboard/farmer/my-farm" className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-5 border-2 border-amber-300 hover:shadow-md hover:border-amber-400 transition-all group relative overflow-hidden">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl">🌱</span>
+              <h3 className="font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">My Farm</h3>
+            </div>
+            <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)] mb-3">Track your crops, get AI-powered daily actions based on real weather, and log harvests.</p>
+            <span className="text-sm text-amber-700 font-semibold font-[family-name:var(--font-body)] group-hover:underline">Manage Crops →</span>
+            <span className="absolute top-2 right-2 text-[9px] bg-amber-600 text-white px-2 py-0.5 rounded-full font-[family-name:var(--font-body)] font-bold">NEW</span>
+          </Link>
+
           <Link href="/advisor" className="bg-white rounded-xl p-5 border border-[#e5e7eb] hover:shadow-md hover:border-amber-300 transition-all group">
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">🌿</span>
