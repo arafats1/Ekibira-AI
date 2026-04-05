@@ -76,6 +76,10 @@ export default function MyFarmPage() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]); // saved chats from backend
+  const [activeChatId, setActiveChatId] = useState(null); // documentId of current chat
+  const [showChatList, setShowChatList] = useState(false); // toggle chat history list
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
 
@@ -84,15 +88,72 @@ export default function MyFarmPage() {
   }, [chatMessages, chatOpen]);
 
   useEffect(() => {
-    if (chatOpen && chatInputRef.current) chatInputRef.current.focus();
+    if (chatOpen && chatInputRef.current && !showChatList) chatInputRef.current.focus();
+  }, [chatOpen, showChatList]);
+
+  // Load chat history when chat opens
+  useEffect(() => {
+    if (chatOpen && chatHistory.length === 0) {
+      loadChatHistory();
+    }
   }, [chatOpen]);
+
+  const loadChatHistory = async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+      setLoadingHistory(true);
+      const res = await fetch("/api/chat-history", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setChatHistory(data.chats || []);
+      }
+    } catch { /* ignore */ }
+    setLoadingHistory(false);
+  };
+
+  const saveChat = async (messages, chatId) => {
+    try {
+      const token = getToken();
+      if (!token || messages.length < 2) return null;
+      const res = await fetch("/api/chat-history", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ chatId, messages }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        loadChatHistory(); // refresh list
+        return data.chatId;
+      }
+    } catch { /* ignore */ }
+    return chatId;
+  };
+
+  const loadChat = (chat) => {
+    setChatMessages(chat.messages || []);
+    setActiveChatId(chat.documentId);
+    setShowChatList(false);
+  };
+
+  const startNewChat = () => {
+    setChatMessages([]);
+    setActiveChatId(null);
+    setShowChatList(false);
+  };
 
   const sendChat = async (msg) => {
     const text = (msg || chatInput).trim();
     if (!text || chatLoading) return;
     setChatInput("");
     const userMsg = { role: "user", content: text };
-    setChatMessages(prev => [...prev, userMsg]);
+    const updatedMessages = [...chatMessages, userMsg];
+    setChatMessages(updatedMessages);
     setChatLoading(true);
     try {
       const token = getToken();
@@ -102,14 +163,15 @@ export default function MyFarmPage() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ message: text, history: [...chatMessages, userMsg] }),
+        body: JSON.stringify({ message: text, history: updatedMessages }),
       });
       const data = await res.json();
-      if (data.reply) {
-        setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
-      } else {
-        setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I couldn't process that. Please try again." }]);
-      }
+      const reply = data.reply || "Sorry, I couldn't process that. Please try again.";
+      const finalMessages = [...updatedMessages, { role: "assistant", content: reply }];
+      setChatMessages(finalMessages);
+      // Auto-save after each assistant reply
+      const newId = await saveChat(finalMessages, activeChatId);
+      if (newId && !activeChatId) setActiveChatId(newId);
     } catch {
       setChatMessages(prev => [...prev, { role: "assistant", content: "Network error. Please try again." }]);
     }
@@ -1168,39 +1230,84 @@ export default function MyFarmPage() {
                 <span className="text-lg">🧠</span>
                 <span className="text-sm font-bold text-white font-[family-name:var(--font-body)]">Farm AI Assistant</span>
               </div>
-              <button onClick={() => setChatOpen(false)} className="text-white/70 hover:text-white text-lg">✕</button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowChatList(v => !v)} className="text-white/70 hover:text-white text-sm" title="Chat history">
+                  {showChatList ? "💬" : "📋"}
+                </button>
+                <button onClick={startNewChat} className="text-white/70 hover:text-white text-sm" title="New chat">＋</button>
+                <button onClick={() => setChatOpen(false)} className="text-white/70 hover:text-white text-lg">✕</button>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f7faf6]" style={{ minHeight: 200, maxHeight: "50vh" }}>
-              {chatMessages.length === 0 && (
-                <div className="text-center py-8">
-                  <div className="text-3xl mb-2">🌱</div>
-                  <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Ask me anything about your crops, weather, planting tips, or market prices!</p>
+
+            {showChatList ? (
+              /* Chat History List */
+              <div className="flex-1 overflow-y-auto bg-[#f7faf6]" style={{ minHeight: 200, maxHeight: "50vh" }}>
+                <div className="px-4 py-3 border-b border-[#e5e7eb] flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#1a2e1a] font-[family-name:var(--font-body)]">Previous Chats</span>
+                  <button onClick={startNewChat} className="text-[10px] bg-[#2d6a4f] text-white px-2 py-1 rounded-lg font-[family-name:var(--font-body)] hover:bg-[#1b4332]">+ New Chat</button>
                 </div>
-              )}
-              {chatMessages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed font-[family-name:var(--font-body)] whitespace-pre-wrap ${m.role === "user" ? "bg-[#2d6a4f] text-white" : "bg-white border border-[#e5e7eb] text-[#1a2e1a]"}`}>
-                    {m.content}
+                {loadingHistory ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-5 h-5 border-2 border-[#2d6a4f] border-t-transparent rounded-full animate-spin" />
                   </div>
-                </div>
-              ))}
-              {chatLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-white border border-[#e5e7eb] rounded-xl px-3 py-2 flex items-center gap-2">
-                    <div className="w-3 h-3 border-2 border-[#2d6a4f] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Thinking...</span>
+                ) : chatHistory.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">No previous chats yet.</p>
+                    <button onClick={startNewChat} className="mt-2 text-xs text-[#2d6a4f] font-semibold font-[family-name:var(--font-body)]">Start your first chat →</button>
                   </div>
+                ) : (
+                  <div className="divide-y divide-[#e5e7eb]">
+                    {chatHistory.map((chat) => (
+                      <button key={chat.documentId} onClick={() => loadChat(chat)}
+                        className={`w-full text-left px-4 py-3 hover:bg-white transition-colors ${activeChatId === chat.documentId ? "bg-white border-l-2 border-[#2d6a4f]" : ""}`}>
+                        <div className="text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] truncate">{chat.title}</div>
+                        <div className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)] mt-0.5">
+                          {chat.messages?.length || 0} messages · {chat.lastMessageAt ? new Date(chat.lastMessageAt).toLocaleDateString("en-GB") : ""}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Active Chat */
+              <>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f7faf6]" style={{ minHeight: 200, maxHeight: "50vh" }}>
+                  {chatMessages.length === 0 && (
+                    <div className="text-center py-8">
+                      <div className="text-3xl mb-2">🌱</div>
+                      <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Ask me anything about your crops, weather, planting tips, or market prices!</p>
+                      {chatHistory.length > 0 && (
+                        <button onClick={() => setShowChatList(true)} className="mt-3 text-[10px] text-[#2d6a4f] font-semibold font-[family-name:var(--font-body)] underline">View previous chats ({chatHistory.length})</button>
+                      )}
+                    </div>
+                  )}
+                  {chatMessages.map((m, i) => (
+                    <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed font-[family-name:var(--font-body)] whitespace-pre-wrap ${m.role === "user" ? "bg-[#2d6a4f] text-white" : "bg-white border border-[#e5e7eb] text-[#1a2e1a]"}`}>
+                        {m.content}
+                      </div>
+                    </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-white border border-[#e5e7eb] rounded-xl px-3 py-2 flex items-center gap-2">
+                        <div className="w-3 h-3 border-2 border-[#2d6a4f] border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Thinking...</span>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
                 </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-            <form onSubmit={e => { e.preventDefault(); sendChat(); }} className="border-t border-[#e5e7eb] px-3 py-2 flex gap-2 bg-white">
-              <input ref={chatInputRef} type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
-                placeholder="Ask about your farm..." disabled={chatLoading}
-                className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f] outline-none font-[family-name:var(--font-body)]" />
-              <button type="submit" disabled={chatLoading || !chatInput.trim()}
-                className="px-3 py-2 bg-[#2d6a4f] hover:bg-[#1b4332] disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-colors">Send</button>
-            </form>
+                <form onSubmit={e => { e.preventDefault(); sendChat(); }} className="border-t border-[#e5e7eb] px-3 py-2 flex gap-2 bg-white">
+                  <input ref={chatInputRef} type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
+                    placeholder="Ask about your farm..." disabled={chatLoading}
+                    className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f] outline-none font-[family-name:var(--font-body)]" />
+                  <button type="submit" disabled={chatLoading || !chatInput.trim()}
+                    className="px-3 py-2 bg-[#2d6a4f] hover:bg-[#1b4332] disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-colors">Send</button>
+                </form>
+              </>
+            )}
           </div>
         )}
         <button onClick={() => setChatOpen(o => !o)}

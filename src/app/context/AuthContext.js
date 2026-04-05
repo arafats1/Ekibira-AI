@@ -102,8 +102,34 @@ export function AuthProvider({ children }) {
       if (profileData?.data?.length > 0) {
         profile = profileData.data[0];
       }
+      // Fallback: try matching by email if user filter didn't return results
+      if (!profile) {
+        const profileByEmail = await fetch(
+          `${STRAPI_URL}/api/kibira-users?filters[email][$eq]=${encodeURIComponent(data.user.email)}`,
+          { headers: { Authorization: `Bearer ${data.jwt}` } }
+        );
+        const emailData = await profileByEmail.json();
+        if (emailData?.data?.length > 0) {
+          profile = emailData.data[0];
+        }
+      }
     } catch {
       // Profile fetch failed, continue with basic user data
+    }
+
+    // Determine accountType with fallbacks
+    let accountType = profile?.accountType || "general";
+    // If profile didn't return accountType, check if it was stored previously
+    if (accountType === "general") {
+      try {
+        const stored = localStorage.getItem("kibira_user");
+        if (stored) {
+          const prev = JSON.parse(stored);
+          if (prev.email === data.user.email && prev.accountType && prev.accountType !== "general") {
+            accountType = prev.accountType;
+          }
+        }
+      } catch { /* ignore */ }
     }
 
     const userData = {
@@ -114,7 +140,7 @@ export function AuthProvider({ children }) {
       phone: profile?.phone || "",
       company: profile?.company || "",
       position: profile?.position || "",
-      accountType: profile?.accountType || "general",
+      accountType,
       role: profile?.role || "user",
       profileId: profile?.id || null,
     };
