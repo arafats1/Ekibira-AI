@@ -5,15 +5,26 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(request) {
   try {
-    const { cropName, location, area, areaUnit, harvestDate } = await request.json();
+    const { cropName, location, area, areaUnit, harvestDate, expectedYieldLow, expectedYieldHigh } =
+      await request.json();
 
     if (!cropName || !location) {
-      return NextResponse.json({ error: "cropName and location are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "cropName and location are required" },
+        { status: 400 }
+      );
     }
 
     const safeCrop = String(cropName).trim().slice(0, 100);
     const safeLoc = String(location).trim().slice(0, 200);
-    const safeArea = area ? `${parseFloat(area) || 0} ${String(areaUnit || "acres").slice(0, 20)}` : "unknown area";
+    const safeArea = area
+      ? `${parseFloat(area) || 0} ${String(areaUnit || "acres").slice(0, 20)}`
+      : "unknown area";
+    const today = new Date().toISOString().split("T")[0];
+
+    const yieldLow = parseFloat(expectedYieldLow) || 0;
+    const yieldHigh = parseFloat(expectedYieldHigh) || 0;
+    const hasYield = yieldLow > 0 && yieldHigh > 0;
 
     const prompt = `You are an expert agricultural market analyst for Uganda and East Africa. A smallholder farmer just harvested their crop and needs market intelligence to sell at the best price.
 
@@ -21,9 +32,10 @@ CROP: ${safeCrop}
 LOCATION: ${safeLoc}
 FARM SIZE: ${safeArea}
 HARVEST DATE: ${harvestDate || "today"}
-TODAY: ${new Date().toISOString().split("T")[0]}
+TODAY: ${today}
+${hasYield ? `EXPECTED YIELD: ${yieldLow} — ${yieldHigh} kg` : ""}
 
-Provide REAL, practical market intelligence for this specific crop in Uganda. Use your knowledge of actual Ugandan market prices, trading hubs, and seasonal patterns.
+Provide REAL, practical market intelligence for this specific crop in Uganda. Use your knowledge of actual current Ugandan market prices, trading hubs, and seasonal patterns.
 
 Respond with ONLY valid JSON:
 {
@@ -47,12 +59,7 @@ Respond with ONLY valid JSON:
   "sellStrategy": {
     "recommendation": "sell_now|store_and_wait|process_first",
     "reasoning": "2-3 sentences explaining the best strategy",
-    "optimalSellWindow": "e.g., Within 2 weeks, or Store until July",
-    "estimatedRevenue": {
-      "low": 0,
-      "high": 0,
-      "currency": "UGX"
-    }
+    "optimalSellWindow": "e.g., Within 2 weeks, or Store until July"
   },
   "valueAddition": [
     {
@@ -69,7 +76,7 @@ Respond with ONLY valid JSON:
 RULES:
 - Prices must be in Ugandan Shillings (UGX) and realistic for the current season.
 - bestMarkets: 3-4 markets, closest first. Include major regional markets and Kampala if relevant.
-- estimatedRevenue: Calculate from farm size. If area unknown, estimate for a typical smallholder (1-2 acres).
+- Do NOT include estimatedRevenue in sellStrategy — it will be calculated separately.
 - valueAddition: 2-3 practical options appropriate for a smallholder with limited equipment.
 - Be specific to the crop and location — different crops have vastly different market dynamics.`;
 
@@ -82,11 +89,33 @@ RULES:
 
     const raw = completion.choices?.[0]?.message?.content || "";
     const jsonStr = raw.replace(/```json?\s*/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(jsonStr);
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (parseErr) {
+      console.error("GPT JSON parse failed. Raw:", raw.substring(0, 500));
+      throw parseErr;
+    }
+
+    // Calculate estimated revenue from expected yield × market price
+    if (hasYield && parsed.currentPrice) {
+      const priceLow = parsed.currentPrice.low || 0;
+      const priceHigh = parsed.currentPrice.high || 0;
+      const priceMid = parsed.currentPrice.mid || 0;
+      parsed.sellStrategy = parsed.sellStrategy || {};
+      parsed.sellStrategy.estimatedRevenue = {
+        low: Math.round(yieldLow * priceLow),
+        high: Math.round(yieldHigh * priceHigh),
+        currency: "UGX",
+      };
+    }
 
     return NextResponse.json({ prices: parsed });
   } catch (error) {
     console.error("Market prices error:", error);
-    return NextResponse.json({ error: "Failed to fetch market intelligence" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch market intelligence" },
+      { status: 500 }
+    );
   }
 }

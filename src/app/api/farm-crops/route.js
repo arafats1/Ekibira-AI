@@ -1,12 +1,67 @@
 import { NextResponse } from "next/server";
+import OpenAI from "openai";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ─── Helper: extract and validate Bearer token ───
 function getToken(request) {
   const auth = request.headers.get("authorization");
   if (!auth || !auth.startsWith("Bearer ")) return null;
   return auth.slice(7);
+}
+
+// ─── AI yield estimation (called once on crop creation) ───
+async function estimateYield(crop) {
+  try {
+    const prompt = `You are an agronomist. Estimate the expected harvest yield in kilograms for this specific crop setup. Use real agronomic data for this crop in Uganda/East Africa.
+
+CROP: ${crop.cropName}${crop.variety ? ` (variety: ${crop.variety})` : ""}
+FARM SIZE: ${crop.area || 0} ${crop.areaUnit || "acres"}
+SEED QUANTITY: ${crop.seedQuantity || 0} ${crop.seedUnit || "kg"}
+PLANT SPACING: ${crop.spacing || "not specified"}
+LOCATION: ${crop.location}
+
+Calculate yield using:
+1. The specific crop's known yield potential per acre in East Africa (use published FAO/NARO/Uganda data)
+2. Plant population = farm area / (row spacing × plant spacing). More plants per acre generally means more yield up to optimal density
+3. Seed quantity relative to recommended seed rate for this crop — over-seeding or under-seeding affects yield
+4. The specific variety's yield profile if known
+
+Respond with ONLY valid JSON:
+{
+  "low": <number in kg — conservative estimate for smallholder conditions>,
+  "high": <number in kg — good conditions estimate>,
+  "basis": "<1 sentence: specific yield/acre used, plant population calculated, and how seed rate compares to recommended>"
+}
+
+RULES:
+- low/high must be realistic numbers for Ugandan smallholder farms, NOT commercial farms
+- The basis must reference the specific crop's yield data (e.g., "Groundnuts yield 600-1000 kg/acre in Uganda") not generic text
+- If farm size is 0, return low:0, high:0
+- Different crops have very different yields: groundnuts ~600-1000 kg/acre, maize ~800-2000 kg/acre, cassava ~5000-12000 kg/acre, beans ~400-800 kg/acre, etc.
+- Account for the actual spacing and seed rate in the calculation`;
+
+    const res = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0,
+      max_tokens: 300,
+      response_format: { type: "json_object" },
+    });
+
+    const content = res.choices?.[0]?.message?.content;
+    if (!content) return null;
+    const parsed = JSON.parse(content);
+    return {
+      expectedYieldLow: Math.round(Number(parsed.low) || 0),
+      expectedYieldHigh: Math.round(Number(parsed.high) || 0),
+      yieldBasis: String(parsed.basis || "").slice(0, 500),
+    };
+  } catch (err) {
+    console.error("Yield estimation error:", err);
+    return null;
+  }
 }
 
 // ─── GET: Fetch user's crops ───
@@ -109,7 +164,27 @@ export async function POST(request) {
     }
 
     const created = await createRes.json();
-    return NextResponse.json({ crop: { ...created.data, id: created.data.documentId || created.data.id } });
+    const cropId = created.data.documentId || created.data.id;
+    const cropResult = { ...created.data, id: cropId };
+
+    // Estimate yield via AI (fire-and-forget update to Strapi, return crop immediately with yield)
+    const yieldData = await estimateYield(sanitized);
+    if (yieldData) {
+      cropResult.expectedYieldLow = yieldData.expectedYieldLow;
+      cropResult.expectedYieldHigh = yieldData.expectedYieldHigh;
+      cropResult.yieldBasis = yieldData.yieldBasis;
+      // Update Strapi record with yield data (non-blocking)
+      fetch(`${STRAPI_URL}/api/farm-crops/${cropId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ data: yieldData }),
+      }).catch(() => {});
+    }
+
+    return NextResponse.json({ crop: cropResult });
   } catch (error) {
     console.error("Farm crops POST error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

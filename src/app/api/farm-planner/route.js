@@ -97,12 +97,7 @@ Respond with ONLY valid JSON:
       "healthScore": 85,
       "healthNotes": "Assessment based on weather conditions",
       "waterNeed": "high|medium|low",
-      "waterAdvice": "Specific irrigation advice based on real soil moisture and ET0 data",
-      "expectedYieldKg": {
-        "low": 0,
-        "high": 0,
-        "basis": "Brief explanation of yield estimate (farm size, spacing, seed qty, avg for this crop/region)"
-      }
+      "waterAdvice": "Specific irrigation advice based on real soil moisture and ET0 data"
     }
   ],
   "riskAlerts": [
@@ -128,8 +123,7 @@ RULES:
 - Reference specific forecast days: "Rain expected Wednesday (15mm) — spray before Tuesday evening"
 - IRRIGATION: When soil moisture is low (<30%) or high temperatures (>30°C) are forecast, recommend specific irrigation — liters per plant or mm per acre, best time (early morning or late evening). If rain is coming within 24-48h, advise skipping irrigation to save water.
 - PEST & DISEASE SPRAYING: Only recommend when crops have foliage (past germination). When humidity >80% with warm temps (>25°C), warn about fungal risk (late blight, rust, powdery mildew). Recommend specific sprays (e.g., "spray copper fungicide", "apply neem oil for aphids"). Always recommend spraying BEFORE rain, not after.
-- FERTILIZER: Recommend specific fertilizer types and quantities per growth stage (e.g., "Side-dress 50kg/acre Urea at knee-height for maize", "Apply 25kg/acre TSP at flowering for beans"). Warn about fertilizer burn risk in dry/hot conditions — advise watering before applying.
-- EXPECTED YIELD: For each crop, calculate expectedYieldKg.low and expectedYieldKg.high in kilograms based on: (1) farm size, (2) plant spacing used, (3) seed quantity planted, and (4) average yields for that crop in Uganda/East Africa. Use realistic smallholder yields, not commercial farm yields. For example: maize 800-1500 kg/acre, beans 400-800 kg/acre, cassava 5000-10000 kg/acre. Adjust based on the weather forecast and health conditions.`;
+- FERTILIZER: Recommend specific fertilizer types and quantities per growth stage (e.g., "Side-dress 50kg/acre Urea at knee-height for maize", "Apply 25kg/acre TSP at flowering for beans"). Warn about fertilizer burn risk in dry/hot conditions — advise watering before applying.`;
 }
 
 export async function POST(request) {

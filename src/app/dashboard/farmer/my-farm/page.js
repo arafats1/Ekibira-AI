@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "../../../context/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 
 const COMMON_CROPS = [
@@ -67,6 +67,54 @@ export default function MyFarmPage() {
   const [formError, setFormError] = useState(null);
   const [doneActions, setDoneActions] = useState(new Set()); // track completed daily actions
   const [marketData, setMarketData] = useState({}); // { cropId: { loading, prices, error } }
+  const [harvestModal, setHarvestModal] = useState(null); // crop being harvested
+  const [harvestForm, setHarvestForm] = useState({ harvestDate: new Date().toISOString().split("T")[0], harvestYield: "", yieldUnit: "kg" });
+  const [yieldChat, setYieldChat] = useState({}); // { cropId: { messages: [], loading, open } }
+
+  // Floating chat state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef(null);
+  const chatInputRef = useRef(null);
+
+  useEffect(() => {
+    if (chatOpen && chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatOpen]);
+
+  useEffect(() => {
+    if (chatOpen && chatInputRef.current) chatInputRef.current.focus();
+  }, [chatOpen]);
+
+  const sendChat = async (msg) => {
+    const text = (msg || chatInput).trim();
+    if (!text || chatLoading) return;
+    setChatInput("");
+    const userMsg = { role: "user", content: text };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatLoading(true);
+    try {
+      const token = getToken();
+      const res = await fetch("/api/farmer-chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ message: text, history: [...chatMessages, userMsg] }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+      } else {
+        setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I couldn't process that. Please try again." }]);
+      }
+    } catch {
+      setChatMessages(prev => [...prev, { role: "assistant", content: "Network error. Please try again." }]);
+    }
+    setChatLoading(false);
+  };
 
   // Fetch market prices for a harvested crop
   const fetchMarketPrice = async (crop) => {
@@ -82,6 +130,8 @@ export default function MyFarmPage() {
           area: crop.area,
           areaUnit: crop.areaUnit,
           harvestDate: crop.harvestDate,
+          expectedYieldLow: crop.expectedYieldLow,
+          expectedYieldHigh: crop.expectedYieldHigh,
         }),
       });
       const data = await res.json();
@@ -260,6 +310,63 @@ export default function MyFarmPage() {
   const growingCrops = crops.filter(c => c.status === "growing");
   const harvestedCrops = crops.filter(c => c.status === "harvested");
   const daysSince = (dateStr) => Math.max(0, Math.floor((new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24)));
+
+  // Submit harvest with actual yield
+  const submitHarvest = async () => {
+    if (!harvestModal) return;
+    const yieldVal = parseFloat(harvestForm.harvestYield);
+    if (!harvestForm.harvestDate) { alert("Please enter the harvest date."); return; }
+    if (!yieldVal || yieldVal <= 0) { alert("Please enter the actual yield amount."); return; }
+    await updateCropStatus(harvestModal.id, "harvested", {
+      harvestDate: harvestForm.harvestDate,
+      harvestYield: yieldVal,
+      yieldUnit: harvestForm.yieldUnit,
+    });
+    setHarvestModal(null);
+  };
+
+  // Yield chat — opens a conversation about low yield for a specific crop
+  const startYieldChat = (crop) => {
+    if (yieldChat[crop.id]?.messages?.length > 0) {
+      // Already started, just toggle open
+      setYieldChat(prev => ({ ...prev, [crop.id]: { ...prev[crop.id], open: !prev[crop.id].open } }));
+      return;
+    }
+    const initMsg = `My ${crop.cropName} crop in ${crop.location} (${crop.area || "unknown"} ${crop.areaUnit || "acres"}, seed: ${crop.seedQuantity || "?"} ${crop.seedUnit || "kg"}, spacing: ${crop.spacing || "?"}, planted ${crop.plantingDate}, harvested ${crop.harvestDate}) produced only ${crop.harvestYield} ${crop.yieldUnit || "kg"} — but the expected yield was ${crop.expectedYieldLow}–${crop.expectedYieldHigh} kg. That is significantly below expectations. Please analyze: 1) What likely went wrong, 2) When is the best time to replant this crop based on forecast conditions, 3) What I should do differently next time to improve yield.`;
+    setYieldChat(prev => ({ ...prev, [crop.id]: { messages: [{ role: "user", content: initMsg }], loading: true, open: true, cropContext: [crop] } }));
+    sendYieldMessage(crop.id, initMsg, [], [crop]);
+  };
+
+  const sendYieldMessage = async (cropId, text, prevMessages, cropContext) => {
+    try {
+      const res = await fetch("/api/farmer-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history: prevMessages, cropContext }),
+      });
+      const data = await res.json();
+      const reply = data.reply || "Sorry, I couldn't process that.";
+      setYieldChat(prev => ({
+        ...prev,
+        [cropId]: { ...prev[cropId], messages: [...(prev[cropId]?.messages || []), { role: "assistant", content: reply }], loading: false },
+      }));
+    } catch {
+      setYieldChat(prev => ({
+        ...prev,
+        [cropId]: { ...prev[cropId], messages: [...(prev[cropId]?.messages || []), { role: "assistant", content: "Network error. Please try again." }], loading: false },
+      }));
+    }
+  };
+
+  const sendYieldFollowUp = (cropId, text) => {
+    if (!text.trim()) return;
+    const prev = yieldChat[cropId];
+    if (!prev) return;
+    const userMsg = { role: "user", content: text.trim() };
+    const newMessages = [...prev.messages, userMsg];
+    setYieldChat(p => ({ ...p, [cropId]: { ...p[cropId], messages: newMessages, loading: true, input: "" } }));
+    sendYieldMessage(cropId, text.trim(), newMessages, prev.cropContext);
+  };
 
   return (
     <div className="min-h-screen bg-[#f7faf6]">
@@ -625,6 +732,7 @@ export default function MyFarmPage() {
                         const healthColor = cs.healthScore >= 80 ? "text-green-600" : cs.healthScore >= 60 ? "text-amber-600" : "text-red-600";
                         const harvestDate = cs.estimatedHarvestDate ? new Date(cs.estimatedHarvestDate) : null;
                         const daysToHarvest = harvestDate ? Math.max(0, Math.ceil((harvestDate - new Date()) / (1000 * 60 * 60 * 24))) : null;
+                        const matchedCrop = growingCrops.find(c => c.cropName.toLowerCase() === cs.cropName.toLowerCase()) || growingCrops[i];
                         return (
                           <div key={i} className="bg-white rounded-xl border border-[#e5e7eb] p-5">
                             <div className="flex items-center justify-between mb-3">
@@ -668,14 +776,14 @@ export default function MyFarmPage() {
                               {cs.healthNotes && (
                                 <p className="text-[11px] text-[#6b7c6b] font-[family-name:var(--font-body)]">{cs.healthNotes}</p>
                               )}
-                              {cs.expectedYieldKg && (
+                              {matchedCrop?.expectedYieldLow > 0 && (
                                 <div className="mt-2 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100">
                                   <div className="flex items-center gap-2 text-xs font-[family-name:var(--font-body)]">
                                     <span>📦</span>
-                                    <span className="text-amber-800 font-semibold">Expected Yield: {cs.expectedYieldKg.low?.toLocaleString()} — {cs.expectedYieldKg.high?.toLocaleString()} kg</span>
+                                    <span className="text-amber-800 font-semibold">Expected Yield: {matchedCrop.expectedYieldLow?.toLocaleString()} — {matchedCrop.expectedYieldHigh?.toLocaleString()} kg</span>
                                   </div>
-                                  {cs.expectedYieldKg.basis && (
-                                    <p className="text-[10px] text-amber-600 mt-0.5 font-[family-name:var(--font-body)]">{cs.expectedYieldKg.basis}</p>
+                                  {matchedCrop.yieldBasis && (
+                                    <p className="text-[10px] text-amber-600 mt-0.5 font-[family-name:var(--font-body)]">{matchedCrop.yieldBasis}</p>
                                   )}
                                 </div>
                               )}
@@ -738,10 +846,21 @@ export default function MyFarmPage() {
                           {crop.spacing && <span>↔️ {crop.spacing}</span>}
                         </div>
                         {crop.notes && <p className="text-xs text-[#6b7c6b] mt-2 font-[family-name:var(--font-body)] italic">{crop.notes}</p>}
+                        {crop.expectedYieldLow > 0 && (
+                          <div className="mt-2 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100 inline-block">
+                            <div className="flex items-center gap-2 text-xs font-[family-name:var(--font-body)]">
+                              <span>📦</span>
+                              <span className="text-amber-800 font-semibold">Expected: {crop.expectedYieldLow?.toLocaleString()} — {crop.expectedYieldHigh?.toLocaleString()} kg</span>
+                            </div>
+                            {crop.yieldBasis && (
+                              <p className="text-[10px] text-amber-600 mt-0.5 font-[family-name:var(--font-body)]">{crop.yieldBasis}</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 ml-4">
                         <button
-                          onClick={() => updateCropStatus(crop.id, "harvested", { harvestDate: new Date().toISOString().split("T")[0] })}
+                          onClick={() => { setHarvestModal(crop); setHarvestForm({ harvestDate: new Date().toISOString().split("T")[0], harvestYield: "", yieldUnit: "kg" }); }}
                           className="text-[11px] px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg font-[family-name:var(--font-body)] font-medium transition-colors"
                         >✓ Harvested</button>
                         <button
@@ -777,6 +896,12 @@ export default function MyFarmPage() {
                     ? Math.floor((new Date(crop.harvestDate) - new Date(crop.plantingDate)) / (1000 * 60 * 60 * 24))
                     : null;
                   const md = marketData[crop.id];
+                  const yc = yieldChat[crop.id];
+                  const actualYield = parseFloat(crop.harvestYield) || 0;
+                  const expectedMid = (parseFloat(crop.expectedYieldLow) + parseFloat(crop.expectedYieldHigh)) / 2;
+                  const hasExpected = crop.expectedYieldLow > 0 && crop.expectedYieldHigh > 0;
+                  const yieldPct = hasExpected && actualYield > 0 ? Math.round((actualYield / expectedMid) * 100) : null;
+                  const isLowYield = yieldPct != null && yieldPct < 70;
                   return (
                     <div key={crop.id} className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
                       {/* Crop Header */}
@@ -794,7 +919,35 @@ export default function MyFarmPage() {
                               <span>🏁 Harvested {fmtDate(crop.harvestDate)}</span>
                               {duration != null && <span>⏱️ {duration} days</span>}
                               {crop.area > 0 && <span>📐 {crop.area} {crop.areaUnit}</span>}
+                              {crop.seedQuantity > 0 && <span>🌱 {crop.seedQuantity} {crop.seedUnit} seed</span>}
                             </div>
+                            {/* Actual vs Expected Yield */}
+                            {actualYield > 0 && (
+                              <div className="mt-3 flex flex-wrap items-center gap-3">
+                                <div className="bg-green-50 rounded-lg px-3 py-2 border border-green-200 inline-flex items-center gap-2">
+                                  <span className="text-xs font-[family-name:var(--font-body)]">📦 Actual: <span className="font-bold text-green-800">{actualYield.toLocaleString()} {crop.yieldUnit || "kg"}</span></span>
+                                </div>
+                                {hasExpected && (
+                                  <div className="bg-amber-50 rounded-lg px-3 py-2 border border-amber-200 inline-flex items-center gap-2">
+                                    <span className="text-xs font-[family-name:var(--font-body)]">🎯 Expected: <span className="font-semibold text-amber-800">{crop.expectedYieldLow?.toLocaleString()}–{crop.expectedYieldHigh?.toLocaleString()} kg</span></span>
+                                  </div>
+                                )}
+                                {yieldPct != null && (
+                                  <span className={`text-[10px] px-2 py-1 rounded-full font-bold font-[family-name:var(--font-body)] ${yieldPct >= 90 ? "bg-green-100 text-green-700" : yieldPct >= 70 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                                    {yieldPct >= 100 ? "↑" : "↓"} {yieldPct}% of expected
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {/* Low yield warning + chat */}
+                            {isLowYield && (
+                              <div className="mt-2">
+                                <button
+                                  onClick={() => startYieldChat(crop)}
+                                  className="text-[11px] px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-[family-name:var(--font-body)] font-semibold transition-colors"
+                                >{yc?.open ? "▼ Hide yield advice" : "⚠️ Low yield — Get AI advice on improving next season"}</button>
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-2 ml-4">
                             {!md && (
@@ -810,6 +963,44 @@ export default function MyFarmPage() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Yield Chat Area */}
+                      {yc?.open && yc?.messages?.length > 0 && (
+                        <div className="border-b border-[#e5e7eb]">
+                          <div className="bg-red-50/50 p-4 space-y-3 max-h-80 overflow-y-auto">
+                            <h4 className="text-xs font-bold text-red-800 font-[family-name:var(--font-body)] flex items-center gap-1.5">🧠 Yield Improvement Chat</h4>
+                            {yc.messages.slice(1).map((m, i) => (
+                              <div key={i} className={m.role === "assistant" ? "bg-white rounded-xl p-3 border border-red-100" : "bg-red-100 rounded-xl p-3 border border-red-200 ml-8"}>
+                                {m.role === "user" && <div className="text-[10px] font-semibold text-red-700 mb-1 font-[family-name:var(--font-body)]">You</div>}
+                                <div className="text-[11px] text-[#1a2e1a] font-[family-name:var(--font-body)] leading-relaxed whitespace-pre-wrap">{m.content}</div>
+                              </div>
+                            ))}
+                            {yc.loading && (
+                              <div className="flex items-center gap-2 text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
+                                <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                                Analyzing...
+                              </div>
+                            )}
+                          </div>
+                          {/* Follow-up input */}
+                          <div className="bg-red-50/30 px-4 py-3 border-t border-red-100">
+                            <form onSubmit={(e) => { e.preventDefault(); const input = yieldChat[crop.id]?.input || ""; if (input.trim()) sendYieldFollowUp(crop.id, input); }} className="flex gap-2">
+                              <input
+                                type="text"
+                                value={yieldChat[crop.id]?.input || ""}
+                                onChange={e => setYieldChat(prev => ({ ...prev, [crop.id]: { ...prev[crop.id], input: e.target.value } }))}
+                                placeholder="Ask a follow-up question about this crop..."
+                                className="flex-1 px-3 py-2 text-xs border border-red-200 rounded-lg focus:border-red-400 focus:ring-1 focus:ring-red-400 outline-none font-[family-name:var(--font-body)] bg-white"
+                                disabled={yc.loading}
+                              />
+                              <button type="submit" disabled={yc.loading || !(yieldChat[crop.id]?.input || "").trim()}
+                                className="px-3 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold font-[family-name:var(--font-body)] transition-colors">
+                                Ask
+                              </button>
+                            </form>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Market Intelligence */}
                       {md?.loading && (
@@ -924,6 +1115,100 @@ export default function MyFarmPage() {
           </div>
         )}
       </main>
+
+      {/* ─── Harvest Modal ─── */}
+      {harvestModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setHarvestModal(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-1">🏁 Record Harvest</h3>
+            <p className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)] mb-5">{harvestModal.cropName}{harvestModal.variety ? ` (${harvestModal.variety})` : ""} • {harvestModal.location}</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-1">Harvest Date *</label>
+                <input type="date" value={harvestForm.harvestDate} onChange={e => setHarvestForm(f => ({ ...f, harvestDate: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f] outline-none font-[family-name:var(--font-body)]" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-1">Actual Yield *</label>
+                <div className="flex gap-2">
+                  <input type="number" placeholder="e.g., 500" value={harvestForm.harvestYield} onChange={e => setHarvestForm(f => ({ ...f, harvestYield: e.target.value }))}
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f] outline-none font-[family-name:var(--font-body)]" />
+                  <select value={harvestForm.yieldUnit} onChange={e => setHarvestForm(f => ({ ...f, yieldUnit: e.target.value }))}
+                    className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f] outline-none font-[family-name:var(--font-body)]">
+                    <option value="kg">kg</option>
+                    <option value="tonnes">tonnes</option>
+                    <option value="bags">bags (100kg)</option>
+                  </select>
+                </div>
+                {harvestModal.expectedYieldLow > 0 && (
+                  <p className="text-[10px] text-[#6b7c6b] mt-1 font-[family-name:var(--font-body)]">
+                    Expected yield was {harvestModal.expectedYieldLow?.toLocaleString()}–{harvestModal.expectedYieldHigh?.toLocaleString()} kg
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setHarvestModal(null)}
+                className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-lg text-[#6b7c6b] hover:bg-gray-50 font-[family-name:var(--font-body)] transition-colors">Cancel</button>
+              <button onClick={submitHarvest}
+                className="flex-1 px-4 py-2.5 text-sm bg-[#2d6a4f] hover:bg-[#1b4332] text-white rounded-lg font-[family-name:var(--font-body)] font-semibold transition-colors">Save Harvest</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating AI Chat Widget */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        {chatOpen && (
+          <div className="w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-[#e5e7eb] flex flex-col overflow-hidden" style={{ maxHeight: "70vh" }}>
+            <div className="bg-[#1b4332] px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🧠</span>
+                <span className="text-sm font-bold text-white font-[family-name:var(--font-body)]">Farm AI Assistant</span>
+              </div>
+              <button onClick={() => setChatOpen(false)} className="text-white/70 hover:text-white text-lg">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f7faf6]" style={{ minHeight: 200, maxHeight: "50vh" }}>
+              {chatMessages.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="text-3xl mb-2">🌱</div>
+                  <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Ask me anything about your crops, weather, planting tips, or market prices!</p>
+                </div>
+              )}
+              {chatMessages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed font-[family-name:var(--font-body)] whitespace-pre-wrap ${m.role === "user" ? "bg-[#2d6a4f] text-white" : "bg-white border border-[#e5e7eb] text-[#1a2e1a]"}`}>
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-[#e5e7eb] rounded-xl px-3 py-2 flex items-center gap-2">
+                    <div className="w-3 h-3 border-2 border-[#2d6a4f] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Thinking...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            <form onSubmit={e => { e.preventDefault(); sendChat(); }} className="border-t border-[#e5e7eb] px-3 py-2 flex gap-2 bg-white">
+              <input ref={chatInputRef} type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
+                placeholder="Ask about your farm..." disabled={chatLoading}
+                className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f] outline-none font-[family-name:var(--font-body)]" />
+              <button type="submit" disabled={chatLoading || !chatInput.trim()}
+                className="px-3 py-2 bg-[#2d6a4f] hover:bg-[#1b4332] disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition-colors">Send</button>
+            </form>
+          </div>
+        )}
+        <button onClick={() => setChatOpen(o => !o)}
+          className="w-14 h-14 rounded-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white shadow-lg flex flex-col items-center justify-center transition-all hover:scale-105">
+          <span className="text-xl leading-none">🧠</span>
+          <span className="text-[8px] font-bold font-[family-name:var(--font-body)] leading-none mt-0.5">AI</span>
+        </button>
+      </div>
     </div>
   );
 }
