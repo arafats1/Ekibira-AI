@@ -11,6 +11,13 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
+      return;
+    }
+    if (!loading && user) {
+      const t = user.accountType;
+      if (t === "farmer") { router.replace("/dashboard/farmer"); return; }
+      if (t === "insurance") { router.replace("/dashboard/insurance"); return; }
+      if (t === "eu_compliance") { router.replace("/dashboard/eu-compliance"); return; }
     }
   }, [user, loading, router]);
 
@@ -28,6 +35,18 @@ export default function DashboardPage() {
   if (!user) return null;
 
   const isAdmin = user.role === "admin";
+  const accountType = user.accountType || "general";
+
+  const getRoleDashboard = () => {
+    switch (accountType) {
+      case "farmer": return { href: "/dashboard/farmer", label: "Farmer Dashboard", icon: "🌾", color: "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100" };
+      case "insurance": return { href: "/dashboard/insurance", label: "Insurance Dashboard", icon: "🛡️", color: "bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100" };
+      case "eu_compliance": return { href: "/dashboard/eu-compliance", label: "EU Compliance Dashboard", icon: "🇪🇺", color: "bg-indigo-50 border-indigo-200 text-indigo-800 hover:bg-indigo-100" };
+      default: return null;
+    }
+  };
+
+  const roleDash = getRoleDashboard();
 
   const systems = [
     {
@@ -125,6 +144,15 @@ export default function DashboardPage() {
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><circle cx="12" cy="12" r="3" /></svg>
               Admin Dashboard — Manage users, chats & knowledge base
+            </Link>
+          )}
+          {roleDash && (
+            <Link
+              href={roleDash.href}
+              className={`inline-flex items-center gap-2 mt-3 ml-0 sm:ml-3 px-4 py-2 rounded-xl border text-sm font-semibold transition-colors font-[family-name:var(--font-body)] ${roleDash.color}`}
+            >
+              <span>{roleDash.icon}</span>
+              Go to {roleDash.label} →
             </Link>
           )}
         </div>

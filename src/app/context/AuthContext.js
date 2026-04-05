@@ -25,7 +25,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const register = useCallback(async ({ username, email, password, fullName, phone, company, position }) => {
+  const register = useCallback(async ({ username, email, password, fullName, phone, company, position, accountType }) => {
     // Step 1: Register with Strapi users-permissions
     const res = await fetch(`${STRAPI_URL}/api/auth/local/register`, {
       method: "POST",
@@ -52,6 +52,7 @@ export function AuthProvider({ children }) {
           phone,
           company,
           position,
+          accountType: accountType || "general",
           user: data.user.id,
         },
       }),
@@ -66,6 +67,7 @@ export function AuthProvider({ children }) {
       phone,
       company,
       position,
+      accountType: profileData?.data?.accountType || accountType || "general",
       role: profileData?.data?.role || "user",
       profileId: profileData?.data?.id || null,
     };
@@ -112,6 +114,7 @@ export function AuthProvider({ children }) {
       phone: profile?.phone || "",
       company: profile?.company || "",
       position: profile?.position || "",
+      accountType: profile?.accountType || "general",
       role: profile?.role || "user",
       profileId: profile?.id || null,
     };

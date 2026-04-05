@@ -1,0 +1,129 @@
+import Link from "next/link";
+
+export default function WhoBenefits() {
+  const activeRoles = [
+    {
+      id: "farmer",
+      icon: "🌾",
+      title: "Farmers & Agribusiness",
+      desc: "Flood/heat risk predictions for crop planning, seasonal weather forecasts, agroforestry guidance, climate-smart agriculture strategies, and carbon credit opportunities.",
+      color: "from-amber-500 to-amber-600",
+      borderColor: "border-amber-200 hover:border-amber-400",
+      href: "/signup?type=farmer",
+      cta: "Get Started Free",
+    },
+    {
+      id: "insurance",
+      icon: "🛡️",
+      title: "Insurance Companies",
+      desc: "Climate risk underwriting data, flood/heat risk scoring per location, loss prediction modeling, premium multiplier recommendations, and portfolio risk analytics.",
+      color: "from-blue-500 to-blue-600",
+      borderColor: "border-blue-200 hover:border-blue-400",
+      href: "/signup?type=insurance",
+      cta: "Access Risk Data",
+    },
+    {
+      id: "eu_compliance",
+      icon: "🇪🇺",
+      title: "EU Compliance & Trade",
+      desc: "EUDR deforestation-free supply chain verification, satellite area overviews, compliance report generation, and commodity risk assessments for EU market access.",
+      color: "from-indigo-500 to-indigo-600",
+      borderColor: "border-indigo-200 hover:border-indigo-400",
+      href: "/signup?type=eu_compliance",
+      cta: "Verify Compliance",
+    },
+  ];
+
+  const comingSoon = [
+    {
+      icon: "🏗️",
+      title: "Real Estate & Property Developers",
+      desc: "Flood risk and heat island data for site selection, environmental compliance, and climate-resilient building planning.",
+    },
+    {
+      icon: "🌍",
+      title: "Conservation Organisations",
+      desc: "Deforestation monitoring dashboards, reforestation project tracking, impact reporting, and illegal logging alerts.",
+    },
+    {
+      icon: "🏦",
+      title: "Banks & Financial Institutions",
+      desc: "Climate risk assessment for green lending, ESG compliance data, and environmental due diligence on loans.",
+    },
+  ];
+
+  return (
+    <section id="who-benefits" className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 bg-gradient-to-b from-white via-[#f7faf6] to-white overflow-hidden">
+      <div className="absolute top-20 right-0 w-72 h-72 bg-[#4ade80]/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-20 left-0 w-72 h-72 bg-[#d4a843]/5 rounded-full blur-3xl" />
+
+      <div className="max-w-6xl mx-auto relative z-10">
+        {/* Header */}
+        <div className="text-center mb-10 sm:mb-16">
+          <span className="inline-block text-[#2d6a4f] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">
+            Who Benefits
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#1a2e1a] leading-tight mb-4 sm:mb-6">
+            Built for <span className="gradient-text">Every Sector</span>
+          </h2>
+          <p className="text-[#6b7c6b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
+            KibiraAI provides customized climate intelligence dashboards tailored to your industry and workflow.
+          </p>
+        </div>
+
+        {/* Active Roles */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16">
+          {activeRoles.map((role) => (
+            <div
+              key={role.id}
+              className={`bg-white rounded-2xl border-2 ${role.borderColor} p-6 sm:p-8 transition-all hover:shadow-xl hover:shadow-black/5 group`}
+              style={{ boxShadow: "var(--card-shadow)" }}
+            >
+              <div className="text-4xl mb-4">{role.icon}</div>
+              <h3 className="text-lg sm:text-xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-3">
+                {role.title}
+              </h3>
+              <p className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)] leading-relaxed mb-6">
+                {role.desc}
+              </p>
+              <Link
+                href={role.href}
+                className={`inline-block w-full text-center py-3 rounded-xl bg-gradient-to-r ${role.color} text-white font-semibold text-sm transition-all hover:scale-[1.02] hover:shadow-lg font-[family-name:var(--font-body)]`}
+              >
+                {role.cta} →
+              </Link>
+            </div>
+          ))}
+        </div>
+
+        {/* Coming Soon */}
+        <div className="text-center mb-8">
+          <span className="inline-flex items-center gap-2 bg-[#fef3c7] border border-[#fde68a] text-[#92400e] text-xs sm:text-sm font-semibold px-4 py-2 rounded-full font-[family-name:var(--font-body)]">
+            <span className="w-2 h-2 bg-[#f59e0b] rounded-full animate-pulse" />
+            Coming Soon
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+          {comingSoon.map((item, i) => (
+            <div
+              key={i}
+              className="bg-white/60 backdrop-blur-sm rounded-2xl border-2 border-dashed border-[#d1d5db] p-6 sm:p-8 opacity-75 hover:opacity-100 transition-opacity"
+            >
+              <div className="text-3xl mb-3 grayscale">{item.icon}</div>
+              <h3 className="text-base sm:text-lg font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-2">
+                {item.title}
+              </h3>
+              <p className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)] leading-relaxed mb-4">
+                {item.desc}
+              </p>
+              <span className="inline-block text-xs bg-gray-100 text-[#6b7c6b] px-3 py-1.5 rounded-full font-[family-name:var(--font-body)] font-semibold">
+                🔜 Coming Q3 2026
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

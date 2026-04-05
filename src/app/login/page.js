@@ -8,10 +8,19 @@ function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/dashboard";
+  const redirect = searchParams.get("redirect");
   const [form, setForm] = useState({ identifier: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const getDashboardRoute = (type) => {
+    switch (type) {
+      case "farmer": return "/dashboard/farmer";
+      case "insurance": return "/dashboard/insurance";
+      case "eu_compliance": return "/dashboard/eu-compliance";
+      default: return "/dashboard";
+    }
+  };
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -29,8 +38,9 @@ function LoginForm() {
 
     setLoading(true);
     try {
-      await login({ identifier: form.identifier, password: form.password });
-      router.push(redirect);
+      const userData = await login({ identifier: form.identifier, password: form.password });
+      const dest = redirect || getDashboardRoute(userData.accountType);
+      router.push(dest);
     } catch (err) {
       setError(err.message || "Login failed. Please check your credentials.");
     } finally {
