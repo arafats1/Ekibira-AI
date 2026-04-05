@@ -7,7 +7,7 @@ import Link from "next/link";
 const SEASON_ICONS = { "Dry": "☀️", "Rainy": "🌧️", "Long Rains": "🌧️", "Short Rains": "🌦️", "Short Dry": "🔧", "Wet": "🌧️", "Planting": "🌱", "Harvest": "🌾", "Preparation": "🔧" };
 
 export default function FarmerDashboard() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, getToken } = useAuth();
   const router = useRouter();
   const [analysis, setAnalysis] = useState(null);
   const [selectedArea, setSelectedArea] = useState("");
@@ -18,6 +18,44 @@ export default function FarmerDashboard() {
   useEffect(() => {
     if (!loading && !user) router.push("/login");
   }, [user, loading, router]);
+
+  // Load saved location on mount
+  useEffect(() => {
+    if (!loading && user) {
+      const saved = user.location;
+      if (saved) {
+        setAreaInput(saved);
+        setSelectedArea(saved);
+        fetchFarmerData(saved);
+      }
+    }
+  }, [loading, user]);
+
+  // Save location to Strapi profile
+  const saveLocation = async (area) => {
+    try {
+      const token = getToken();
+      if (!token || !user?.profileId) return;
+      const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+      // Fetch documentId for the profile
+      const profileRes = await fetch(
+        `${STRAPI_URL}/api/kibira-users?filters[user][$eq]=${user.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const profileData = await profileRes.json();
+      const docId = profileData?.data?.[0]?.documentId;
+      if (!docId) return;
+      await fetch(`${STRAPI_URL}/api/kibira-users/${docId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ data: { location: area } }),
+      });
+      // Update localStorage so it persists across refreshes
+      const stored = JSON.parse(localStorage.getItem("kibira_user") || "{}");
+      stored.location = area;
+      localStorage.setItem("kibira_user", JSON.stringify(stored));
+    } catch { /* silently fail */ }
+  };
 
   const fetchFarmerData = async (area) => {
     setLoadingData(true);
@@ -47,6 +85,7 @@ export default function FarmerDashboard() {
     if (areaInput.trim()) {
       setSelectedArea(areaInput.trim());
       fetchFarmerData(areaInput.trim());
+      saveLocation(areaInput.trim());
     }
   };
 

@@ -2,6 +2,77 @@ import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// ─── Weather API helpers (same as farmer-analysis) ───
+async function geocode(location) {
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    if (data?.results?.[0]) {
+      return { lat: data.results[0].latitude, lng: data.results[0].longitude, name: data.results[0].name };
+    }
+    return null;
+  } catch { return null; }
+}
+
+async function fetchWeatherData(lat, lng) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+      `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,relative_humidity_2m_max,et0_fao_evapotranspiration` +
+      `&current=temperature_2m,relative_humidity_2m` +
+      `&timezone=auto&forecast_days=7`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
+function mapWeatherCode(code) {
+  if (code <= 1) return "Sunny";
+  if (code === 2) return "Partly Cloudy";
+  if (code === 3) return "Overcast";
+  if (code >= 45 && code <= 48) return "Foggy";
+  if (code >= 51 && code <= 57) return "Drizzle";
+  if (code >= 61 && code <= 63) return "Light Rain";
+  if (code >= 64 && code <= 67) return "Heavy Rain";
+  if (code >= 80 && code <= 81) return "Showers";
+  if (code === 82) return "Heavy Rain";
+  if (code >= 95) return "Thunderstorm";
+  return "Partly Cloudy";
+}
+
+function formatWeatherContext(weather, locationName) {
+  if (!weather?.daily?.time) return null;
+  const d = weather.daily;
+  const lines = d.time.map((date, i) => {
+    const cond = mapWeatherCode(d.weather_code?.[i] || 0);
+    return `${date}: ${cond}, ${Math.round(d.temperature_2m_max?.[i] || 0)}/${Math.round(d.temperature_2m_min?.[i] || 0)}°C, ${Math.round(d.precipitation_sum?.[i] || 0)}mm rain, ET0 ${(d.et0_fao_evapotranspiration?.[i] || 0).toFixed(1)}mm`;
+  });
+  const currentTemp = weather.current?.temperature_2m || "?";
+  const humidity = weather.current?.relative_humidity_2m || "?";
+  return `\n\n## REAL-TIME WEATHER DATA for ${locationName} (from Open-Meteo API — use this for weather questions)\nCURRENT: ${currentTemp}°C, ${humidity}% humidity\n7-DAY FORECAST:\n${lines.join("\n")}`;
+}
+
+// Detect if user is asking about weather for a location
+function detectWeatherQuery(message) {
+  const weatherTerms = /\b(weather|forecast|rain|rainfall|temperature|temp|humid|drought|flood|storm|climate forecast|heat|cold|dry season|rainy season|precipitation)\b/i;
+  if (!weatherTerms.test(message)) return null;
+  // Try to extract a location from the message
+  const locPatterns = [
+    /(?:weather|forecast|rain|temperature|climate)\s+(?:in|for|at|of|around)\s+([A-Z][a-zA-Z\s,]+)/i,
+    /(?:in|for|at|around)\s+([A-Z][a-zA-Z\s,]+?)(?:\s+(?:weather|forecast|rain|temperature|today|tomorrow|this week|next week))/i,
+    /([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\s+(?:weather|forecast|rain|temperature)/i,
+  ];
+  for (const pat of locPatterns) {
+    const m = message.match(pat);
+    if (m?.[1]) return m[1].trim().replace(/[.,!?]+$/, "");
+  }
+  // Fallback: look for capitalized multi-word names
+  const capMatch = message.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/);
+  if (capMatch?.[1] && capMatch[1].length > 2) return capMatch[1];
+  return null;
+}
+
 const SYSTEM_PROMPT = `You are Dr. Kibira — a warm, experienced African climate researcher and environmental scientist. You've spent 20+ years studying Africa's forests, climate systems, and sustainable land use. You speak like a knowledgeable colleague over coffee — approachable, passionate, and deeply informed. 
 
 ## STRICT TOPIC BOUNDARY (CRITICAL — ALWAYS ENFORCE)
@@ -232,6 +303,20 @@ export async function POST(request) {
     let systemContent = SYSTEM_PROMPT;
     if (knowledgeBase) {
       systemContent += `\n\n## Additional Knowledge Base (from admin-uploaded documents)\nUse the following verified information when relevant to the user's question. Cite these as "KibiraAI Knowledge Base" in your references:\n\n${knowledgeBase}`;
+    }
+
+    // Detect weather queries and fetch real-time data
+    const weatherLocation = detectWeatherQuery(message);
+    if (weatherLocation) {
+      const geo = await geocode(weatherLocation);
+      if (geo) {
+        const weather = await fetchWeatherData(geo.lat, geo.lng);
+        const weatherCtx = formatWeatherContext(weather, geo.name || weatherLocation);
+        if (weatherCtx) {
+          systemContent += weatherCtx;
+          systemContent += `\n\nIMPORTANT: The user is asking about weather. Use the REAL-TIME WEATHER DATA above to answer. Present the forecast clearly with dates, temperatures, conditions, and rainfall amounts. This is live data from Open-Meteo API — reference it as your source.`;
+        }
+      }
     }
 
     const messages = [

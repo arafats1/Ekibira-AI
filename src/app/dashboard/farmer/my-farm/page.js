@@ -722,6 +722,22 @@ export default function MyFarmPage() {
                       🌤️ Week Outlook — {plan.location}
                     </h3>
                     <p className="text-sm text-white/90 font-[family-name:var(--font-body)] leading-relaxed">{plan.weekOutlook}</p>
+
+                    {/* 7-Day Forecast Cards */}
+                    {plan.forecast && plan.forecast.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-4">
+                        {plan.forecast.map((day, i) => (
+                          <div key={i} className="bg-white/10 rounded-xl p-3 text-center border border-white/20">
+                            <p className="text-xs font-semibold text-white font-[family-name:var(--font-body)]">{day.date}</p>
+                            <p className="text-xl my-1">{day.condition === "Sunny" ? "☀️" : day.condition === "Heavy Rain" ? "🌧️" : day.condition === "Light Rain" || day.condition === "Showers" ? "🌦️" : day.condition === "Thunderstorm" ? "⛈️" : day.condition === "Drizzle" ? "🌧️" : "☁️"}</p>
+                            <p className="text-[10px] text-white/70 font-[family-name:var(--font-body)]">{day.condition}</p>
+                            <p className="text-sm font-bold text-white font-[family-name:var(--font-body)] mt-1">{day.tempHigh}° / {day.tempLow}°</p>
+                            <p className="text-[10px] text-blue-300 font-[family-name:var(--font-body)]">{day.rainfall}mm rain</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <p className="text-[10px] text-white/50 mt-3 font-[family-name:var(--font-body)]">Generated {new Date(plan.generatedAt).toLocaleString()}</p>
                   </div>
                 )}

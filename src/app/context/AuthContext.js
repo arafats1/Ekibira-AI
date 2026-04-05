@@ -68,6 +68,7 @@ export function AuthProvider({ children }) {
       company,
       position,
       accountType: profileData?.data?.accountType || accountType || "general",
+      location: profileData?.data?.location || "",
       role: profileData?.data?.role || "user",
       profileId: profileData?.data?.id || null,
     };
@@ -141,6 +142,7 @@ export function AuthProvider({ children }) {
       company: profile?.company || "",
       position: profile?.position || "",
       accountType,
+      location: profile?.location || "",
       role: profile?.role || "user",
       profileId: profile?.id || null,
     };

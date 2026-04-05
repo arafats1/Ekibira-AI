@@ -94,7 +94,7 @@ Respond with ONLY valid JSON:
       "daysToNextStage": 0,
       "nextStage": "Next growth stage",
       "estimatedHarvestDate": "YYYY-MM-DD",
-      "healthScore": 85,
+      "healthScore": "<integer 0-100, calculated individually per crop>",
       "healthNotes": "Assessment based on weather conditions",
       "waterNeed": "high|medium|low",
       "waterAdvice": "Specific irrigation advice based on real soil moisture and ET0 data"
@@ -116,6 +116,7 @@ RULES:
 - dailyActions: 3-6 actions, ordered by priority. Must reference real weather conditions.
 - cropStatus: One entry per crop. Calculate growth stage from planting date to today.
 - cropStatus variety: If the farmer did not specify a variety, use empty string "". NEVER write "Unknown" or "N/A".
+- healthScore: MUST be calculated INDIVIDUALLY for each crop. Consider these factors: (1) current weather vs crop ideal conditions, (2) soil moisture levels, (3) days since planting vs expected growth timeline, (4) upcoming weather risks (heavy rain, drought, extreme heat), (5) ET0 vs crop water needs. Each crop MUST have a DIFFERENT score unless conditions truly justify the same value. Do NOT default to 85 or any fixed number.
 - GROWTH-STAGE AWARENESS: Tailor ALL advice to the actual growth stage. During germination (days 0-7), focus on soil moisture for seed emergence — do NOT warn about foliar diseases, pest sprays, or fertilizer top-dressing since there are no leaves yet. During vegetative phase, focus on weeding, nitrogen needs, and leaf pests. During flowering/fruiting, focus on phosphorus/potassium, pollination, and fruit pests.
 - riskAlerts: Only include REAL risks based on actual forecast data AND the current growth stage. If no rain is coming, do NOT warn about waterlogging. If temps are moderate, do NOT warn about heat stress. If crops are in germination, do NOT warn about foliar fungal diseases (late blight, rust, etc.) since no foliage exists yet.
 - Use actual crop growth timelines (e.g., maize: 90-120 days, beans: 60-90 days, cassava: 9-18 months)
