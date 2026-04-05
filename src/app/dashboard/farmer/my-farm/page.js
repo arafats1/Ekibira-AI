@@ -851,6 +851,9 @@ export default function MyFarmPage() {
                                   <span className="text-[#6b7c6b]">Est. harvest: <span className="font-medium text-[#1a2e1a]">{daysToHarvest} days</span> ({fmtDate(cs.estimatedHarvestDate)})</span>
                                 </div>
                               )}
+                              {cs.healthReason && (
+                                <p className="text-[11px] text-[#6b7c6b] font-[family-name:var(--font-body)] italic">{cs.healthReason}</p>
+                              )}
                               {cs.healthNotes && (
                                 <p className="text-[11px] text-[#6b7c6b] font-[family-name:var(--font-body)]">{cs.healthNotes}</p>
                               )}

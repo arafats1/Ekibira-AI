@@ -94,7 +94,8 @@ Respond with ONLY valid JSON:
       "daysToNextStage": 0,
       "nextStage": "Next growth stage",
       "estimatedHarvestDate": "DD-MM-YYYY",
-      "healthScore": "<integer 0-100, calculated individually per crop>",
+      "healthScore": 0,
+      "healthReason": "2-3 sentence explanation of WHY this specific score was given, referencing actual weather data and crop conditions",
       "healthNotes": "Assessment based on weather conditions",
       "waterNeed": "high|medium|low",
       "waterAdvice": "Specific irrigation advice based on real soil moisture and ET0 data"
@@ -116,7 +117,19 @@ RULES:
 - dailyActions: 3-6 actions, ordered by priority. Must reference real weather conditions.
 - cropStatus: One entry per crop. Calculate growth stage from planting date to today.
 - cropStatus variety: If the farmer did not specify a variety, use empty string "". NEVER write "Unknown" or "N/A".
-- healthScore: MUST be calculated INDIVIDUALLY for each crop. Consider these factors: (1) current weather vs crop ideal conditions, (2) soil moisture levels, (3) days since planting vs expected growth timeline, (4) upcoming weather risks (heavy rain, drought, extreme heat), (5) ET0 vs crop water needs. Each crop MUST have a DIFFERENT score unless conditions truly justify the same value. Do NOT default to 85 or any fixed number.
+- healthScore: CRITICAL — this is the MOST IMPORTANT field. You MUST calculate a UNIQUE, justified score (0-100) for EACH crop. The score MUST reflect REAL conditions:
+  * 90-100: Perfect conditions — ideal temps, good soil moisture, no weather risks
+  * 70-89: Good but with minor concerns — slight temp deviation, some rain risk
+  * 50-69: Moderate stress — drought, excessive rain, suboptimal temps for this crop
+  * 30-49: Significant stress — extreme weather, disease risk, poor soil conditions
+  * 0-29: Critical — crop may fail without intervention
+  SCORING FORMULA: Start at 100, then SUBTRACT points for each real problem:
+  -5 to -15 for each weather risk (heavy rain during germination, heat stress, etc.)
+  -5 to -10 if soil moisture is too high or too low for the growth stage
+  -5 to -10 if temperature is outside the crop's ideal range
+  -5 for each upcoming severe weather event in the 7-day forecast
+  NEVER give 85 to all crops. NEVER give the same score to multiple crops unless you explicitly justify why in healthReason. If you have 3 crops, I expect 3 DIFFERENT scores (e.g., 72, 88, 61).
+- healthReason: MANDATORY — explain the score calculation: "Score: 72/100. Started at 100, -10 for heavy rain forecast during germination (21mm on Wed), -8 for soil moisture at 42% (ideal for maize germination is 50-70%), -10 for thunderstorm risk on Friday." This field MUST reference specific weather data numbers.
 - GROWTH-STAGE AWARENESS: Tailor ALL advice to the actual growth stage. During germination (days 0-7), focus on soil moisture for seed emergence — do NOT warn about foliar diseases, pest sprays, or fertilizer top-dressing since there are no leaves yet. During vegetative phase, focus on weeding, nitrogen needs, and leaf pests. During flowering/fruiting, focus on phosphorus/potassium, pollination, and fruit pests.
 - riskAlerts: Only include REAL risks based on actual forecast data AND the current growth stage. If no rain is coming, do NOT warn about waterlogging. If temps are moderate, do NOT warn about heat stress. If crops are in germination, do NOT warn about foliar fungal diseases (late blight, rust, etc.) since no foliage exists yet.
 - Use actual crop growth timelines (e.g., maize: 90-120 days, beans: 60-90 days, cassava: 9-18 months)
