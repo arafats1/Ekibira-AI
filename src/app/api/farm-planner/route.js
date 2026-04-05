@@ -88,7 +88,7 @@ Respond with ONLY valid JSON:
   "cropStatus": [
     {
       "cropName": "Crop name",
-      "variety": "Variety if known",
+      "variety": "Variety if farmer specified, otherwise empty string",
       "daysSincePlanting": 0,
       "growthStage": "e.g., Germination, Vegetative, Flowering, Fruiting, Maturity",
       "daysToNextStage": 0,
@@ -97,7 +97,12 @@ Respond with ONLY valid JSON:
       "healthScore": 85,
       "healthNotes": "Assessment based on weather conditions",
       "waterNeed": "high|medium|low",
-      "waterAdvice": "Specific irrigation advice based on real soil moisture and ET0 data"
+      "waterAdvice": "Specific irrigation advice based on real soil moisture and ET0 data",
+      "expectedYieldKg": {
+        "low": 0,
+        "high": 0,
+        "basis": "Brief explanation of yield estimate (farm size, spacing, seed qty, avg for this crop/region)"
+      }
     }
   ],
   "riskAlerts": [
@@ -115,10 +120,16 @@ Respond with ONLY valid JSON:
 RULES:
 - dailyActions: 3-6 actions, ordered by priority. Must reference real weather conditions.
 - cropStatus: One entry per crop. Calculate growth stage from planting date to today.
-- riskAlerts: Only include REAL risks based on actual forecast data. If no rain is coming, do NOT warn about waterlogging. If temps are moderate, do NOT warn about heat stress.
+- cropStatus variety: If the farmer did not specify a variety, use empty string "". NEVER write "Unknown" or "N/A".
+- GROWTH-STAGE AWARENESS: Tailor ALL advice to the actual growth stage. During germination (days 0-7), focus on soil moisture for seed emergence — do NOT warn about foliar diseases, pest sprays, or fertilizer top-dressing since there are no leaves yet. During vegetative phase, focus on weeding, nitrogen needs, and leaf pests. During flowering/fruiting, focus on phosphorus/potassium, pollination, and fruit pests.
+- riskAlerts: Only include REAL risks based on actual forecast data AND the current growth stage. If no rain is coming, do NOT warn about waterlogging. If temps are moderate, do NOT warn about heat stress. If crops are in germination, do NOT warn about foliar fungal diseases (late blight, rust, etc.) since no foliage exists yet.
 - Use actual crop growth timelines (e.g., maize: 90-120 days, beans: 60-90 days, cassava: 9-18 months)
 - Be specific about quantities: "apply 50kg/acre DAP", not just "fertilize"
-- Reference specific forecast days: "Rain expected Wednesday (15mm) — spray before Tuesday evening"`;
+- Reference specific forecast days: "Rain expected Wednesday (15mm) — spray before Tuesday evening"
+- IRRIGATION: When soil moisture is low (<30%) or high temperatures (>30°C) are forecast, recommend specific irrigation — liters per plant or mm per acre, best time (early morning or late evening). If rain is coming within 24-48h, advise skipping irrigation to save water.
+- PEST & DISEASE SPRAYING: Only recommend when crops have foliage (past germination). When humidity >80% with warm temps (>25°C), warn about fungal risk (late blight, rust, powdery mildew). Recommend specific sprays (e.g., "spray copper fungicide", "apply neem oil for aphids"). Always recommend spraying BEFORE rain, not after.
+- FERTILIZER: Recommend specific fertilizer types and quantities per growth stage (e.g., "Side-dress 50kg/acre Urea at knee-height for maize", "Apply 25kg/acre TSP at flowering for beans"). Warn about fertilizer burn risk in dry/hot conditions — advise watering before applying.
+- EXPECTED YIELD: For each crop, calculate expectedYieldKg.low and expectedYieldKg.high in kilograms based on: (1) farm size, (2) plant spacing used, (3) seed quantity planted, and (4) average yields for that crop in Uganda/East Africa. Use realistic smallholder yields, not commercial farm yields. For example: maize 800-1500 kg/acre, beans 400-800 kg/acre, cassava 5000-10000 kg/acre. Adjust based on the weather forecast and health conditions.`;
 }
 
 export async function POST(request) {
@@ -146,7 +157,7 @@ export async function POST(request) {
     const cropDetails = crops.slice(0, 10).map((c, i) => {
       const planted = new Date(c.plantingDate);
       const daysSince = Math.max(0, Math.floor((today - planted) / (1000 * 60 * 60 * 24)));
-      return `${i + 1}. ${c.cropName}${c.variety ? ` (${c.variety})` : ""} — planted ${c.plantingDate} (${daysSince} days ago), ${c.area || "?"} ${c.areaUnit || "acres"}, status: ${c.status || "growing"}${c.notes ? `, notes: ${c.notes}` : ""}`;
+      return `${i + 1}. ${c.cropName}${c.variety ? ` (${c.variety})` : ""} — planted ${c.plantingDate} (${daysSince} days ago), ${c.area || "?"} ${c.areaUnit || "acres"}${c.seedQuantity ? `, seed: ${c.seedQuantity} ${c.seedUnit || "kg"}` : ""}${c.spacing ? `, spacing: ${c.spacing}` : ""}, status: ${c.status || "growing"}${c.notes ? `, notes: ${c.notes}` : ""}`;
     }).join("\n");
 
     // Ask AI for personalized farm plan

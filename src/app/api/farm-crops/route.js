@@ -40,8 +40,8 @@ export async function GET(request) {
 
     const cropsData = await cropsRes.json();
     const crops = (cropsData.data || []).map((item) => ({
-      id: item.id,
       ...item,
+      id: item.documentId || item.id,
     }));
 
     return NextResponse.json({ crops });
@@ -66,7 +66,7 @@ export async function POST(request) {
     const me = await meRes.json();
 
     const body = await request.json();
-    const { cropName, variety, area, areaUnit, plantingDate, location, notes } = body;
+    const { cropName, variety, area, areaUnit, plantingDate, location, notes, seedQuantity, seedUnit, spacing } = body;
 
     if (!cropName || !plantingDate || !location) {
       return NextResponse.json(
@@ -81,9 +81,12 @@ export async function POST(request) {
       variety: variety ? String(variety).trim().slice(0, 100) : "",
       area: area ? parseFloat(area) || 0 : 0,
       areaUnit: ["acres", "hectares", "sqm"].includes(areaUnit) ? areaUnit : "acres",
-      plantingDate: String(plantingDate).slice(0, 10), // YYYY-MM-DD
+      plantingDate: String(plantingDate).slice(0, 10),
       location: String(location).trim().slice(0, 200),
       notes: notes ? String(notes).trim().slice(0, 500) : "",
+      seedQuantity: seedQuantity ? parseFloat(seedQuantity) || 0 : 0,
+      seedUnit: seedUnit ? String(seedUnit).trim().slice(0, 20) : "kg",
+      spacing: spacing ? String(spacing).trim().slice(0, 100) : "",
       userId: me.id,
       status: "growing",
     };
@@ -106,7 +109,7 @@ export async function POST(request) {
     }
 
     const created = await createRes.json();
-    return NextResponse.json({ crop: { id: created.data.id, ...created.data } });
+    return NextResponse.json({ crop: { ...created.data, id: created.data.documentId || created.data.id } });
   } catch (error) {
     console.error("Farm crops POST error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -134,14 +137,15 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Crop id is required" }, { status: 400 });
     }
 
-    // Verify ownership
+    // Verify ownership — Strapi v5 uses documentId in URLs
     const checkRes = await fetch(
       `${STRAPI_URL}/api/farm-crops/${id}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (!checkRes.ok) return NextResponse.json({ error: "Crop not found" }, { status: 404 });
     const existing = await checkRes.json();
-    if (existing.data?.userId !== me.id) {
+    const existingUserId = existing.data?.userId ?? existing.data?.attributes?.userId;
+    if (existingUserId !== me.id) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 
@@ -170,7 +174,7 @@ export async function PUT(request) {
     }
 
     const updated = await updateRes.json();
-    return NextResponse.json({ crop: { id: updated.data.id, ...updated.data } });
+    return NextResponse.json({ crop: { ...updated.data, id: updated.data.documentId || updated.data.id } });
   } catch (error) {
     console.error("Farm crops PUT error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -197,14 +201,15 @@ export async function DELETE(request) {
       return NextResponse.json({ error: "Crop id is required" }, { status: 400 });
     }
 
-    // Verify ownership
+    // Verify ownership — Strapi v5 uses documentId in URLs
     const checkRes = await fetch(
       `${STRAPI_URL}/api/farm-crops/${id}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (!checkRes.ok) return NextResponse.json({ error: "Crop not found" }, { status: 404 });
     const existing = await checkRes.json();
-    if (existing.data?.userId !== me.id) {
+    const existingUserId = existing.data?.userId ?? existing.data?.attributes?.userId;
+    if (existingUserId !== me.id) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 });
     }
 

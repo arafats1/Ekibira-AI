@@ -10,6 +10,29 @@ const COMMON_CROPS = [
   "Onions", "Cabbage", "Sunflower", "Sesame", "Cotton", "Wheat", "Peas",
 ];
 
+const SPACING_OPTIONS = {
+  Maize: ["75cm × 25cm (standard)", "90cm × 30cm (wide)"],
+  Beans: ["45cm × 10cm (bush)", "60cm × 20cm (climbing)"],
+  Cassava: ["100cm × 100cm (standard)", "120cm × 80cm (wide)"],
+  "Sweet Potatoes": ["90cm × 30cm (standard)", "100cm × 25cm (dense)"],
+  Rice: ["20cm × 20cm (transplant)", "25cm × 25cm (SRI method)"],
+  Sorghum: ["75cm × 15cm (standard)", "60cm × 20cm (dense)"],
+  Millet: ["45cm × 15cm (rows)", "30cm × 30cm (hills)"],
+  Groundnuts: ["45cm × 15cm (standard)", "30cm × 10cm (dense)"],
+  Soybeans: ["60cm × 5cm (drill)", "45cm × 10cm (rows)"],
+  Coffee: ["300cm × 300cm (standard)", "250cm × 250cm (intensive)"],
+  Bananas: ["300cm × 300cm (standard)", "400cm × 400cm (wide)"],
+  "Irish Potatoes": ["75cm × 30cm (standard)", "60cm × 25cm (dense)"],
+  Tomatoes: ["60cm × 45cm (staked)", "90cm × 60cm (ground)"],
+  Onions: ["30cm × 10cm (standard)", "20cm × 10cm (dense)"],
+  Cabbage: ["60cm × 45cm (standard)", "50cm × 40cm (dense)"],
+  Sunflower: ["75cm × 25cm (standard)", "60cm × 30cm (dense)"],
+  Sesame: ["45cm × 15cm (rows)", "60cm × 10cm (drill)"],
+  Cotton: ["90cm × 30cm (standard)", "75cm × 25cm (dense)"],
+  Wheat: ["25cm × broadcast (drill)", "20cm × broadcast (dense)"],
+  Peas: ["45cm × 10cm (bush)", "60cm × 15cm (climbing)"],
+};
+
 const PRIORITY_STYLES = {
   urgent: "bg-red-50 border-red-200 text-red-800",
   important: "bg-amber-50 border-amber-200 text-amber-800",
@@ -20,6 +43,13 @@ const SEVERITY_STYLES = {
   critical: "bg-red-100 border-red-300 text-red-900",
   warning: "bg-orange-100 border-orange-300 text-orange-900",
   info: "bg-blue-100 border-blue-300 text-blue-900",
+};
+
+// Format YYYY-MM-DD to dd-mm-yyyy
+const fmtDate = (d) => {
+  if (!d) return "—";
+  const parts = String(d).slice(0, 10).split("-");
+  return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : d;
 };
 
 export default function MyFarmPage() {
@@ -35,12 +65,41 @@ export default function MyFarmPage() {
   const [addingCrop, setAddingCrop] = useState(false);
   const [activeTab, setActiveTab] = useState("plan"); // plan | crops | harvest
   const [formError, setFormError] = useState(null);
+  const [doneActions, setDoneActions] = useState(new Set()); // track completed daily actions
+  const [marketData, setMarketData] = useState({}); // { cropId: { loading, prices, error } }
+
+  // Fetch market prices for a harvested crop
+  const fetchMarketPrice = async (crop) => {
+    if (marketData[crop.id]?.prices) return; // already loaded
+    setMarketData(prev => ({ ...prev, [crop.id]: { loading: true } }));
+    try {
+      const res = await fetch("/api/market-prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cropName: crop.cropName,
+          location: crop.location,
+          area: crop.area,
+          areaUnit: crop.areaUnit,
+          harvestDate: crop.harvestDate,
+        }),
+      });
+      const data = await res.json();
+      if (data.prices) {
+        setMarketData(prev => ({ ...prev, [crop.id]: { prices: data.prices } }));
+      } else {
+        setMarketData(prev => ({ ...prev, [crop.id]: { error: data.error || "Failed" } }));
+      }
+    } catch {
+      setMarketData(prev => ({ ...prev, [crop.id]: { error: "Network error" } }));
+    }
+  };
 
   // Add crop form
   const [cropForm, setCropForm] = useState({
     cropName: "", variety: "", area: "", areaUnit: "acres",
     plantingDate: new Date().toISOString().split("T")[0],
-    location: "", notes: "",
+    location: "", notes: "", seedQuantity: "", seedUnit: "kg", spacing: "",
   });
 
   // Auth guard
@@ -83,7 +142,10 @@ export default function MyFarmPage() {
         body: JSON.stringify({ crops: growingCrops, location }),
       });
       const data = await res.json();
-      if (data.plan) setPlan(data.plan);
+      if (data.plan) {
+        setPlan(data.plan);
+        setDoneActions(new Set());
+      }
     } catch { /* silently fail */ }
     setLoadingPlan(false);
   };
@@ -155,8 +217,12 @@ export default function MyFarmPage() {
       if (data.crop) {
         setCrops(prev => prev.map(c => c.id === id ? { ...c, ...data.crop } : c));
         setPlan(null); // Reset plan
+      } else {
+        alert(data.error || "Failed to update crop. Please try again.");
       }
-    } catch { /* silently fail */ }
+    } catch {
+      alert("Network error. Please try again.");
+    }
   };
 
   // Delete crop
@@ -172,8 +238,12 @@ export default function MyFarmPage() {
       if (data.success) {
         setCrops(prev => prev.filter(c => c.id !== id));
         setPlan(null);
+      } else {
+        alert(data.error || "Failed to delete crop. Please try again.");
       }
-    } catch { /* silently fail */ }
+    } catch {
+      alert("Network error. Please try again.");
+    }
   };
 
   if (loading || !user) {
@@ -328,6 +398,55 @@ export default function MyFarmPage() {
 
                 {/* Planting Date */}
                 <div>
+                  <label className="text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-1 block">Seed Quantity</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={cropForm.seedQuantity}
+                      onChange={e => setCropForm(f => ({ ...f, seedQuantity: e.target.value }))}
+                      placeholder="e.g., 10"
+                      className="w-full px-3 py-2 rounded-lg border border-[#d1d5db] focus:border-amber-500 outline-none text-sm font-[family-name:var(--font-body)]"
+                    />
+                    <select
+                      value={cropForm.seedUnit}
+                      onChange={e => setCropForm(f => ({ ...f, seedUnit: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border border-[#d1d5db] focus:border-amber-500 outline-none text-sm font-[family-name:var(--font-body)]"
+                    >
+                      <option value="kg">Kilograms (kg)</option>
+                      <option value="g">Grams (g)</option>
+                      <option value="pieces">Pieces/Seeds</option>
+                      <option value="bags">Bags</option>
+                      <option value="tins">Tins</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Plant Spacing */}
+                <div>
+                  <label className="text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-1 block">Plant Spacing</label>
+                  {(SPACING_OPTIONS[cropForm.cropName] || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {SPACING_OPTIONS[cropForm.cropName].map(s => (
+                        <button
+                          key={s} type="button"
+                          onClick={() => setCropForm(f => ({ ...f, spacing: s }))}
+                          className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all font-[family-name:var(--font-body)] ${cropForm.spacing === s ? 'bg-[#2d6a4f] text-white border-[#2d6a4f]' : 'bg-gray-50 text-[#6b7c6b] border-gray-200 hover:border-[#2d6a4f]'}`}
+                        >{s}</button>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    value={cropForm.spacing}
+                    onChange={e => setCropForm(f => ({ ...f, spacing: e.target.value }))}
+                    placeholder="e.g., 75cm × 25cm or type custom spacing..."
+                    className="w-full px-3 py-2 rounded-lg border border-[#d1d5db] focus:border-amber-500 outline-none text-sm font-[family-name:var(--font-body)]"
+                  />
+                </div>
+
+                {/* Planting Date */}
+                <div>
                   <label className="text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-1 block">Planting Date *</label>
                   <input
                     type="date"
@@ -464,22 +583,35 @@ export default function MyFarmPage() {
                   <div>
                     <h3 className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-3">📋 Today&apos;s Actions</h3>
                     <div className="space-y-2">
-                      {plan.dailyActions.map((action, i) => (
-                        <div key={i} className={`rounded-xl p-4 border ${PRIORITY_STYLES[action.priority] || PRIORITY_STYLES.routine}`}>
+                      {plan.dailyActions.map((action, i) => {
+                        const isDone = doneActions.has(i);
+                        return (
+                        <div key={i} className={`rounded-xl p-4 border transition-all cursor-pointer select-none ${isDone ? "bg-green-50 border-green-300" : (PRIORITY_STYLES[action.priority] || PRIORITY_STYLES.routine)}`}
+                          onClick={() => setDoneActions(prev => {
+                            const next = new Set(prev);
+                            if (next.has(i)) next.delete(i); else next.add(i);
+                            return next;
+                          })}
+                        >
                           <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/60 flex items-center justify-center text-xs font-bold">{i + 1}</div>
+                            <div
+                              className={`flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-all ${isDone ? "bg-green-500 border-green-500 text-white" : "bg-white border-gray-300 hover:border-amber-400 text-gray-500"}`}
+                            >
+                              {isDone ? "✓" : ""}
+                            </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[10px] uppercase font-bold font-[family-name:var(--font-body)] opacity-60">{action.priority}</span>
+                                <span className="text-[10px] uppercase font-bold font-[family-name:var(--font-body)] opacity-60">{isDone ? "done" : action.priority}</span>
                                 <span className="text-[10px] font-[family-name:var(--font-body)] opacity-60">•</span>
                                 <span className="text-[10px] font-[family-name:var(--font-body)] opacity-60">{action.crop}</span>
                               </div>
-                              <p className="text-sm font-semibold font-[family-name:var(--font-body)] mt-0.5">{action.action}</p>
-                              <p className="text-xs mt-1 font-[family-name:var(--font-body)] opacity-70">{action.reason}</p>
+                              <p className={`text-sm font-semibold font-[family-name:var(--font-body)] mt-0.5 ${isDone ? "line-through text-green-700" : ""}`}>{action.action}</p>
+                              <p className={`text-xs mt-1 font-[family-name:var(--font-body)] ${isDone ? "text-green-600" : "opacity-70"}`}>{action.reason}</p>
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -498,7 +630,7 @@ export default function MyFarmPage() {
                             <div className="flex items-center justify-between mb-3">
                               <div>
                                 <h4 className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
-                                  {cs.cropName}{cs.variety ? ` (${cs.variety})` : ""}
+                                  {cs.cropName}{cs.variety && cs.variety.toLowerCase() !== "unknown" ? ` (${cs.variety})` : ""}
                                 </h4>
                                 <p className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">Day {cs.daysSincePlanting}</p>
                               </div>
@@ -535,6 +667,17 @@ export default function MyFarmPage() {
                               )}
                               {cs.healthNotes && (
                                 <p className="text-[11px] text-[#6b7c6b] font-[family-name:var(--font-body)]">{cs.healthNotes}</p>
+                              )}
+                              {cs.expectedYieldKg && (
+                                <div className="mt-2 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100">
+                                  <div className="flex items-center gap-2 text-xs font-[family-name:var(--font-body)]">
+                                    <span>📦</span>
+                                    <span className="text-amber-800 font-semibold">Expected Yield: {cs.expectedYieldKg.low?.toLocaleString()} — {cs.expectedYieldKg.high?.toLocaleString()} kg</span>
+                                  </div>
+                                  {cs.expectedYieldKg.basis && (
+                                    <p className="text-[10px] text-amber-600 mt-0.5 font-[family-name:var(--font-body)]">{cs.expectedYieldKg.basis}</p>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -589,8 +732,10 @@ export default function MyFarmPage() {
                         </div>
                         <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
                           <span>📍 {crop.location}</span>
-                          <span>📅 Planted {crop.plantingDate} ({daysSince(crop.plantingDate)}d ago)</span>
+                          <span>📅 Planted {fmtDate(crop.plantingDate)} ({daysSince(crop.plantingDate)}d ago)</span>
                           {crop.area > 0 && <span>📐 {crop.area} {crop.areaUnit}</span>}
+                          {crop.seedQuantity > 0 && <span>🌰 {crop.seedQuantity} {crop.seedUnit}</span>}
+                          {crop.spacing && <span>↔️ {crop.spacing}</span>}
                         </div>
                         {crop.notes && <p className="text-xs text-[#6b7c6b] mt-2 font-[family-name:var(--font-body)] italic">{crop.notes}</p>}
                       </div>
@@ -623,47 +768,157 @@ export default function MyFarmPage() {
               <div className="bg-white rounded-2xl border border-[#e5e7eb] p-12 text-center">
                 <span className="text-5xl mb-4 block">📦</span>
                 <h3 className="text-lg font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-2">No harvests yet</h3>
-                <p className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)]">When you mark crops as harvested, they&apos;ll appear here for tracking.</p>
+                <p className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)]">When you mark crops as harvested, they&apos;ll appear here with market price intelligence.</p>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b border-[#e5e7eb]">
-                    <tr>
-                      <th className="text-left px-4 py-3 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] text-xs">Crop</th>
-                      <th className="text-left px-4 py-3 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] text-xs">Location</th>
-                      <th className="text-left px-4 py-3 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] text-xs">Planted</th>
-                      <th className="text-left px-4 py-3 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] text-xs">Harvested</th>
-                      <th className="text-left px-4 py-3 font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] text-xs">Duration</th>
-                      <th className="px-4 py-3"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {harvestedCrops.map(crop => {
-                      const duration = crop.harvestDate && crop.plantingDate
-                        ? Math.floor((new Date(crop.harvestDate) - new Date(crop.plantingDate)) / (1000 * 60 * 60 * 24))
-                        : "—";
-                      return (
-                        <tr key={crop.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                          <td className="px-4 py-3 font-[family-name:var(--font-body)]">
-                            <span className="font-medium text-[#1a2e1a]">{crop.cropName}</span>
-                            {crop.variety && <span className="text-[#6b7c6b] text-xs ml-1">({crop.variety})</span>}
-                          </td>
-                          <td className="px-4 py-3 text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">{crop.location}</td>
-                          <td className="px-4 py-3 text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">{crop.plantingDate}</td>
-                          <td className="px-4 py-3 text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">{crop.harvestDate || "—"}</td>
-                          <td className="px-4 py-3 text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)]">{duration !== "—" ? `${duration}d` : "—"}</td>
-                          <td className="px-4 py-3">
+              <div className="space-y-4">
+                {harvestedCrops.map(crop => {
+                  const duration = crop.harvestDate && crop.plantingDate
+                    ? Math.floor((new Date(crop.harvestDate) - new Date(crop.plantingDate)) / (1000 * 60 * 60 * 24))
+                    : null;
+                  const md = marketData[crop.id];
+                  return (
+                    <div key={crop.id} className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
+                      {/* Crop Header */}
+                      <div className="p-5 border-b border-[#e5e7eb]">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-base font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{crop.cropName}</h3>
+                              {crop.variety && <span className="text-[10px] bg-gray-100 text-[#6b7c6b] px-2 py-0.5 rounded-full font-[family-name:var(--font-body)]">{crop.variety}</span>}
+                              <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold">Harvested ✓</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
+                              <span>📍 {crop.location}</span>
+                              <span>📅 Planted {fmtDate(crop.plantingDate)}</span>
+                              <span>🏁 Harvested {fmtDate(crop.harvestDate)}</span>
+                              {duration != null && <span>⏱️ {duration} days</span>}
+                              {crop.area > 0 && <span>📐 {crop.area} {crop.areaUnit}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            {!md && (
+                              <button
+                                onClick={() => fetchMarketPrice(crop)}
+                                className="text-[11px] px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg font-[family-name:var(--font-body)] font-semibold transition-colors flex items-center gap-1.5"
+                              >💰 Get Market Prices</button>
+                            )}
                             <button
                               onClick={() => { if (confirm("Delete this harvest record?")) deleteCrop(crop.id); }}
-                              className="text-[11px] text-[#6b7c6b] hover:text-red-600 transition-colors"
+                              className="text-[11px] px-2 py-1.5 text-[#6b7c6b] hover:text-red-600 transition-colors"
                             >🗑️</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Market Intelligence */}
+                      {md?.loading && (
+                        <div className="p-6 flex items-center justify-center gap-3">
+                          <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)]">Fetching market intelligence for {crop.cropName}...</span>
+                        </div>
+                      )}
+                      {md?.error && (
+                        <div className="p-4 bg-red-50 text-xs text-red-600 font-[family-name:var(--font-body)] flex items-center justify-between">
+                          <span>⚠️ {md.error}</span>
+                          <button onClick={() => { setMarketData(prev => { const n = {...prev}; delete n[crop.id]; return n; }); fetchMarketPrice(crop); }} className="text-red-700 font-semibold hover:underline">Retry</button>
+                        </div>
+                      )}
+                      {md?.prices && (
+                        <div className="p-5 space-y-5">
+                          {/* Price + Strategy Row */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Current Price */}
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                              <h4 className="text-xs font-bold text-green-800 font-[family-name:var(--font-body)] mb-2 flex items-center gap-1.5">💰 Current Market Price</h4>
+                              <div className="flex items-baseline gap-2 mb-1">
+                                <span className="text-2xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{md.prices.currentPrice?.mid?.toLocaleString()}</span>
+                                <span className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">{md.prices.currentPrice?.unit}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs font-[family-name:var(--font-body)]">
+                                <span className="text-[#6b7c6b]">Range: {md.prices.currentPrice?.low?.toLocaleString()} — {md.prices.currentPrice?.high?.toLocaleString()}</span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${md.prices.currentPrice?.trend === "rising" ? "bg-green-100 text-green-700" : md.prices.currentPrice?.trend === "falling" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"}`}>
+                                  {md.prices.currentPrice?.trend === "rising" ? "↑" : md.prices.currentPrice?.trend === "falling" ? "↓" : "→"} {md.prices.currentPrice?.trend}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-green-700 mt-1.5 font-[family-name:var(--font-body)]">{md.prices.currentPrice?.trendReason}</p>
+                            </div>
+
+                            {/* Sell Strategy */}
+                            <div className={`rounded-xl p-4 border ${md.prices.sellStrategy?.recommendation === "sell_now" ? "bg-amber-50 border-amber-200" : md.prices.sellStrategy?.recommendation === "store_and_wait" ? "bg-blue-50 border-blue-200" : "bg-purple-50 border-purple-200"}`}>
+                              <h4 className="text-xs font-bold font-[family-name:var(--font-body)] mb-2 flex items-center gap-1.5">
+                                {md.prices.sellStrategy?.recommendation === "sell_now" ? "🔥 Sell Now" : md.prices.sellStrategy?.recommendation === "store_and_wait" ? "🏪 Store & Wait" : "⚙️ Process First"}
+                              </h4>
+                              <p className="text-xs font-[family-name:var(--font-body)] text-[#1a2e1a] leading-relaxed">{md.prices.sellStrategy?.reasoning}</p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <span className="text-[10px] bg-white/60 rounded-full px-2 py-0.5 font-[family-name:var(--font-body)]">⏰ {md.prices.sellStrategy?.optimalSellWindow}</span>
+                                {md.prices.sellStrategy?.estimatedRevenue && (
+                                  <span className="text-[10px] bg-white/60 rounded-full px-2 py-0.5 font-semibold font-[family-name:var(--font-body)]">
+                                    💵 Est: {md.prices.sellStrategy.estimatedRevenue.low?.toLocaleString()} — {md.prices.sellStrategy.estimatedRevenue.high?.toLocaleString()} {md.prices.sellStrategy.estimatedRevenue.currency}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Best Markets */}
+                          {md.prices.bestMarkets?.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-bold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-2">📍 Best Markets to Sell</h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {md.prices.bestMarkets.map((m, idx) => (
+                                  <div key={idx} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-bold text-[#1a2e1a] font-[family-name:var(--font-body)]">{m.name}</span>
+                                      <span className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">{m.distance}</span>
+                                    </div>
+                                    <p className="text-[11px] text-[#6b7c6b] font-[family-name:var(--font-body)]">{m.location} • {m.priceRange}</p>
+                                    <p className="text-[10px] text-amber-700 mt-1 font-[family-name:var(--font-body)]">💡 {m.tip}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Value Addition */}
+                          {md.prices.valueAddition?.length > 0 && (
+                            <div>
+                              <h4 className="text-xs font-bold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-2">⚡ Value Addition Options</h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {md.prices.valueAddition.map((v, idx) => (
+                                  <div key={idx} className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs font-bold text-purple-800 font-[family-name:var(--font-body)]">{v.method}</span>
+                                      <span className="text-[10px] bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded-full font-[family-name:var(--font-body)]">{v.effort}</span>
+                                    </div>
+                                    <p className="text-xs font-semibold text-green-700 font-[family-name:var(--font-body)]">{v.priceIncrease}</p>
+                                    <p className="text-[10px] text-[#6b7c6b] mt-1 font-[family-name:var(--font-body)]">{v.description}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Seasonal Insight + Buyer Tips */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {md.prices.seasonalInsight && (
+                              <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                                <h4 className="text-xs font-bold text-blue-800 font-[family-name:var(--font-body)] mb-1">📊 Seasonal Price Pattern</h4>
+                                <p className="text-[11px] text-blue-800 font-[family-name:var(--font-body)] leading-relaxed">{md.prices.seasonalInsight}</p>
+                              </div>
+                            )}
+                            {md.prices.buyerTips && (
+                              <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
+                                <h4 className="text-xs font-bold text-amber-800 font-[family-name:var(--font-body)] mb-1">🤝 Selling Tips</h4>
+                                <p className="text-[11px] text-amber-800 font-[family-name:var(--font-body)] leading-relaxed">{md.prices.buyerTips}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
