@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { checkUsageLimit, incrementUsage } from "../lib/usage";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -190,6 +191,27 @@ export async function POST(request) {
     const safeMessage = message.trim().slice(0, 2000);
     const token = getToken(request);
 
+    // Check usage limits
+    if (token) {
+      try {
+        const meRes = await fetch(`${STRAPI_URL}/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          const limit = await checkUsageLimit(me.id, "farmerChatCount", token);
+          if (!limit.allowed) {
+            return NextResponse.json({
+              error: "limit_reached",
+              reply: "🔒 You've used all 5 free Farm AI messages for today. Upgrade to the Annual Plan (80,000 UGX/year) for unlimited messages, or come back tomorrow!",
+              remaining: 0,
+              tier: limit.tier,
+            }, { status: 429 });
+          }
+        }
+      } catch {}
+    }
+
     // Fetch farmer's crops if token is available
     let farmerCrops = cropContext || [];
     if (token && !cropContext) {
@@ -363,6 +385,19 @@ YOUR ROLE:
     });
 
     const reply = completion.choices?.[0]?.message?.content || "";
+
+    // Increment usage counter
+    if (token) {
+      try {
+        const meRes = await fetch(`${STRAPI_URL}/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          await incrementUsage(me.id, "farmerChatCount", token);
+        }
+      } catch {}
+    }
 
     return NextResponse.json({ reply });
   } catch (error) {

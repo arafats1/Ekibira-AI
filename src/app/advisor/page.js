@@ -8,6 +8,7 @@ import {
   Legend, ResponsiveContainer,
 } from "recharts";
 import { useAuth } from "../context/AuthContext";
+import PaymentModal from "../components/PaymentModal";
 
 /* ── Default chart palette ── */
 const DEFAULT_COLORS = ["#2d6a4f", "#4ade80", "#d97706", "#dc2626", "#2563eb", "#8b5cf6", "#06b6d4", "#f59e0b"];
@@ -390,7 +391,8 @@ function AdvisorPageContent() {
   const inputRef = useRef(null);
   const hydrated = useRef(false);
   const sessionIdRef = useRef("");
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
+  const [paymentModal, setPaymentModal] = useState(false);
   const searchParams = useSearchParams();
 
   // Auto-send query from URL ?q= param
@@ -425,6 +427,7 @@ function AdvisorPageContent() {
             setMessages((prev) => [...prev, { role: "assistant", content: data.error || "Something went wrong." }]);
           } else {
             setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+            if (data.limited) setTimeout(() => setPaymentModal(true), 1500);
           }
         } catch {
           setMessages((prev) => [...prev, { role: "assistant", content: "Network error. Please check your connection." }]);
@@ -505,6 +508,7 @@ function AdvisorPageContent() {
         ]);
       } else {
         setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+        if (data.limited) setTimeout(() => setPaymentModal(true), 1500);
       }
     } catch {
       setMessages((prev) => [
@@ -765,6 +769,15 @@ function AdvisorPageContent() {
           </p>
         </div>
       </div>
+
+      {/* Subscription Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModal}
+        onClose={() => setPaymentModal(false)}
+        onSuccess={() => setPaymentModal(false)}
+        context="advisor"
+        getToken={getToken}
+      />
     </div>
   );
 }

@@ -120,6 +120,38 @@ export async function POST(request) {
     if (!meRes.ok) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     const me = await meRes.json();
 
+    // Check subscription limits before allowing new crop
+    try {
+      const countRes = await fetch(
+        `${STRAPI_URL}/api/farm-crops?filters[userId][$eq]=${me.id}&filters[status][$eq]=growing&pagination[limit]=100`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const countData = countRes.ok ? await countRes.json() : { data: [] };
+      const growingCount = (countData.data || []).length;
+
+      const subRes = await fetch(
+        `${STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${me.id}&filters[status][$eq]=active`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const subData = subRes.ok ? await subRes.json() : { data: [] };
+      const activeSubs = subData.data || [];
+      const hasAnnual = activeSubs.some((s) => s.type === "annual" && (!s.endDate || new Date(s.endDate) >= new Date()));
+      const paidCropCount = activeSubs.filter((s) => s.type === "per-crop").length;
+      const maxCrops = hasAnnual ? Infinity : 1 + paidCropCount;
+
+      if (growingCount >= maxCrops) {
+        return NextResponse.json({
+          error: "crop_limit",
+          message: growingCount === 1 && paidCropCount === 0
+            ? "You've used your 1 free crop. Pay 20,000 UGX per additional crop or 80,000 UGX/year for unlimited crops."
+            : `You've reached your crop limit (${maxCrops}). Pay 20,000 UGX for another crop or upgrade to annual (80,000 UGX/year).`,
+          currentCount: growingCount,
+          maxCrops,
+          tier: hasAnnual ? "annual" : paidCropCount > 0 ? "per-crop" : "free",
+        }, { status: 403 });
+      }
+    } catch {}
+
     const body = await request.json();
     const { cropName, variety, area, areaUnit, plantingDate, location, notes, seedQuantity, seedUnit, spacing } = body;
 

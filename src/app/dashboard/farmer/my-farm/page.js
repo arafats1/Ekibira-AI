@@ -3,6 +3,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
+import PaymentModal from "../../../components/PaymentModal";
 
 const COMMON_CROPS = [
   "Maize", "Beans", "Cassava", "Sweet Potatoes", "Rice", "Sorghum", "Millet",
@@ -52,6 +53,30 @@ const fmtDate = (d) => {
   return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : d;
 };
 
+// Parse DD-MM-YYYY string into a Date object
+const parseDMY = (d) => {
+  if (!d) return null;
+  const s = String(d).slice(0, 10);
+  const parts = s.split("-");
+  if (parts.length !== 3) return null;
+  // If first part is 4 digits, it's YYYY-MM-DD
+  if (parts[0].length === 4) return new Date(s);
+  // Otherwise DD-MM-YYYY
+  return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+};
+
+// Ensure date displays as DD-MM-YYYY regardless of input format
+const displayDMY = (d) => {
+  if (!d) return "—";
+  const s = String(d).slice(0, 10);
+  const parts = s.split("-");
+  if (parts.length !== 3) return d;
+  // If first part is 4 digits (YYYY-MM-DD), reverse it
+  if (parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  // Already DD-MM-YYYY
+  return s;
+};
+
 export default function MyFarmPage() {
   const { user, loading, logout, getToken } = useAuth();
   const router = useRouter();
@@ -70,6 +95,10 @@ export default function MyFarmPage() {
   const [harvestModal, setHarvestModal] = useState(null); // crop being harvested
   const [harvestForm, setHarvestForm] = useState({ harvestDate: new Date().toISOString().split("T")[0], harvestYield: "", yieldUnit: "kg" });
   const [yieldChat, setYieldChat] = useState({}); // { cropId: { messages: [], loading, open } }
+
+  // Payment modal state
+  const [paymentModal, setPaymentModal] = useState({ open: false, context: "crop", cropData: null });
+  const [pendingCropForm, setPendingCropForm] = useState(null); // store form data when payment needed
 
   // Floating chat state
   const [chatOpen, setChatOpen] = useState(false);
@@ -166,6 +195,14 @@ export default function MyFarmPage() {
         body: JSON.stringify({ message: text, history: updatedMessages }),
       });
       const data = await res.json();
+      if (data.error === "limit_reached" || res.status === 429) {
+        const limitMsg = data.reply || "🔒 You've used your 5 free messages for today. Upgrade for unlimited!";
+        setChatMessages(prev => [...prev, { role: "assistant", content: limitMsg }]);
+        setChatLoading(false);
+        // Show payment modal after a short delay
+        setTimeout(() => setPaymentModal({ open: true, context: "chat", cropData: null }), 1500);
+        return;
+      }
       const reply = data.reply || "Sorry, I couldn't process that. Please try again.";
       const finalMessages = [...updatedMessages, { role: "assistant", content: reply }];
       setChatMessages(finalMessages);
@@ -293,6 +330,12 @@ export default function MyFarmPage() {
         body: JSON.stringify(cropForm),
       });
       const data = await res.json();
+      if (data.error === "crop_limit") {
+        setPendingCropForm({ ...cropForm });
+        setPaymentModal({ open: true, context: "crop", cropData: { cropName: cropForm.cropName } });
+        setAddingCrop(false);
+        return;
+      }
       if (data.crop) {
         setCrops(prev => [data.crop, ...prev]);
         setCropForm({
@@ -480,8 +523,8 @@ export default function MyFarmPage() {
             <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Harvested</p>
           </div>
           <div className="bg-white rounded-xl p-4 border border-[#e5e7eb]">
-            <p className="text-2xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
-              {plan?.riskAlerts?.filter(a => a.severity === "critical").length || 0}
+            <p className={`text-2xl font-bold font-[family-name:var(--font-display)] ${(plan?.riskAlerts?.length || 0) > 0 ? "text-amber-600" : "text-[#1a2e1a]"}`}>
+              {plan?.riskAlerts?.length || 0}
             </p>
             <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">Active Alerts</p>
           </div>
@@ -808,7 +851,7 @@ export default function MyFarmPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {plan.cropStatus.map((cs, i) => {
                         const healthColor = cs.healthScore >= 80 ? "text-green-600" : cs.healthScore >= 60 ? "text-amber-600" : "text-red-600";
-                        const harvestDate = cs.estimatedHarvestDate ? new Date(cs.estimatedHarvestDate) : null;
+                        const harvestDate = parseDMY(cs.estimatedHarvestDate);
                         const daysToHarvest = harvestDate ? Math.max(0, Math.ceil((harvestDate - new Date()) / (1000 * 60 * 60 * 24))) : null;
                         const matchedCrop = growingCrops.find(c => c.cropName.toLowerCase() === cs.cropName.toLowerCase()) || growingCrops[i];
                         return (
@@ -820,8 +863,11 @@ export default function MyFarmPage() {
                                 </h4>
                                 <p className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">Day {cs.daysSincePlanting}</p>
                               </div>
-                              <div className={`text-xl font-bold font-[family-name:var(--font-display)] ${healthColor}`}>
-                                {cs.healthScore}%
+                              <div className="text-right">
+                                <div className={`text-xl font-bold font-[family-name:var(--font-display)] ${healthColor}`}>
+                                  {cs.healthScore}%
+                                </div>
+                                <p className="text-[9px] text-[#6b7c6b] font-[family-name:var(--font-body)]">Health Score</p>
                               </div>
                             </div>
 
@@ -848,7 +894,7 @@ export default function MyFarmPage() {
                               {daysToHarvest != null && (
                                 <div className="flex items-center gap-2 text-xs font-[family-name:var(--font-body)]">
                                   <span>📅</span>
-                                  <span className="text-[#6b7c6b]">Est. harvest: <span className="font-medium text-[#1a2e1a]">{daysToHarvest} days</span> ({fmtDate(cs.estimatedHarvestDate)})</span>
+                                  <span className="text-[#6b7c6b]">Est. harvest: <span className="font-medium text-[#1a2e1a]">{daysToHarvest} days</span> ({displayDMY(cs.estimatedHarvestDate)})</span>
                                 </div>
                               )}
                               {cs.healthReason && (
@@ -910,7 +956,7 @@ export default function MyFarmPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {growingCrops.map(crop => (
+                {growingCrops.map((crop, cropIdx) => (
                   <div key={crop.id} className="bg-white rounded-xl border border-[#e5e7eb] p-5">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -918,6 +964,7 @@ export default function MyFarmPage() {
                           <h3 className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{crop.cropName}</h3>
                           {crop.variety && <span className="text-[10px] bg-gray-100 text-[#6b7c6b] px-2 py-0.5 rounded-full font-[family-name:var(--font-body)]">{crop.variety}</span>}
                           <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold">Growing</span>
+                          {cropIdx === 0 && <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold border border-blue-200">Free</span>}
                         </div>
                         <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
                           <span>📍 {crop.location}</span>
@@ -926,6 +973,19 @@ export default function MyFarmPage() {
                           {crop.seedQuantity > 0 && <span>🌰 {crop.seedQuantity} {crop.seedUnit}</span>}
                           {crop.spacing && <span>↔️ {crop.spacing}</span>}
                         </div>
+                        {(() => {
+                          const cs = plan?.cropStatus?.find(s => s.cropName.toLowerCase() === crop.cropName.toLowerCase());
+                          if (!cs?.estimatedHarvestDate) return null;
+                          const hd = parseDMY(cs.estimatedHarvestDate);
+                          if (!hd) return null;
+                          const daysLeft = Math.max(0, Math.ceil((hd - new Date()) / (1000 * 60 * 60 * 24)));
+                          return (
+                            <div className="mt-2 flex items-center gap-2 text-xs font-[family-name:var(--font-body)]">
+                              <span className="text-green-700 font-semibold">🗓️ Est. harvest: {displayDMY(cs.estimatedHarvestDate)}</span>
+                              <span className="text-[#6b7c6b]">({daysLeft} days left)</span>
+                            </div>
+                          );
+                        })()}
                         {crop.notes && <p className="text-xs text-[#6b7c6b] mt-2 font-[family-name:var(--font-body)] italic">{crop.notes}</p>}
                         {crop.expectedYieldLow > 0 && (
                           <div className="mt-2 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100 inline-block">
@@ -1335,6 +1395,44 @@ export default function MyFarmPage() {
           <span className="text-[8px] font-bold font-[family-name:var(--font-body)] leading-none mt-0.5">AI</span>
         </button>
       </div>
+
+      {/* Subscription Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModal.open}
+        onClose={() => setPaymentModal({ open: false, context: "crop", cropData: null })}
+        onSuccess={async () => {
+          setPaymentModal({ open: false, context: "crop", cropData: null });
+          if (paymentModal.context === "crop" && pendingCropForm) {
+            // Retry adding the crop after successful payment
+            try {
+              const token = getToken();
+              const res = await fetch("/api/farm-crops", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify(pendingCropForm),
+              });
+              const data = await res.json();
+              if (data.crop) {
+                setCrops(prev => [data.crop, ...prev]);
+                setCropForm({
+                  cropName: "", variety: "", area: "", areaUnit: "acres",
+                  plantingDate: new Date().toISOString().split("T")[0],
+                  location: pendingCropForm.location,
+                  seedQuantity: "", seedUnit: "kg", spacing: "",
+                });
+                setShowAddForm(false);
+                setActiveTab("crops");
+              }
+            } catch (err) {
+              console.error("Failed to add crop after payment:", err);
+            }
+            setPendingCropForm(null);
+          }
+        }}
+        context={paymentModal.context}
+        cropData={paymentModal.cropData}
+        getToken={getToken}
+      />
     </div>
   );
 }
