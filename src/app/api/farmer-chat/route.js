@@ -10,6 +10,68 @@ function getToken(request) {
   return auth.slice(7);
 }
 
+// ─── Weather helpers (Open-Meteo) ───
+async function geocode(location) {
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    if (data?.results?.[0]) {
+      return { lat: data.results[0].latitude, lng: data.results[0].longitude, name: data.results[0].name };
+    }
+    return null;
+  } catch { return null; }
+}
+
+async function fetchWeather(lat, lng) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
+      `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,relative_humidity_2m_max,et0_fao_evapotranspiration` +
+      `&current=temperature_2m,relative_humidity_2m,soil_moisture_0_to_1cm,soil_temperature_0cm` +
+      `&timezone=auto&forecast_days=7`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
+function mapWeatherCode(code) {
+  if (code <= 1) return "Sunny";
+  if (code === 2) return "Partly Cloudy";
+  if (code === 3) return "Overcast";
+  if (code >= 45 && code <= 48) return "Foggy";
+  if (code >= 51 && code <= 57) return "Drizzle";
+  if (code >= 61 && code <= 63) return "Light Rain";
+  if (code >= 64 && code <= 67) return "Heavy Rain";
+  if (code >= 80 && code <= 81) return "Showers";
+  if (code === 82) return "Heavy Rain";
+  if (code >= 95) return "Thunderstorm";
+  return "Partly Cloudy";
+}
+
+function buildWeatherSummary(weather, locationName) {
+  if (!weather?.daily?.time) return null;
+  const d = weather.daily;
+  const lines = d.time.map((date, i) => {
+    const cond = mapWeatherCode(d.weather_code?.[i] || 0);
+    const parts = date.split("-");
+    const fmtDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    return `${fmtDate}: ${cond}, ${Math.round(d.temperature_2m_max?.[i] || 0)}/${Math.round(d.temperature_2m_min?.[i] || 0)}°C, ${Math.round(d.precipitation_sum?.[i] || 0)}mm rain, ET0 ${(d.et0_fao_evapotranspiration?.[i] || 0).toFixed(1)}mm`;
+  });
+  const currentTemp = weather.current?.temperature_2m || "?";
+  const humidity = weather.current?.relative_humidity_2m || "?";
+  const soilMoisture = weather.current?.soil_moisture_0_to_1cm;
+  const soilTemp = weather.current?.soil_temperature_0cm;
+  return `REAL-TIME WEATHER for ${locationName} (from Open-Meteo API):\nCURRENT: ${currentTemp}°C, ${humidity}% humidity` +
+    (soilMoisture != null ? `, soil moisture ${(soilMoisture * 100).toFixed(1)}%` : "") +
+    (soilTemp != null ? `, soil temp ${soilTemp.toFixed(1)}°C` : "") +
+    `\n7-DAY FORECAST:\n${lines.join("\n")}`;
+}
+
+function detectWeatherQuery(message) {
+  return /\b(weather|forecast|rain|rainfall|temperature|temp|humid|drought|flood|storm|heat|cold|dry season|rainy season|precipitation|tomorrow|next week|this week)\b/i.test(message);
+}
+
 // Detect if the user is asking about market prices
 function detectPriceQuery(message) {
   const lower = message.toLowerCase();
@@ -167,37 +229,62 @@ export async function POST(request) {
       }
     }
 
-    // Build crop summary
-    let cropSummary = "No crops recorded yet.";
-    if (farmerCrops.length > 0) {
-      const lines = farmerCrops.map((c, i) => {
-        let line = `${i + 1}. ${c.cropName}${c.variety ? ` (${c.variety})` : ""} — ${c.status}`;
-        line += `\n   Location: ${c.location}, Area: ${c.area || "?"} ${c.areaUnit || "acres"}`;
+    // Build crop summary — separate growing crops from harvest logs
+    const today = new Date();
+    const growingCrops = farmerCrops.filter(c => c.status !== "harvested");
+    const harvestedCrops = farmerCrops.filter(c => c.status === "harvested");
+
+    let cropSummary = "";
+    if (growingCrops.length > 0) {
+      cropSummary += "CURRENTLY GROWING:\n";
+      cropSummary += growingCrops.map((c, i) => {
+        const daysSince = c.plantingDate ? Math.max(0, Math.floor((today - new Date(c.plantingDate)) / (1000 * 60 * 60 * 24))) : "?";
+        let line = `${i + 1}. ${c.cropName}${c.variety ? ` (${c.variety})` : ""} — ${c.status || "growing"}, ${daysSince} days since planting`;
+        line += `\n   Location: ${c.location || "?"}, Area: ${c.area || "?"} ${c.areaUnit || "acres"}`;
         line += `\n   Planted: ${c.plantingDate || "?"}`;
         if (c.seedQuantity) line += `, Seed: ${c.seedQuantity} ${c.seedUnit || "kg"}`;
         if (c.spacing) line += `, Spacing: ${c.spacing}`;
-        if (c.harvestDate) line += `\n   Harvested: ${c.harvestDate}`;
-        if (c.harvestYield > 0)
-          line += `, Actual yield: ${c.harvestYield} ${c.yieldUnit || "kg"}`;
-        if (c.expectedYieldLow > 0)
-          line += `, Expected: ${c.expectedYieldLow}–${c.expectedYieldHigh} kg`;
+        if (c.expectedYieldLow > 0) line += `\n   Expected yield: ${c.expectedYieldLow}–${c.expectedYieldHigh} kg`;
+        return line;
+      }).join("\n");
+    }
+
+    if (harvestedCrops.length > 0) {
+      cropSummary += "\n\nHARVEST LOG:\n";
+      cropSummary += harvestedCrops.map((c, i) => {
+        let line = `${i + 1}. ${c.cropName}${c.variety ? ` (${c.variety})` : ""}`;
+        line += `\n   Location: ${c.location || "?"}, Area: ${c.area || "?"} ${c.areaUnit || "acres"}`;
+        line += `\n   Planted: ${c.plantingDate || "?"}, Harvested: ${c.harvestDate || "?"}`;
+        if (c.harvestYield > 0) line += `, Actual yield: ${c.harvestYield} ${c.yieldUnit || "kg"}`;
+        if (c.expectedYieldLow > 0) line += `, Expected: ${c.expectedYieldLow}–${c.expectedYieldHigh} kg`;
         if (c.harvestYield > 0 && c.expectedYieldLow > 0) {
-          const pct = Math.round(
-            (c.harvestYield /
-              ((c.expectedYieldLow + c.expectedYieldHigh) / 2)) *
-              100
-          );
+          const pct = Math.round((c.harvestYield / ((c.expectedYieldLow + c.expectedYieldHigh) / 2)) * 100);
           line += ` (${pct}% of expected)`;
         }
         return line;
-      });
-      cropSummary = lines.join("\n");
+      }).join("\n");
     }
+
+    if (!cropSummary) cropSummary = "No crops recorded yet.";
 
     // Locations summary for weather context
     const locations = [
       ...new Set(farmerCrops.map((c) => c.location).filter(Boolean)),
     ];
+
+    // Fetch real weather data for the farmer's location
+    let weatherContext = "";
+    const primaryLocation = locations[0] || null;
+    if (primaryLocation) {
+      const geo = await geocode(primaryLocation);
+      if (geo) {
+        const weather = await fetchWeather(geo.lat, geo.lng);
+        const summary = buildWeatherSummary(weather, geo.name || primaryLocation);
+        if (summary) {
+          weatherContext = `\n\n${summary}`;
+        }
+      }
+    }
 
     // Detect price queries — fetch real market data if asking about prices
     let marketContext = "";
@@ -218,32 +305,39 @@ export async function POST(request) {
       }
     }
 
+    // Detect weather queries — add extra instruction
+    const isWeatherQuery = detectWeatherQuery(safeMessage);
+
     // Build conversation history
+    const todayStr = (() => { const d = new Date(); return `${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`; })();
     const messages = [
       {
         role: "system",
-        content: `You are KibiraAI Farm Assistant — an expert agricultural advisor personalized for this specific farmer in Uganda/East Africa. You have access to all their farm data below.
+        content: `You are KibiraAI Farm Assistant — an expert agricultural advisor personalized for this specific farmer in Uganda/East Africa. You have access to all their farm data and REAL weather data below.
 
-TODAY: ${new Date().toISOString().split("T")[0]}
+TODAY: ${todayStr}
 
 FARMER'S CROPS:
 ${cropSummary}
 
-FARMER'S LOCATIONS: ${locations.join(", ") || "Unknown"}${marketContext}
+FARMER'S LOCATIONS: ${locations.join(", ") || "Unknown"}${weatherContext}${marketContext}
 
 YOUR ROLE:
 - Answer questions about their specific crops, yields, timing, and practices
 - Use their ACTUAL data (planting dates, harvest dates, actual yields vs expected) to give tailored advice
+- **WEATHER**: You have REAL weather data above from Open-Meteo API. When the farmer asks about weather, forecast, rain, temperature, or "what's the weather tomorrow", use the REAL forecast data to answer with specific dates, temperatures, rainfall amounts, and conditions. NEVER say you don't have weather data — you DO have it above.
+- **HARVEST LOG**: When the farmer asks about their harvest history, past yields, or performance, reference the HARVEST LOG data above. Compare actual yields vs expected, note patterns across seasons, and give improvement advice.
 - When asked about MARKET PRICES: If market price data was provided above, present it clearly with the specific prices, markets, and advice. Format with bullet points or numbered lists. Always show at least 3 markets with their prices.
 - If actual yield was below expected, analyze what likely went wrong (weather, timing, soil, seed quality, spacing) and recommend improvements
 - Recommend optimal planting windows based on Uganda's two growing seasons (Mar-Jun Long Rains, Sep-Dec Short Rains)
-- Consider local climate patterns and forecast conditions when advising
+- Consider the real weather forecast when advising on farming activities (irrigation, spraying, harvesting timing)
 - Reference specific crops the farmer has grown when giving advice
 - Be practical — assume a smallholder farmer with limited resources
 - Keep responses concise but actionable (2-4 paragraphs max unless the user asks for detail)
 - Use simple language. Avoid jargon unless explaining it.
 - When asked about a crop the farmer hasn't grown, use your agricultural knowledge and relate it to their existing experience
-- Format prices clearly: always include UGX amounts and the unit (per kg, per bag, etc.)`,
+- Format prices clearly: always include UGX amounts and the unit (per kg, per bag, etc.)
+- Use DD-MM-YYYY format for all dates${isWeatherQuery && weatherContext ? "\n\nThe farmer is asking about weather — use the REAL-TIME WEATHER DATA above to give a specific, data-driven answer with actual temperatures and rainfall amounts for each day." : ""}`,
       },
     ];
 
