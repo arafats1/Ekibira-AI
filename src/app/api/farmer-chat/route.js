@@ -101,7 +101,7 @@ RULES:
 function formatPriceResponse(data, cropName) {
   if (!data) return null;
   const p = data.currentPrice;
-  let text = `📊 **${cropName} Market Prices (${new Date().toLocaleDateString("en-GB")})**\n\n`;
+  let text = `📊 **${cropName} Market Prices (${(() => { const d = new Date(); return `${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`; })()})**\n\n`;
   text += `💰 Current Price: ${p.low?.toLocaleString()} – ${p.high?.toLocaleString()} ${p.unit} (avg ${p.mid?.toLocaleString()})\n`;
   text += `📈 Trend: ${p.trend} — ${p.trendReason}\n\n`;
   text += `🏪 **Markets:**\n`;

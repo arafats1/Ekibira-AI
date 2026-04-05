@@ -112,7 +112,7 @@ function UsersTab({ token, currentUser }) {
                     <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden md:table-cell">{u.position || "—"}</td>
                     <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden sm:table-cell">{u.phone || "—"}</td>
                     <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] text-xs">
-                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}
+                      {u.createdAt ? (() => { const d = new Date(u.createdAt); return `${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`; })() : "—"}
                     </td>
                   </tr>
                 );
@@ -176,7 +176,7 @@ function ChatsTab({ token }) {
                   <p className="text-xs text-[#6b7c6b] truncate font-[family-name:var(--font-body)]">{chat.userMessage?.slice(0, 100)}</p>
                 </div>
                 <span className="text-[10px] text-[#9ca3af] flex-shrink-0 font-[family-name:var(--font-body)]">
-                  {chat.createdAt ? new Date(chat.createdAt).toLocaleDateString() : ""}
+                  {chat.createdAt ? (() => { const d = new Date(chat.createdAt); return `${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}`; })() : ""}
                 </span>
                 <svg width="16" height="16" fill="none" stroke="#9ca3af" strokeWidth="2" viewBox="0 0 24 24" className={`flex-shrink-0 transition-transform ${expandedChat === chat.id ? "rotate-180" : ""}`}>
                   <path d="M6 9l6 6 6-6" />

@@ -93,7 +93,7 @@ Respond with ONLY valid JSON:
       "growthStage": "e.g., Germination, Vegetative, Flowering, Fruiting, Maturity",
       "daysToNextStage": 0,
       "nextStage": "Next growth stage",
-      "estimatedHarvestDate": "YYYY-MM-DD",
+      "estimatedHarvestDate": "DD-MM-YYYY",
       "healthScore": "<integer 0-100, calculated individually per crop>",
       "healthNotes": "Assessment based on weather conditions",
       "waterNeed": "high|medium|low",
@@ -122,6 +122,7 @@ RULES:
 - Use actual crop growth timelines (e.g., maize: 90-120 days, beans: 60-90 days, cassava: 9-18 months)
 - Be specific about quantities: "apply 50kg/acre DAP", not just "fertilize"
 - Reference specific forecast days: "Rain expected Wednesday (15mm) — spray before Tuesday evening"
+- ALL dates in the response MUST use DD-MM-YYYY format (e.g., "06-04-2026"), never YYYY-MM-DD
 - IRRIGATION: When soil moisture is low (<30%) or high temperatures (>30°C) are forecast, recommend specific irrigation — liters per plant or mm per acre, best time (early morning or late evening). If rain is coming within 24-48h, advise skipping irrigation to save water.
 - PEST & DISEASE SPRAYING: Only recommend when crops have foliage (past germination). When humidity >80% with warm temps (>25°C), warn about fungal risk (late blight, rust, powdery mildew). Recommend specific sprays (e.g., "spray copper fungicide", "apply neem oil for aphids"). Always recommend spraying BEFORE rain, not after.
 - FERTILIZER: Recommend specific fertilizer types and quantities per growth stage (e.g., "Side-dress 50kg/acre Urea at knee-height for maize", "Apply 25kg/acre TSP at flowering for beans"). Warn about fertilizer burn risk in dry/hot conditions — advise watering before applying.`;

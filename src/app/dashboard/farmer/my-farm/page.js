@@ -738,7 +738,7 @@ export default function MyFarmPage() {
                       </div>
                     )}
 
-                    <p className="text-[10px] text-white/50 mt-3 font-[family-name:var(--font-body)]">Generated {new Date(plan.generatedAt).toLocaleString()}</p>
+                    <p className="text-[10px] text-white/50 mt-3 font-[family-name:var(--font-body)]">Generated {fmtDate(plan.generatedAt)} {new Date(plan.generatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</p>
                   </div>
                 )}
 
@@ -848,7 +848,7 @@ export default function MyFarmPage() {
                               {daysToHarvest != null && (
                                 <div className="flex items-center gap-2 text-xs font-[family-name:var(--font-body)]">
                                   <span>📅</span>
-                                  <span className="text-[#6b7c6b]">Est. harvest: <span className="font-medium text-[#1a2e1a]">{daysToHarvest} days</span> ({cs.estimatedHarvestDate})</span>
+                                  <span className="text-[#6b7c6b]">Est. harvest: <span className="font-medium text-[#1a2e1a]">{daysToHarvest} days</span> ({fmtDate(cs.estimatedHarvestDate)})</span>
                                 </div>
                               )}
                               {cs.healthNotes && (
@@ -1278,7 +1278,7 @@ export default function MyFarmPage() {
                         className={`w-full text-left px-4 py-3 hover:bg-white transition-colors ${activeChatId === chat.documentId ? "bg-white border-l-2 border-[#2d6a4f]" : ""}`}>
                         <div className="text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] truncate">{chat.title}</div>
                         <div className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)] mt-0.5">
-                          {chat.messages?.length || 0} messages · {chat.lastMessageAt ? new Date(chat.lastMessageAt).toLocaleDateString("en-GB") : ""}
+                          {chat.messages?.length || 0} messages · {chat.lastMessageAt ? fmtDate(chat.lastMessageAt) : ""}
                         </div>
                       </button>
                     ))}

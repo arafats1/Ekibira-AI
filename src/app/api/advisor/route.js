@@ -53,15 +53,27 @@ function formatWeatherContext(weather, locationName) {
   return `\n\n## REAL-TIME WEATHER DATA for ${locationName} (from Open-Meteo API — use this for weather questions)\nCURRENT: ${currentTemp}°C, ${humidity}% humidity\n7-DAY FORECAST:\n${lines.join("\n")}`;
 }
 
-// Detect if user is asking about weather for a location
-function detectWeatherQuery(message) {
+// Detect if user is asking about weather or farming/crops for a location
+function detectLocationQuery(message, history = []) {
   const weatherTerms = /\b(weather|forecast|rain|rainfall|temperature|temp|humid|drought|flood|storm|climate forecast|heat|cold|dry season|rainy season|precipitation)\b/i;
-  if (!weatherTerms.test(message)) return null;
+  const farmTerms = /\b(crop|crops|plant|planting|grow|growing|farm|farming|harvest|season|soil|agroforestry|seed|maize|beans|cassava|coffee|banana|rice|sorghum|millet|groundnut|sweet potato|vegetable)\b/i;
+  const needsData = weatherTerms.test(message) || farmTerms.test(message);
+  if (!needsData) {
+    // Check if the user is replying with just a location name (after being asked)
+    const lastAssistant = [...history].reverse().find(m => m.role === "assistant");
+    if (lastAssistant?.content && /what.*(area|region|location|place)|where.*you|which.*(area|region|district)/i.test(lastAssistant.content)) {
+      // User is likely replying with a location
+      const loc = message.trim().replace(/[.,!?]+$/, "");
+      if (loc.length >= 2 && loc.length <= 60) return loc;
+    }
+    return null;
+  }
   // Try to extract a location from the message
   const locPatterns = [
-    /(?:weather|forecast|rain|temperature|climate)\s+(?:in|for|at|of|around)\s+([A-Z][a-zA-Z\s,]+)/i,
-    /(?:in|for|at|around)\s+([A-Z][a-zA-Z\s,]+?)(?:\s+(?:weather|forecast|rain|temperature|today|tomorrow|this week|next week))/i,
-    /([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\s+(?:weather|forecast|rain|temperature)/i,
+    /(?:weather|forecast|rain|temperature|climate|crops?|plant|grow|farm)\s+(?:in|for|at|of|around|near)\s+([A-Z][a-zA-Z\s,]+)/i,
+    /(?:in|for|at|around|near)\s+([A-Z][a-zA-Z\s,]+?)(?:\s+(?:weather|forecast|rain|temperature|today|tomorrow|this week|next week|season|region|area))/i,
+    /([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\s+(?:weather|forecast|rain|temperature|crops?|farming)/i,
+    /(?:best|suitable|recommended)\s+crops?\s+(?:for|in)\s+([A-Z][a-zA-Z\s,]+)/i,
   ];
   for (const pat of locPatterns) {
     const m = message.match(pat);
@@ -167,7 +179,8 @@ When discussing carbon sequestration, provide:
   - Top native species: Cedrus atlantica, Quercus suber, Argania spinosa, Tetraclinis articulata
 
 ## Response Guidelines
-1. When a user mentions a location, provide specific climate analysis for that area
+1. **LOCATION-FIRST RULE (CRITICAL)**: When a user asks about crops, farming, agriculture, planting, or any location-specific advice (e.g., "best crops for my region", "what should I plant this season", "crop recommendations") WITHOUT specifying their area or location, you MUST ask them which area, district, or region they are in BEFORE giving recommendations. Say something like: "Great question! To give you the most accurate crop recommendations based on real weather and soil conditions, could you tell me which area or district you're farming in?" Do NOT give generic crop advice without knowing the location first.
+2. When a user mentions a location, provide specific climate analysis for that area
 2. Include risk assessments with scores out of 100 when relevant
 3. Recommend specific native tree species with their scientific names, uses, and sequestration rates
 4. Provide carbon sequestration estimates with per-hectare breakdowns and carbon credit valuations
@@ -305,16 +318,16 @@ export async function POST(request) {
       systemContent += `\n\n## Additional Knowledge Base (from admin-uploaded documents)\nUse the following verified information when relevant to the user's question. Cite these as "KibiraAI Knowledge Base" in your references:\n\n${knowledgeBase}`;
     }
 
-    // Detect weather queries and fetch real-time data
-    const weatherLocation = detectWeatherQuery(message);
-    if (weatherLocation) {
-      const geo = await geocode(weatherLocation);
+    // Detect location-specific queries (weather, crops, farming) and fetch real-time data
+    const detectedLocation = detectLocationQuery(message, history);
+    if (detectedLocation) {
+      const geo = await geocode(detectedLocation);
       if (geo) {
         const weather = await fetchWeatherData(geo.lat, geo.lng);
-        const weatherCtx = formatWeatherContext(weather, geo.name || weatherLocation);
+        const weatherCtx = formatWeatherContext(weather, geo.name || detectedLocation);
         if (weatherCtx) {
           systemContent += weatherCtx;
-          systemContent += `\n\nIMPORTANT: The user is asking about weather. Use the REAL-TIME WEATHER DATA above to answer. Present the forecast clearly with dates, temperatures, conditions, and rainfall amounts. This is live data from Open-Meteo API — reference it as your source.`;
+          systemContent += `\n\nIMPORTANT: Real-time weather data for ${geo.name || detectedLocation} is provided above. Use this REAL data to answer the user's question. For crop recommendations, base your advice on the actual temperature ranges, rainfall patterns, and current conditions shown. For weather queries, present the forecast clearly with dates, temperatures, conditions, and rainfall amounts. This is live data from Open-Meteo API — reference it as your source.`;
         }
       }
     }

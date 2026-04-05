@@ -1,6 +1,7 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -380,7 +381,7 @@ function TypingIndicator() {
   );
 }
 
-export default function AdvisorPage() {
+function AdvisorPageContent() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -390,6 +391,49 @@ export default function AdvisorPage() {
   const hydrated = useRef(false);
   const sessionIdRef = useRef("");
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+
+  // Auto-send query from URL ?q= param
+  const autoSentRef = useRef(false);
+  useEffect(() => {
+    if (autoSentRef.current) return;
+    const q = searchParams.get("q");
+    if (q && !loading) {
+      autoSentRef.current = true;
+      // Clear the URL param without re-rendering
+      window.history.replaceState(null, "", "/advisor");
+      // Auto-send the message
+      const userMessage = q.trim();
+      setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+      setLoading(true);
+      (async () => {
+        try {
+          const history = messages.map((m) => ({ role: m.role, content: m.content }));
+          const res = await fetch("/api/advisor", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: userMessage,
+              history,
+              userEmail: user?.email || "",
+              userName: user?.fullName || "",
+              sessionId: sessionIdRef.current,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            setMessages((prev) => [...prev, { role: "assistant", content: data.error || "Something went wrong." }]);
+          } else {
+            setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+          }
+        } catch {
+          setMessages((prev) => [...prev, { role: "assistant", content: "Network error. Please check your connection." }]);
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }
+  }, [searchParams]);
 
   // Generate session ID on mount
   useEffect(() => {
@@ -722,5 +766,13 @@ export default function AdvisorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdvisorPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-b from-[#f0fdf4] to-white flex items-center justify-center"><span className="text-[#6b7c6b] font-[family-name:var(--font-body)]">Loading...</span></div>}>
+      <AdvisorPageContent />
+    </Suspense>
   );
 }
