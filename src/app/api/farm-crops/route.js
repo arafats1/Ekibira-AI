@@ -130,7 +130,7 @@ export async function POST(request) {
       const growingCount = (countData.data || []).length;
 
       const subRes = await fetch(
-        `${STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${me.id}&filters[status][$eq]=active`,
+        `${STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${me.id}&filters[subStatus][$eq]=active`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const subData = subRes.ok ? await subRes.json() : { data: [] };

@@ -327,7 +327,7 @@ export async function POST(request) {
             advisorUserId = users[0].id;
             // Check for any active paid subscription (annual or per-crop = unlimited)
             const subRes = await fetch(
-              `${ADVISOR_STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${advisorUserId}&filters[status][$eq]=active`
+              `${ADVISOR_STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${advisorUserId}&filters[subStatus][$eq]=active`
             );
             const subData = subRes.ok ? await subRes.json() : { data: [] };
             const hasPaidSub = (subData.data || []).some(s => !s.endDate || new Date(s.endDate) >= new Date());

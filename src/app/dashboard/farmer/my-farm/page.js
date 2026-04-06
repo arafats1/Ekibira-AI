@@ -327,6 +327,47 @@ export default function MyFarmPage() {
       if (data.plan) {
         setPlan(data.plan);
         setDoneActions(new Set());
+
+        // Sync subscription endDates with AI harvest estimates
+        if (data.plan.cropStatus) {
+          try {
+            const token = getToken();
+            if (token) {
+              // Fetch all active per-crop subscriptions via our API
+              const subRes = await fetch("/api/subscription?includeSubs=true", {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              const subInfo = subRes.ok ? await subRes.json() : null;
+              if (subInfo?.subscriptions) {
+                for (const sub of subInfo.subscriptions) {
+                  if (sub.type !== "per-crop") continue;
+                  // Find matching AI crop status
+                  const match = data.plan.cropStatus.find(cs => {
+                    if (sub.cropDocumentId) {
+                      const crop = growingCrops.find(c => c.documentId === sub.cropDocumentId);
+                      return crop && crop.cropName.toLowerCase() === cs.cropName.toLowerCase();
+                    }
+                    return sub.cropName && cs.cropName.toLowerCase() === sub.cropName.toLowerCase();
+                  });
+                  if (match?.estimatedHarvestDate) {
+                    const hd = parseDMY(match.estimatedHarvestDate);
+                    if (hd) {
+                      hd.setDate(hd.getDate() + 14);
+                      const newEnd = hd.toISOString().split("T")[0];
+                      if (sub.endDate !== newEnd) {
+                        fetch("/api/subscription", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                          body: JSON.stringify({ subscriptionDocumentId: sub.documentId, endDate: newEnd }),
+                        }).catch(() => {});
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          } catch {}
+        }
       }
     } catch { /* silently fail */ }
     setLoadingPlan(false);
@@ -365,7 +406,7 @@ export default function MyFarmPage() {
       const data = await res.json();
       if (data.error === "crop_limit") {
         setPendingCropForm({ ...cropForm });
-        setPaymentModal({ open: true, context: "crop", cropData: { cropName: cropForm.cropName } });
+        setPaymentModal({ open: true, context: "crop", cropData: { cropName: cropForm.cropName, plantingDate: cropForm.plantingDate } });
         setAddingCrop(false);
         return;
       }
@@ -379,6 +420,7 @@ export default function MyFarmPage() {
         });
         setShowAddForm(false);
         setPlan(null); // Reset plan to force regeneration
+        setActiveTab("plan");
       } else {
         setFormError(data.error || "Failed to add crop");
       }
@@ -446,6 +488,7 @@ export default function MyFarmPage() {
   }
 
   const growingCrops = crops.filter(c => c.status === "growing");
+  const oldestGrowingCropId = growingCrops.length > 0 ? growingCrops[growingCrops.length - 1].id : null;
   const harvestedCrops = crops.filter(c => c.status === "harvested");
   const daysSince = (dateStr) => Math.max(0, Math.floor((new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24)));
 
@@ -670,9 +713,11 @@ export default function MyFarmPage() {
                 {/* Plant Spacing */}
                 <div>
                   <label className="text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-1 block">Plant Spacing</label>
-                  {(SPACING_OPTIONS[cropForm.cropName] || []).length > 0 && (
+                  {(() => {
+                    const opts = SPACING_OPTIONS[cropForm.cropName] || (cropForm.cropName ? ["60cm × 30cm (standard)", "90cm × 45cm (wide)"] : []);
+                    return opts.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 mb-2">
-                      {SPACING_OPTIONS[cropForm.cropName].map(s => (
+                      {opts.map(s => (
                         <button
                           key={s} type="button"
                           onClick={() => setCropForm(f => ({ ...f, spacing: s }))}
@@ -680,7 +725,8 @@ export default function MyFarmPage() {
                         >{s}</button>
                       ))}
                     </div>
-                  )}
+                    ) : null;
+                  })()}
                   <input
                     type="text"
                     value={cropForm.spacing}
@@ -897,7 +943,7 @@ export default function MyFarmPage() {
                                     <h4 className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
                                       {cs.cropName}{cs.variety && cs.variety.toLowerCase() !== "unknown" ? ` (${cs.variety})` : ""}
                                     </h4>
-                                    {i === 0 && <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold border border-blue-200">Free</span>}
+                                    {matchedCrop && matchedCrop.id === oldestGrowingCropId && <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold border border-blue-200">Free</span>}
                                   </div>
                                   <p className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">Day {cs.daysSincePlanting}</p>
                                 </div>
@@ -1007,7 +1053,7 @@ export default function MyFarmPage() {
                           <h3 className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{crop.cropName}</h3>
                           {crop.variety && <span className="text-[10px] bg-gray-100 text-[#6b7c6b] px-2 py-0.5 rounded-full font-[family-name:var(--font-body)]">{crop.variety}</span>}
                           <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold">Growing</span>
-                          {cropIdx === 0 && <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold border border-blue-200">Free</span>}
+                          {crop.id === oldestGrowingCropId && <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold border border-blue-200">Free</span>}
                         </div>
                         <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
                           <span>📍 {crop.location}</span>
@@ -1445,16 +1491,20 @@ export default function MyFarmPage() {
       <PaymentModal
         isOpen={paymentModal.open}
         onClose={() => setPaymentModal({ open: false, context: "crop", cropData: null })}
-        onSuccess={async () => {
+        onSuccess={async (subData) => {
+          // Capture values before state resets
+          const ctx = paymentModal.context;
+          const pending = pendingCropForm;
+          const subDocId = subData?.subscription?.documentId;
           setPaymentModal({ open: false, context: "crop", cropData: null });
-          if (paymentModal.context === "crop" && pendingCropForm) {
+          if (ctx === "crop" && pending) {
             // Retry adding the crop after successful payment
             try {
               const token = getToken();
               const res = await fetch("/api/farm-crops", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify(pendingCropForm),
+                body: JSON.stringify(pending),
               });
               const data = await res.json();
               if (data.crop) {
@@ -1462,14 +1512,36 @@ export default function MyFarmPage() {
                 setCropForm({
                   cropName: "", variety: "", area: "", areaUnit: "acres",
                   plantingDate: new Date().toISOString().split("T")[0],
-                  location: pendingCropForm.location,
+                  location: pending.location,
                   seedQuantity: "", seedUnit: "kg", spacing: "",
                 });
                 setShowAddForm(false);
-                setActiveTab("crops");
+                setActiveTab("plan");
+                setPlan(null); // Force regeneration with new crop
+                // Link the crop's documentId to the subscription
+                if (subDocId && data.crop.documentId) {
+                  try {
+                    await fetch("/api/subscription", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({
+                        subscriptionDocumentId: subDocId,
+                        cropDocumentId: data.crop.documentId,
+                        cropName: data.crop.cropName,
+                      }),
+                    });
+                  } catch {}
+                }
+              } else {
+                // If still rejected (e.g. Strapi race), force close form anyway
+                console.error("Crop add after payment returned:", data);
+                setShowAddForm(false);
+                alert(data.message || "Crop could not be added. Please try adding it again manually.");
               }
             } catch (err) {
               console.error("Failed to add crop after payment:", err);
+              setShowAddForm(false);
+              alert("Something went wrong adding your crop. Please try adding it again from My Crops tab.");
             }
             setPendingCropForm(null);
           }

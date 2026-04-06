@@ -44,7 +44,7 @@ export async function checkUsageLimit(userId, field, token) {
   try {
     // Check for any active paid subscription (annual or per-crop = unlimited chat)
     const subRes = await fetch(
-      `${STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${userId}&filters[status][$eq]=active`,
+      `${STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${userId}&filters[subStatus][$eq]=active`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const subData = subRes.ok ? await subRes.json() : { data: [] };

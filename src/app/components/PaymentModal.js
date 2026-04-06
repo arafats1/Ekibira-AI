@@ -111,6 +111,7 @@ export default function PaymentModal({
           type: plan.id,
           cropDocumentId: plan.id === "per-crop" ? cropData?.documentId : null,
           cropName: plan.id === "per-crop" ? cropData?.cropName : null,
+          plantingDate: plan.id === "per-crop" ? cropData?.plantingDate : null,
           paymentRef: payData.paymentRef,
           paymentMethod: "mobile_money",
         }),
@@ -126,7 +127,7 @@ export default function PaymentModal({
       setStep("success");
       setTimeout(() => {
         onSuccess?.(subData);
-        onClose();
+        // Don't call onClose here — onSuccess handler already closes the modal
         setStep("plans");
         setSelectedPlan(null);
         setPhone("");
