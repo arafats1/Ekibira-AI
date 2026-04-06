@@ -9,6 +9,8 @@ const ROUTE_MAP = {
   farmer: "/dashboard/farmer",
   insurance: "/dashboard/insurance",
   eu_compliance: "/dashboard/eu-compliance",
+  forestry: "/dashboard/forestry",
+  general: "/dashboard/forestry",
 };
 
 export default function DashboardPage() {

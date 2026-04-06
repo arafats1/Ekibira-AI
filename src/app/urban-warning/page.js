@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useAuth } from "../context/AuthContext";
 
 // ─── Quick-select presets for demo (Kampala neighborhoods) ───
 const PRESET_LOCATIONS = [
@@ -63,6 +64,7 @@ function WeatherIcon({ condition }) {
 
 // ─── Main page ───
 export default function UrbanWarningPage() {
+  const { user } = useAuth();
   const [selectedArea, setSelectedArea] = useState(null);
   const [forecast, setForecast] = useState([]);
   const [alertSent, setAlertSent] = useState(false);
@@ -76,6 +78,28 @@ export default function UrbanWarningPage() {
   const [analyzedLocations, setAnalyzedLocations] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const mapRef = useRef(null);
+
+  // Visitor query limit tracking
+  const VISITOR_QUERY_LIMIT = 2;
+  const [visitorQueries, setVisitorQueries] = useState(0);
+  const [showLimitReached, setShowLimitReached] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      try {
+        const count = parseInt(localStorage.getItem("kibira_visitor_urban_queries") || "0", 10);
+        setVisitorQueries(count);
+        if (count >= VISITOR_QUERY_LIMIT) setShowLimitReached(true);
+      } catch {}
+    }
+  }, [user]);
+
+  const incrementVisitorQueries = () => {
+    const newCount = visitorQueries + 1;
+    setVisitorQueries(newCount);
+    try { localStorage.setItem("kibira_visitor_urban_queries", String(newCount)); } catch {}
+    if (newCount >= VISITOR_QUERY_LIMIT) setShowLimitReached(true);
+  };
 
   // Load persisted locations from localStorage on mount
   useEffect(() => {
@@ -119,9 +143,19 @@ export default function UrbanWarningPage() {
   // Analyze a location using AI
   const analyzeLocation = async (locationQuery) => {
     if (!locationQuery.trim()) return;
+
+    // Check visitor limit
+    if (!user && visitorQueries >= VISITOR_QUERY_LIMIT) {
+      setShowLimitReached(true);
+      return;
+    }
+
     setAnalyzing(true);
     setAnalysisError("");
     setSelectedArea(null);
+
+    // Increment visitor counter
+    if (!user) incrementVisitorQueries();
 
     try {
       const res = await fetch("/api/urban-analysis", {
@@ -248,7 +282,41 @@ export default function UrbanWarningPage() {
         </div>
       </nav>
 
-      <main className="pt-20 sm:pt-24 pb-20">
+      {/* Visitor limit banner */}
+      {!user && !showLimitReached && (
+        <div className="fixed top-[52px] sm:top-[56px] left-0 right-0 z-40 bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between">
+          <p className="text-xs text-amber-800 font-[family-name:var(--font-body)]">
+            👋 You&apos;re browsing as a visitor — <strong>{VISITOR_QUERY_LIMIT - visitorQueries} free area {VISITOR_QUERY_LIMIT - visitorQueries === 1 ? "analysis" : "analyses"}</strong> remaining. Create an account for unlimited access.
+          </p>
+          <Link href="/signup" className="text-xs font-bold text-amber-900 hover:underline font-[family-name:var(--font-body)] whitespace-nowrap ml-3">Sign Up →</Link>
+        </div>
+      )}
+
+      {/* Limit reached overlay */}
+      {showLimitReached && !user && (
+        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center px-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+            <div className="text-5xl mb-4">🏙️</div>
+            <h2 className="text-xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-2">Free Analyses Used Up</h2>
+            <p className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)] mb-6">
+              You&apos;ve used all {VISITOR_QUERY_LIMIT} free visitor area analyses for Urban Early Warning. Create a free account to analyze unlimited locations with full flood and heat risk data.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Link href="/signup" className="w-full py-3 rounded-xl bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-semibold text-sm transition-colors font-[family-name:var(--font-body)] block">
+                Create Free Account
+              </Link>
+              <Link href="/login" className="w-full py-3 rounded-xl border border-[#e5e7eb] text-[#6b7c6b] hover:bg-gray-50 text-sm font-[family-name:var(--font-body)] transition-colors block">
+                Already have an account? Sign In
+              </Link>
+              <button onClick={() => setShowLimitReached(false)} className="text-xs text-[#9ca3af] hover:text-[#6b7c6b] font-[family-name:var(--font-body)] mt-1">
+                Continue browsing (no new analyses)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className={`pt-20 sm:pt-24 pb-20 ${!user && !showLimitReached ? "mt-8" : ""}`}>
         {/* Hero */}
         <div className="bg-gradient-to-br from-[#0c2d48] to-[#1a1a2e] py-12 sm:py-16 mb-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">

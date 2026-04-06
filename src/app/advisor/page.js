@@ -395,6 +395,28 @@ function AdvisorPageContent() {
   const [paymentModal, setPaymentModal] = useState(false);
   const searchParams = useSearchParams();
 
+  // Visitor query limit tracking
+  const VISITOR_QUERY_LIMIT = 3;
+  const [visitorQueries, setVisitorQueries] = useState(0);
+  const [showLimitReached, setShowLimitReached] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      try {
+        const count = parseInt(localStorage.getItem("kibira_visitor_advisor_queries") || "0", 10);
+        setVisitorQueries(count);
+        if (count >= VISITOR_QUERY_LIMIT) setShowLimitReached(true);
+      } catch {}
+    }
+  }, [user]);
+
+  const incrementVisitorQueries = () => {
+    const newCount = visitorQueries + 1;
+    setVisitorQueries(newCount);
+    try { localStorage.setItem("kibira_visitor_advisor_queries", String(newCount)); } catch {}
+    if (newCount >= VISITOR_QUERY_LIMIT) setShowLimitReached(true);
+  };
+
   // Auto-send query from URL ?q= param
   const autoSentRef = useRef(false);
   useEffect(() => {
@@ -479,10 +501,19 @@ function AdvisorPageContent() {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
+    // Check visitor limit
+    if (!user && visitorQueries >= VISITOR_QUERY_LIMIT) {
+      setShowLimitReached(true);
+      return;
+    }
+
     const userMessage = input.trim();
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setLoading(true);
+
+    // Increment visitor counter before the API call
+    if (!user) incrementVisitorQueries();
 
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
@@ -650,6 +681,40 @@ function AdvisorPageContent() {
           </div>
         </header>
 
+        {/* Visitor limit banner */}
+        {!user && !showLimitReached && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between">
+            <p className="text-xs text-amber-800 font-[family-name:var(--font-body)]">
+              👋 You&apos;re using Dr. Kibira as a visitor — <strong>{VISITOR_QUERY_LIMIT - visitorQueries} free {VISITOR_QUERY_LIMIT - visitorQueries === 1 ? "query" : "queries"}</strong> remaining. Create an account for unlimited access.
+            </p>
+            <Link href="/signup" className="text-xs font-bold text-amber-900 hover:underline font-[family-name:var(--font-body)] whitespace-nowrap ml-3">Sign Up →</Link>
+          </div>
+        )}
+
+        {/* Limit reached overlay */}
+        {showLimitReached && !user && (
+          <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center px-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+              <div className="text-5xl mb-4">🌿</div>
+              <h2 className="text-xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-2">Free Queries Used Up</h2>
+              <p className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)] mb-6">
+                You&apos;ve used all {VISITOR_QUERY_LIMIT} free visitor queries for Dr. Kibira AI. Create a free account to continue with unlimited climate research analysis.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Link href="/signup" className="w-full py-3 rounded-xl bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-semibold text-sm transition-colors font-[family-name:var(--font-body)] block">
+                  Create Free Account
+                </Link>
+                <Link href="/login" className="w-full py-3 rounded-xl border border-[#e5e7eb] text-[#6b7c6b] hover:bg-gray-50 text-sm font-[family-name:var(--font-body)] transition-colors block">
+                  Already have an account? Sign In
+                </Link>
+                <button onClick={() => setShowLimitReached(false)} className="text-xs text-[#9ca3af] hover:text-[#6b7c6b] font-[family-name:var(--font-body)] mt-1">
+                  Continue reading (no new queries)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -750,9 +815,9 @@ function AdvisorPageContent() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about any location, climate risk, or environmental topic..."
+              placeholder={!user && visitorQueries >= VISITOR_QUERY_LIMIT ? "Create an account for more queries..." : "Ask about any location, climate risk, or environmental topic..."}
               className="flex-1 min-w-0 py-2 text-base sm:text-sm text-[#1a2e1a] focus:outline-none bg-transparent font-[family-name:var(--font-body)] placeholder:text-[#9ca3af]"
-              disabled={loading}
+              disabled={loading || (!user && visitorQueries >= VISITOR_QUERY_LIMIT)}
             />
             <button
               type="submit"
