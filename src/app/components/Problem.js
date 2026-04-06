@@ -4,35 +4,21 @@ export default function Problem() {
       icon: "🪓",
       title: "Rapid Deforestation",
       description:
-        "Africa loses 3.9 million hectares of forest annually — more than any other continent. The Congo Basin, the world's second-largest tropical forest, is disappearing at an alarming rate.",
+        "Africa loses 3.9 million hectares of forest annually — more than any other continent. Without monitoring and enforcement, critical ecosystems like the Congo Basin continue to disappear.",
       stat: "3.9M ha/year",
     },
     {
-      icon: "🌡️",
-      title: "Rising Temperatures",
-      description:
-        "African temperatures are rising 1.5x faster than the global average. By 2050, crop yields could decline by 20-30%, threatening food security for over 250 million people.",
-      stat: "1.5x faster warming",
-    },
-    {
       icon: "🌾",
-      title: "Loss of Livelihoods",
+      title: "Threatened Livelihoods",
       description:
-        "Over 60% of Africans depend on agriculture and natural resources. Deforestation destroys soil fertility, water systems, and biodiversity — trapping communities in cycles of poverty.",
+        "Over 60% of Africans depend on agriculture and natural resources. Deforestation and climate change destroy soil fertility, water systems, and food security — trapping communities in poverty.",
       stat: "60% depend on land",
     },
     {
-      icon: "💨",
-      title: "Carbon Emissions",
-      description:
-        "Land-use change in Africa contributes 15-20% of global carbon emissions. Yet African nations receive less than 3% of global climate finance to address this crisis.",
-      stat: "<3% climate finance",
-    },
-    {
       icon: "🏙️",
-      title: "Urban Vulnerability",
+      title: "Urban Climate Risk",
       description:
-        "African cities face acute risks from heat stress, flash flooding, and water scarcity. Without resilient services and digital planning, 100M+ urban dwellers face extreme climate displacement.",
+        "African cities face acute heat stress, flash flooding, and water scarcity. Without data-driven planning, 100M+ urban residents face displacement and climate-related disasters.",
       stat: "100M+ at risk",
     },
   ];
@@ -48,9 +34,7 @@ export default function Problem() {
             The Crisis
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#1a2e1a] leading-tight mb-4 sm:mb-6">
-            Africa&rsquo;s Climate Crisis:
-            <br />
-            <span className="gradient-text">Forests &amp; Cities Under Threat</span>
+            The <span className="gradient-text">Climate Challenge</span>
           </h2>
           <p className="text-[#6b7c6b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
             Africa loses millions of hectares of forest every year while its fastest-growing
@@ -60,7 +44,7 @@ export default function Problem() {
         </div>
 
         {/* Problem cards */}
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
           {problems.map((problem, i) => (
             <div
               key={i}
