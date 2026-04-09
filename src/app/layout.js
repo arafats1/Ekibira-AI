@@ -16,17 +16,22 @@ const fraunces = Fraunces({
 
 export const metadata = {
   metadataBase: new URL("https://www.kibiraai.com"),
-  title: "KibiraAI — AI-Powered Reforestation for Africa",
+  title: "KibiraAI — AI-Powered Climate Intelligence for Africa",
   description:
-    "KibiraAI uses artificial intelligence to combat deforestation in Africa by providing smart reforestation plans, carbon sequestration estimates, and climate-smart land-use recommendations for communities across the continent.",
+    "KibiraAI is an integrated climate intelligence platform combining AI research, real-time forest monitoring, urban flood and heat risk prediction, and community reforestation tools to protect Africa's forests and cities.",
   keywords: [
-    "climate change",
+    "climate intelligence",
     "Africa",
     "reforestation",
     "AI",
     "deforestation",
+    "forest monitoring",
+    "flood risk",
+    "urban heat",
     "carbon credits",
     "sustainability",
+    "acoustic monitoring",
+    "climate adaptation",
   ],
   icons: {
     icon: [
@@ -36,9 +41,9 @@ export const metadata = {
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "KibiraAI — AI-Powered Reforestation for Africa",
+    title: "KibiraAI — AI-Powered Climate Intelligence for Africa",
     description:
-      "Combating deforestation across Africa with AI-driven reforestation planning and carbon tracking.",
+      "AI-driven reforestation planning & climate research - Empowering African communities to fight climate change.",
     type: "website",
     url: "https://www.kibiraai.com",
     siteName: "KibiraAI",
@@ -47,15 +52,15 @@ export const metadata = {
         url: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&q=80",
         width: 1200,
         height: 630,
-        alt: "KibiraAI — AI-Powered Reforestation for Africa",
+        alt: "KibiraAI — AI-Powered Climate Intelligence for Africa",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "KibiraAI — AI-Powered Reforestation for Africa",
+    title: "KibiraAI — AI-Powered Climate Intelligence for Africa",
     description:
-      "Combating deforestation across Africa with AI-driven reforestation planning and carbon tracking.",
+      "AI climate research, real-time forest sentinel monitoring, urban flood and heat warnings, and direct reforestation — empowering African communities to fight climate change.",
     creator: "@KibiraAI",
     images: ["https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&q=80"],
   },
