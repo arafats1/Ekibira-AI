@@ -15,7 +15,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata = {
-  metadataBase: new URL("https://kibira-ai.vercel.app"),
+  metadataBase: new URL("https://www.kibiraai.com"),
   title: "KibiraAI — AI-Powered Reforestation for Africa",
   description:
     "KibiraAI uses artificial intelligence to combat deforestation in Africa by providing smart reforestation plans, carbon sequestration estimates, and climate-smart land-use recommendations for communities across the continent.",
@@ -40,7 +40,7 @@ export const metadata = {
     description:
       "Combating deforestation across Africa with AI-driven reforestation planning and carbon tracking.",
     type: "website",
-    url: "https://kibira-ai.vercel.app/",
+    url: "https://www.kibiraai.com",
     siteName: "KibiraAI",
     images: [
       {

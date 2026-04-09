@@ -20,7 +20,7 @@ async function getAccessToken() {
 }
 
 async function registerIPN(token) {
-  const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://kibira-ai.vercel.app"}/api/verify-payment`;
+  const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.kibiraai.com"}/api/verify-payment`;
   const res = await fetch(`${PESAPAL_BASE}/api/URLSetup/RegisterIPN`, {
     method: "POST",
     headers: {
@@ -53,7 +53,7 @@ export async function POST(request) {
     const ipnId = await registerIPN(token);
 
     const merchantRef = `KIBIRA-TREE-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://kibira-ai.vercel.app"}/plant-a-tree?payment=success&ref=${merchantRef}`;
+    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.kibiraai.com"}/plant-a-tree?payment=success&ref=${merchantRef}`;
 
     const orderPayload = {
       id: merchantRef,
