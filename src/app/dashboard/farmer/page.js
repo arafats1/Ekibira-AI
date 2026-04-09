@@ -302,15 +302,15 @@ export default function FarmerDashboard() {
                 <h2 className="text-lg font-bold text-[#1a2e1a] mb-4 font-[family-name:var(--font-display)]">
                   🌤️ 7-Day Weather Forecast — {analysis.locationName}
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
                   {analysis.forecast.map((day, i) => (
-                    <div key={i} className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
+                    <div key={i} className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100 flex-shrink-0 w-24 sm:w-28">
                       <p className="text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)]">{day.date}</p>
-                      <p className="text-xl my-1">{day.condition === "Sunny" ? "☀️" : day.condition === "Heavy Rain" ? "🌧️" : day.condition === "Light Rain" || day.condition === "Showers" ? "🌦️" : day.condition === "Thunderstorm" ? "⛈️" : day.condition === "Drizzle" ? "🌧️" : "☁️"}</p>
+                      <p className="text-lg sm:text-xl my-1">{day.condition === "Sunny" ? "☀️" : day.condition === "Heavy Rain" ? "🌧️" : day.condition === "Light Rain" || day.condition === "Showers" ? "🌦️" : day.condition === "Thunderstorm" ? "⛈️" : day.condition === "Drizzle" ? "🌧️" : "☁️"}</p>
                       <p className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">{day.condition}</p>
-                      <p className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-body)] mt-1">{day.tempHigh}° / {day.tempLow}°</p>
-                      <p className="text-[10px] text-blue-600 font-[family-name:var(--font-body)]">{day.rainfall}mm rain</p>
-                      {day.wind > 0 && <p className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">💨 {day.wind} km/h</p>}
+                      <p className="text-xs sm:text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-body)] mt-1">{day.tempHigh}° / {day.tempLow}°</p>
+                      <p className="text-[9px] sm:text-[10px] text-blue-600 font-[family-name:var(--font-body)]">{day.rainfall}mm rain</p>
+                      {day.wind > 0 && <p className="text-[9px] sm:text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">💨 {day.wind} km/h</p>}
                     </div>
                   ))}
                 </div>
@@ -354,26 +354,26 @@ export default function FarmerDashboard() {
 
             {/* Rainfall Pattern — from historical data */}
             {analysis.rainfallProfile && (
-              <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6 mb-8">
+              <div className="bg-white rounded-2xl border border-[#e5e7eb] p-4 sm:p-6 mb-8 overflow-x-auto">
                 <h2 className="text-lg font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">
                   📊 Annual Rainfall Pattern — {analysis.locationName}
                 </h2>
                 <p className="text-xs text-[#6b7c6b] mb-4 font-[family-name:var(--font-body)]">
                   {analysis.rainySeasons || "Historical monthly rainfall based on the past 12 months"}
                 </p>
-                <div className="flex items-end gap-1 sm:gap-2 h-40">
+                <div className="flex items-end gap-0.5 sm:gap-2 h-32 sm:h-40 min-w-full">
                   {analysis.rainfallProfile.map((m, i) => {
                     const maxRain = Math.max(...analysis.rainfallProfile.map(r => r.rainfallMm), 1);
                     const height = Math.max(4, (m.rainfallMm / maxRain) * 100);
                     const isWet = m.rainfallMm > maxRain * 0.4;
                     return (
-                      <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                        <p className="text-[9px] font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-1">{m.rainfallMm}mm</p>
+                      <div key={i} className="flex-1 min-w-[40px] sm:flex-1 flex flex-col items-center justify-end h-full">
+                        <p className="text-[7px] sm:text-[9px] font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)] mb-0.5 sm:mb-1">{m.rainfallMm}mm</p>
                         <div
                           className={`w-full rounded-t-md transition-all ${isWet ? 'bg-blue-500' : 'bg-amber-400'}`}
-                          style={{ height: `${height}%`, minHeight: "4px" }}
+                          style={{ height: `${height}%`, minHeight: "2px" }}
                         />
-                        <p className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)] mt-1">{m.month}</p>
+                        <p className="text-[7px] sm:text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)] mt-0.5 sm:mt-1 text-center">{m.month}</p>
                       </div>
                     );
                   })}
