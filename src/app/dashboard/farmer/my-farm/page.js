@@ -789,7 +789,7 @@ export default function MyFarmPage() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-white rounded-xl border border-[#e5e7eb] p-1 mb-6 w-fit">
+        <div className="flex gap-1 bg-white rounded-xl border border-[#e5e7eb] p-1 mb-6 w-fit overflow-x-auto">
           {[
             { key: "plan", label: "📋 Today's Plan", count: plan?.dailyActions?.length },
             { key: "crops", label: "🌾 My Crops", count: growingCrops.length },
@@ -798,7 +798,7 @@ export default function MyFarmPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-[family-name:var(--font-body)] transition-all flex items-center gap-2 ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-[family-name:var(--font-body)] transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap ${
                 activeTab === tab.key
                   ? "bg-amber-600 text-white font-semibold"
                   : "text-[#6b7c6b] hover:bg-gray-50"
@@ -806,7 +806,7 @@ export default function MyFarmPage() {
             >
               {tab.label}
               {tab.count > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? 'bg-white/20' : 'bg-gray-100'}`}>
+                <span className={`text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? 'bg-white/20' : 'bg-gray-100'}`}>
                   {tab.count}
                 </span>
               )}
@@ -847,14 +847,14 @@ export default function MyFarmPage() {
 
                     {/* 7-Day Forecast Cards */}
                     {plan.forecast && plan.forecast.length > 0 && (
-                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-4">
+                      <div className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6 mt-4">
                         {plan.forecast.map((day, i) => (
-                          <div key={i} className="bg-white/10 rounded-xl p-3 text-center border border-white/20">
+                          <div key={i} className="bg-white/10 rounded-xl p-3 text-center border border-white/20 flex-shrink-0 w-24 sm:w-28">
                             <p className="text-xs font-semibold text-white font-[family-name:var(--font-body)]">{day.date}</p>
-                            <p className="text-xl my-1">{day.condition === "Sunny" ? "☀️" : day.condition === "Heavy Rain" ? "🌧️" : day.condition === "Light Rain" || day.condition === "Showers" ? "🌦️" : day.condition === "Thunderstorm" ? "⛈️" : day.condition === "Drizzle" ? "🌧️" : "☁️"}</p>
-                            <p className="text-[10px] text-white/70 font-[family-name:var(--font-body)]">{day.condition}</p>
-                            <p className="text-sm font-bold text-white font-[family-name:var(--font-body)] mt-1">{day.tempHigh}° / {day.tempLow}°</p>
-                            <p className="text-[10px] text-blue-300 font-[family-name:var(--font-body)]">{day.rainfall}mm rain</p>
+                            <p className="text-lg sm:text-xl my-1">{day.condition === "Sunny" ? "☀️" : day.condition === "Heavy Rain" ? "🌧️" : day.condition === "Light Rain" || day.condition === "Showers" ? "🌦️" : day.condition === "Thunderstorm" ? "⛈️" : day.condition === "Drizzle" ? "🌧️" : "☁️"}</p>
+                            <p className="text-[9px] sm:text-[10px] text-white/70 font-[family-name:var(--font-body)]">{day.condition}</p>
+                            <p className="text-xs sm:text-sm font-bold text-white font-[family-name:var(--font-body)] mt-1">{day.tempHigh}° / {day.tempLow}°</p>
+                            <p className="text-[9px] sm:text-[10px] text-blue-300 font-[family-name:var(--font-body)]">{day.rainfall}mm rain</p>
                           </div>
                         ))}
                       </div>
@@ -1040,13 +1040,13 @@ export default function MyFarmPage() {
                 <button onClick={() => setShowAddForm(true)} className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-semibold text-sm font-[family-name:var(--font-body)]">+ Add Crop</button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 {growingCrops.map((crop, cropIdx) => {
                   const cs = plan?.cropStatus?.find(s => s.cropName.toLowerCase() === crop.cropName.toLowerCase());
                   return (
-                  <div key={crop.id} className="bg-white rounded-xl border border-[#e5e7eb] p-5">
-                    <div className="flex items-start justify-between">
-                      <div className="flex gap-3 flex-1">
+                  <div key={crop.id} className="bg-white rounded-xl border border-[#e5e7eb] p-4 sm:p-5">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                      <div className="flex gap-3 flex-1 min-w-0">
                         <CropStageImage cropName={crop.cropName} growthStage={cs?.growthStage} size="sm" />
                         <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1089,18 +1089,18 @@ export default function MyFarmPage() {
                         )}
                       </div>  {/* end flex-1 text content */}
                       </div>  {/* end flex gap-3 wrapper */}
-                      <div className="flex items-center gap-2 ml-4">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 sm:ml-4 w-full sm:w-auto sm:flex-col">
                         <button
                           onClick={() => { setHarvestModal(crop); setHarvestForm({ harvestDate: new Date().toISOString().split("T")[0], harvestYield: "", yieldUnit: "kg" }); }}
-                          className="text-[11px] px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg font-[family-name:var(--font-body)] font-medium transition-colors"
+                          className="text-[10px] sm:text-[11px] px-2.5 sm:px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg font-[family-name:var(--font-body)] font-medium transition-colors flex-1 sm:flex-none text-center"
                         >✓ Harvested</button>
                         <button
                           onClick={() => updateCropStatus(crop.id, "failed")}
-                          className="text-[11px] px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-[family-name:var(--font-body)] font-medium transition-colors"
+                          className="text-[10px] sm:text-[11px] px-2.5 sm:px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-[family-name:var(--font-body)] font-medium transition-colors flex-1 sm:flex-none text-center"
                         >✗ Failed</button>
                         <button
                           onClick={() => { if (confirm("Remove this crop?")) deleteCrop(crop.id); }}
-                          className="text-[11px] px-2 py-1.5 text-[#6b7c6b] hover:text-red-600 transition-colors"
+                          className="text-[10px] sm:text-[11px] px-2 sm:px-2.5 py-1.5 text-[#6b7c6b] hover:text-red-600 transition-colors"
                         >🗑️</button>
                       </div>
                     </div>
