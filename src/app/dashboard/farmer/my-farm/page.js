@@ -1137,25 +1137,25 @@ export default function MyFarmPage() {
                   return (
                     <div key={crop.id} className="bg-white rounded-2xl border border-[#e5e7eb] overflow-hidden">
                       {/* Crop Header */}
-                      <div className="p-5 border-b border-[#e5e7eb]">
-                        <div className="flex items-start justify-between">
-                          <div>
+                      <div className="p-4 sm:p-5 border-b border-[#e5e7eb]">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="text-base font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{crop.cropName}</h3>
                               {crop.variety && <span className="text-[10px] bg-gray-100 text-[#6b7c6b] px-2 py-0.5 rounded-full font-[family-name:var(--font-body)]">{crop.variety}</span>}
                               <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-[family-name:var(--font-body)] font-semibold">Harvested ✓</span>
                             </div>
-                            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-[11px] sm:text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
                               <span>📍 {crop.location}</span>
                               <span>📅 Planted {fmtDate(crop.plantingDate)}</span>
                               <span>🏁 Harvested {fmtDate(crop.harvestDate)}</span>
-                              {duration != null && <span>⏱️ {duration} days</span>}
+                              {duration != null && <span>⏱️ {duration}d</span>}
                               {crop.area > 0 && <span>📐 {crop.area} {crop.areaUnit}</span>}
-                              {crop.seedQuantity > 0 && <span>🌱 {crop.seedQuantity} {crop.seedUnit} seed</span>}
+                              {crop.seedQuantity > 0 && <span>🌱 {crop.seedQuantity} {crop.seedUnit}</span>}
                             </div>
                             {/* Actual vs Expected Yield */}
                             {actualYield > 0 && (
-                              <div className="mt-3 flex flex-wrap items-center gap-3">
+                              <div className="mt-3 flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-3">
                                 <div className="bg-green-50 rounded-lg px-3 py-2 border border-green-200 inline-flex items-center gap-2">
                                   <span className="text-xs font-[family-name:var(--font-body)]">📦 Actual: <span className="font-bold text-green-800">{actualYield.toLocaleString()} {crop.yieldUnit || "kg"}</span></span>
                                 </div>
@@ -1176,21 +1176,21 @@ export default function MyFarmPage() {
                               <div className="mt-2">
                                 <button
                                   onClick={() => startYieldChat(crop)}
-                                  className="text-[11px] px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-[family-name:var(--font-body)] font-semibold transition-colors"
-                                >{yc?.open ? "▼ Hide yield advice" : "⚠️ Low yield — Get AI advice on improving next season"}</button>
+                                  className="text-[10px] sm:text-[11px] px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-[family-name:var(--font-body)] font-semibold transition-colors w-full sm:w-auto text-left sm:text-center"
+                                >{yc?.open ? "▼ Hide advice" : "⚠️ Get AI yield advice"}</button>
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 ml-4">
+                          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto sm:ml-4">
                             {!md && (
                               <button
                                 onClick={() => fetchMarketPrice(crop)}
-                                className="text-[11px] px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg font-[family-name:var(--font-body)] font-semibold transition-colors flex items-center gap-1.5"
+                                className="text-[10px] sm:text-[11px] px-3 sm:px-4 py-1.5 sm:py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg font-[family-name:var(--font-body)] font-semibold transition-colors flex items-center gap-1 flex-1 sm:flex-none justify-center"
                               >💰 Get Market Prices</button>
                             )}
                             <button
                               onClick={() => { if (confirm("Delete this harvest record?")) deleteCrop(crop.id); }}
-                              className="text-[11px] px-2 py-1.5 text-[#6b7c6b] hover:text-red-600 transition-colors"
+                              className="text-[10px] sm:text-[11px] px-2 sm:px-2.5 py-1.5 text-[#6b7c6b] hover:text-red-600 transition-colors"
                             >🗑️</button>
                           </div>
                         </div>
