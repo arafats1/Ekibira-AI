@@ -49,12 +49,6 @@ export async function GET(request) {
 
     // Pesapal IPN received, payment verified
     // No console logging in production
-      orderTrackingId,
-      orderMerchantReference,
-      orderNotificationType,
-      paymentStatus: statusData.payment_status_description,
-      amount: statusData.amount,
-    });
 
     // In production, you would update your database here
     // e.g., mark the tree planting order as confirmed
