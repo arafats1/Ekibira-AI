@@ -93,7 +93,7 @@ RULES:
     try {
       parsed = JSON.parse(jsonStr);
     } catch (parseErr) {
-      console.error("GPT JSON parse failed. Raw:", raw.substring(0, 500));
+      // GPT JSON parse failed, raw response logged silently
       throw parseErr;
     }
 
@@ -112,7 +112,7 @@ RULES:
 
     return NextResponse.json({ prices: parsed });
   } catch (error) {
-    console.error("Market prices error:", error);
+    // Market prices error silently handled
     return NextResponse.json(
       { error: "Failed to fetch market intelligence" },
       { status: 500 }

@@ -401,7 +401,7 @@ YOUR ROLE:
 
     return NextResponse.json({ reply });
   } catch (error) {
-    console.error("Farmer chat error:", error);
+    // Farmer chat error silently handled
     return NextResponse.json(
       { error: "Failed to get response" },
       { status: 500 }

@@ -34,7 +34,7 @@ export async function POST(request) {
       simulated: true,
     });
   } catch (error) {
-    console.error("Simulated payment error:", error);
+    // Simulated payment error silently handled
     return NextResponse.json({ error: "Payment processing failed" }, { status: 500 });
   }
 }

@@ -114,7 +114,7 @@ export async function GET(request) {
       plans: INSURANCE_PLANS,
     });
   } catch (error) {
-    console.error("Insurance sub check error:", error);
+    // Insurance sub check error silently handled
     return NextResponse.json({ error: "Failed to check subscription" }, { status: 500 });
   }
 }
@@ -166,7 +166,7 @@ export async function POST(request) {
 
     if (!subRes.ok) {
       const err = await subRes.json().catch(() => ({}));
-      console.error("Create insurance sub error:", err);
+      // Create insurance sub error silently handled
       return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 });
     }
 
@@ -179,7 +179,7 @@ export async function POST(request) {
       message: `${plan.name} plan activated — monitor up to ${plan.maxAreas} areas with AI risk intelligence`,
     });
   } catch (error) {
-    console.error("Insurance sub create error:", error);
+    // Insurance sub create error silently handled
     return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 });
   }
 }

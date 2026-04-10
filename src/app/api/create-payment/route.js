@@ -100,7 +100,7 @@ export async function POST(request) {
       { status: 500 }
     );
   } catch (err) {
-    console.error("Pesapal create-payment error:", err);
+    // Pesapal create-payment error silently handled
     return NextResponse.json(
       { error: err.message || "Internal server error" },
       { status: 500 }

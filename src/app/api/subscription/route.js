@@ -114,7 +114,7 @@ export async function GET(request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Subscription check error:", error);
+    // Subscription check error silently handled
     return NextResponse.json({ error: "Failed to check subscription" }, { status: 500 });
   }
 }
@@ -228,7 +228,7 @@ export async function POST(request) {
 
     if (!subRes.ok) {
       const err = await subRes.json().catch(() => ({}));
-      console.error("Strapi subscription create error:", err);
+      // Strapi subscription create error silently handled
       return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 });
     }
 
@@ -242,7 +242,7 @@ export async function POST(request) {
         : `Crop tracking activated for ${cropName || "your crop"} until ${endDate}`,
     });
   } catch (error) {
-    console.error("Subscription create error:", error);
+    // Subscription create error silently handled
     return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 });
   }
 }
@@ -296,7 +296,7 @@ export async function PUT(request) {
     const updated = await updateRes.json();
     return NextResponse.json({ success: true, subscription: updated.data });
   } catch (error) {
-    console.error("Subscription update error:", error);
+    // Subscription update error silently handled
     return NextResponse.json({ error: "Failed to update subscription" }, { status: 500 });
   }
 }

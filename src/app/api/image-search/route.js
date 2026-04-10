@@ -16,7 +16,7 @@ export async function POST(request) {
 
     return Response.json({ image: null });
   } catch (error) {
-    console.error("Image search error:", error);
+    // Image search error silently handled
     return Response.json({ image: null });
   }
 }

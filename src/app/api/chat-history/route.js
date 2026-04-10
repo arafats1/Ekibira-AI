@@ -60,7 +60,7 @@ export async function GET(request) {
       },
     });
   } catch (error) {
-    console.error("Load chats error:", error);
+    // Load chats error silently handled
     return NextResponse.json({ error: "Failed to load chats" }, { status: 500 });
   }
 }
@@ -99,7 +99,7 @@ export async function POST(request) {
 
       if (!res.ok) {
         const err = await res.text();
-        console.error("Update chat error:", err);
+        // Update chat error silently handled
         return NextResponse.json({ error: "Failed to update chat" }, { status: 500 });
       }
 
@@ -128,7 +128,7 @@ export async function POST(request) {
 
       if (!res.ok) {
         const err = await res.text();
-        console.error("Create chat error:", err);
+        // Create chat error silently handled
         return NextResponse.json({ error: "Failed to save chat" }, { status: 500 });
       }
 
@@ -139,7 +139,7 @@ export async function POST(request) {
       });
     }
   } catch (error) {
-    console.error("Save chat error:", error);
+    // Save chat error silently handled
     return NextResponse.json({ error: "Failed to save chat" }, { status: 500 });
   }
 }

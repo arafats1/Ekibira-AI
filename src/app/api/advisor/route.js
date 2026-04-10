@@ -426,7 +426,7 @@ export async function POST(request) {
 
     return Response.json({ reply });
   } catch (error) {
-    console.error("Advisor API error:", error);
+    // Advisor API error silently handled
 
     if (error?.status === 429) {
       return Response.json({ error: "Rate limit exceeded. Please try again in a moment." }, { status: 429 });

@@ -233,7 +233,7 @@ RESPOND IN STRICT JSON (no markdown, no code fences):
       },
     });
   } catch (err) {
-    console.error("EU analysis error:", err);
+    // EU analysis error silently handled
     return Response.json({ error: "Analysis failed. Please try again." }, { status: 500 });
   }
 }

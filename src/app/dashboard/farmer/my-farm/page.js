@@ -1534,12 +1534,12 @@ export default function MyFarmPage() {
                 }
               } else {
                 // If still rejected (e.g. Strapi race), force close form anyway
-                console.error("Crop add after payment returned:", data);
+                // Crop add after payment returned error silently handled
                 setShowAddForm(false);
                 alert(data.message || "Crop could not be added. Please try adding it again manually.");
               }
             } catch (err) {
-              console.error("Failed to add crop after payment:", err);
+              // Failed to add crop after payment error silently handled
               setShowAddForm(false);
               alert("Something went wrong adding your crop. Please try adding it again from My Crops tab.");
             }

@@ -488,7 +488,7 @@ export async function POST(request) {
 
     return NextResponse.json({ analysis });
   } catch (error) {
-    console.error("Urban analysis error:", error);
+    // Urban analysis error silently handled
     if (error instanceof SyntaxError) {
       return NextResponse.json({ error: "AI returned invalid data. Please try again." }, { status: 500 });
     }

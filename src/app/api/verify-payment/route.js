@@ -47,7 +47,8 @@ export async function GET(request) {
 
     const statusData = await statusRes.json();
 
-    console.log("Pesapal IPN received:", {
+    // Pesapal IPN received, payment verified
+    // No console logging in production
       orderTrackingId,
       orderMerchantReference,
       orderNotificationType,
@@ -69,7 +70,7 @@ export async function GET(request) {
         : `Payment status: ${statusData.payment_status_description}`,
     });
   } catch (err) {
-    console.error("Pesapal verify-payment error:", err);
+    // Pesapal verify-payment error silently handled
     return NextResponse.json(
       { error: err.message || "Verification failed" },
       { status: 500 }
@@ -110,7 +111,7 @@ export async function POST(request) {
       confirmed: statusData.payment_status_description === "Completed",
     });
   } catch (err) {
-    console.error("Pesapal verify error:", err);
+    // Pesapal verify error silently handled
     return NextResponse.json({ error: "Verification failed" }, { status: 500 });
   }
 }

@@ -296,7 +296,7 @@ export async function POST(request) {
           generatedAt: new Date().toISOString(),
         };
       } catch (aiErr) {
-        console.error(`AI analysis failed for ${areaName}:`, aiErr);
+        // AI analysis failed silently handled
         results[areaName] = {
           geo: { lat: geo.lat, lng: geo.lng, country: geo.country, region: geo.admin1, elevation: geo.elevation },
           rawData: stats,
@@ -309,7 +309,7 @@ export async function POST(request) {
 
     return NextResponse.json({ results, timestamp: new Date().toISOString() });
   } catch (error) {
-    console.error("Insurance risk API error:", error);
+    // Insurance risk API error silently handled
     return NextResponse.json({ error: "Failed to analyze insurance risk" }, { status: 500 });
   }
 }

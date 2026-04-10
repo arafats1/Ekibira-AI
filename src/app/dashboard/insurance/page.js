@@ -118,7 +118,9 @@ export default function InsuranceDashboard() {
       });
       const subData = await subRes.json();
       if (subData.success) { await fetchSub(); setShowPricing(false); }
-    } catch (err) { console.error("Payment error:", err); }
+    } catch (err) { 
+      // Payment error silently handled
+    }
     setProcessingPayment(null);
   };
 

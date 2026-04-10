@@ -59,7 +59,7 @@ RULES:
       yieldBasis: String(parsed.basis || "").slice(0, 500),
     };
   } catch (err) {
-    console.error("Yield estimation error:", err);
+    // Yield estimation error silently handled
     return null;
   }
 }
@@ -101,7 +101,7 @@ export async function GET(request) {
 
     return NextResponse.json({ crops });
   } catch (error) {
-    console.error("Farm crops GET error:", error);
+    // Farm crops GET error silently handled
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -218,7 +218,7 @@ export async function POST(request) {
 
     return NextResponse.json({ crop: cropResult });
   } catch (error) {
-    console.error("Farm crops POST error:", error);
+    // Farm crops POST error silently handled
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -283,7 +283,7 @@ export async function PUT(request) {
     const updated = await updateRes.json();
     return NextResponse.json({ crop: { ...updated.data, id: updated.data.documentId || updated.data.id } });
   } catch (error) {
-    console.error("Farm crops PUT error:", error);
+    // Farm crops PUT error silently handled
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -331,7 +331,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Farm crops DELETE error:", error);
+    // Farm crops DELETE error silently handled
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

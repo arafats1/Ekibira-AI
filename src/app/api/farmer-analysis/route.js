@@ -420,7 +420,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error("Farmer analysis error:", error);
+    // Farmer analysis error silently handled
     if (error instanceof SyntaxError) {
       return NextResponse.json({ error: "AI returned invalid data. Please try again." }, { status: 500 });
     }
