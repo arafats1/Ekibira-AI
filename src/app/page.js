@@ -8,7 +8,7 @@ import Impact from "./components/Impact";
 import Footer from "./components/Footer";
 
 export const metadata = {
-  title: "KibiraAI - AI-Powered Climate Intelligence for Africa",
+  title: "Kibira AI - AI-Powered Climate Intelligence for Africa",
   description:
     "KibiraAI is an integrated climate intelligence platform for Africa: forest monitoring, flood and heat risk prediction, AI climate research, and community reforestation.",
   alternates: {

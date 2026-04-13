@@ -17,8 +17,8 @@ const fraunces = Fraunces({
 export const metadata = {
   metadataBase: new URL("https://www.kibiraai.com"),
   title: {
-    default: "KibiraAI — AI-Powered Climate Intelligence for Africa",
-    template: "%s | KibiraAI",
+    default: "Kibira AI — AI-Powered Climate Intelligence for Africa",
+    template: "%s | Kibira AI",
   },
   description:
     "KibiraAI is an integrated climate intelligence platform combining AI research, real-time forest monitoring, urban flood and heat risk prediction, and community reforestation tools to protect Africa's forests and cities.",
@@ -36,10 +36,10 @@ export const metadata = {
     "acoustic monitoring",
     "climate adaptation",
   ],
-  applicationName: "KibiraAI",
-  authors: [{ name: "KibiraAI", url: "https://www.kibiraai.com" }],
-  creator: "KibiraAI",
-  publisher: "KibiraAI",
+  applicationName: "Kibira AI",
+  authors: [{ name: "Kibira AI", url: "https://www.kibiraai.com" }],
+  creator: "Kibira AI",
+  publisher: "Kibira AI",
   robots: {
     index: true,
     follow: true,
@@ -59,12 +59,12 @@ export const metadata = {
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "KibiraAI — AI-Powered Climate Intelligence for Africa",
+    title: "Kibira AI — AI-Powered Climate Intelligence for Africa",
     description:
       "AI-driven reforestation planning & climate research - Empowering African communities to fight climate change.",
     type: "website",
     url: "https://www.kibiraai.com",
-    siteName: "KibiraAI",
+    siteName: "Kibira AI",
     locale: "en_US",
     images: [
       {
@@ -77,7 +77,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "KibiraAI — AI-Powered Climate Intelligence for Africa",
+    title: "Kibira AI — AI-Powered Climate Intelligence for Africa",
     description:
       "AI climate research, real-time forest sentinel monitoring, urban flood and heat warnings, and direct reforestation — empowering African communities to fight climate change.",
     creator: "@KibiraAI",
@@ -99,7 +99,7 @@ export default function RootLayout({ children }) {
       {
         "@type": "Organization",
         "@id": "https://www.kibiraai.com/#organization",
-        name: "KibiraAI",
+        name: "Kibira AI",
         url: "https://www.kibiraai.com",
         logo: {
           "@type": "ImageObject",
@@ -118,7 +118,8 @@ export default function RootLayout({ children }) {
         "@type": "WebSite",
         "@id": "https://www.kibiraai.com/#website",
         url: "https://www.kibiraai.com",
-        name: "KibiraAI",
+        name: "Kibira AI",
+        alternateName: ["KibiraAI", "kibiraai.com"],
         publisher: { "@id": "https://www.kibiraai.com/#organization" },
         description:
           "AI-powered climate intelligence for Africa — forest monitoring, urban risk prediction, climate research, and reforestation.",
@@ -131,7 +132,7 @@ export default function RootLayout({ children }) {
       {
         "@type": "WebApplication",
         "@id": "https://www.kibiraai.com/#app",
-        name: "KibiraAI",
+        name: "Kibira AI",
         url: "https://www.kibiraai.com",
         applicationCategory: "EnvironmentApplication",
         operatingSystem: "Web",
