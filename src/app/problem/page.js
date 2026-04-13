@@ -1,6 +1,15 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
+export const metadata = {
+  title: "Africa's Climate Crisis: Forest and Urban Risks",
+  description:
+    "Understand the connected climate risks KibiraAI addresses across Africa: deforestation, flood exposure, urban heat stress, food insecurity, and water scarcity.",
+  alternates: {
+    canonical: "/problem",
+  },
+};
+
 export default function ProblemPage() {
   const forestCrisisStats = [
     {

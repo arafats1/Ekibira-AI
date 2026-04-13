@@ -1,6 +1,15 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
+export const metadata = {
+  title: "Climate Solutions for Forests and Cities",
+  description:
+    "Explore KibiraAI's climate solutions: AI forest intelligence, acoustic logging detection, flood prediction, heat risk mapping, and community reforestation programs.",
+  alternates: {
+    canonical: "/solution",
+  },
+};
+
 export default function SolutionPage() {
   const reforestationServices = [
     {

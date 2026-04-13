@@ -9,12 +9,6 @@ export default function sitemap() {
       priority: 1,
     },
     {
-      url: `${baseUrl}/dashboard`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
       url: `${baseUrl}/forest-sentinel`,
       lastModified: new Date(),
       changeFrequency: "daily",
@@ -30,6 +24,12 @@ export default function sitemap() {
       url: `${baseUrl}/plant-a-tree`,
       lastModified: new Date(),
       changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/advisor`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
       priority: 0.8,
     },
     {

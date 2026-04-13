@@ -4,7 +4,7 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/admin/", "/login/", "/signup/"],
+        disallow: ["/api", "/admin", "/dashboard", "/login", "/signup"],
       },
     ],
     sitemap: "https://www.kibiraai.com/sitemap.xml",

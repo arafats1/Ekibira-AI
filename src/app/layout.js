@@ -40,9 +40,6 @@ export const metadata = {
   authors: [{ name: "KibiraAI", url: "https://www.kibiraai.com" }],
   creator: "KibiraAI",
   publisher: "KibiraAI",
-  alternates: {
-    canonical: "https://www.kibiraai.com",
-  },
   robots: {
     index: true,
     follow: true,
