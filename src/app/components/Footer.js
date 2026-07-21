@@ -12,8 +12,8 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-sm leading-relaxed font-[family-name:var(--font-body)]">
-              AI-powered reforestation intelligence for Africa.
-              Empowering communities to fight climate change with data-driven solutions.
+              AI-powered climate intelligence for Africa — fighting deforestation, delivering urban early warning,
+              and turning climate data into children&rsquo;s health foresight.
             </p>
           </div>
 
@@ -24,8 +24,9 @@ export default function Footer() {
               <a href="/#problem" className="block hover:text-[#4ade80] transition-colors">The Problem</a>
               <a href="/solution" className="block hover:text-[#4ade80] transition-colors">Our Solution</a>
               <a href="/advisor" className="block hover:text-[#4ade80] transition-colors">Dr. Kibira AI</a>
+              <a href="/urban-warning" className="block hover:text-[#4ade80] transition-colors">Early Warning</a>
+              <a href="/forest-sentinel" className="block hover:text-[#4ade80] transition-colors">Forest Sentinel</a>
               <a href="/#impact" className="block hover:text-[#4ade80] transition-colors">Projected Impact</a>
-              <a href="/#support" className="block hover:text-[#4ade80] transition-colors">Support Us</a>
             </div>
           </div>
 

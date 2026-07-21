@@ -21,19 +21,18 @@ export const metadata = {
     template: "%s | Kibira AI",
   },
   description:
-    "KibiraAI is an integrated climate intelligence platform combining AI research, real-time forest monitoring, urban flood and heat risk prediction, and community reforestation tools to protect Africa's forests and cities.",
+    "KibiraAI fights deforestation, delivers urban flood and heat early warning, supports climate-smart farming, and turns climate data into children's health foresight across Africa.",
   keywords: [
     "climate intelligence",
     "Africa",
-    "reforestation",
-    "AI",
     "deforestation",
+    "reforestation",
     "forest monitoring",
     "flood risk",
     "urban heat",
-    "carbon credits",
-    "sustainability",
-    "acoustic monitoring",
+    "children's health",
+    "early warning",
+    "AI",
     "climate adaptation",
   ],
   applicationName: "Kibira AI",
@@ -61,7 +60,7 @@ export const metadata = {
   openGraph: {
     title: "Kibira AI — AI-Powered Climate Intelligence for Africa",
     description:
-      "AI-driven reforestation planning & climate research - Empowering African communities to fight climate change.",
+      "Deforestation monitoring, urban early warning, and children's climate–health foresight — empowering African communities to fight climate change.",
     type: "website",
     url: "https://www.kibiraai.com",
     siteName: "Kibira AI",
@@ -79,7 +78,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Kibira AI — AI-Powered Climate Intelligence for Africa",
     description:
-      "AI climate research, real-time forest sentinel monitoring, urban flood and heat warnings, and direct reforestation — empowering African communities to fight climate change.",
+      "AI forest protection, urban flood and heat warnings, and children's climate–health early action for Africa.",
     creator: "@KibiraAI",
     images: ["https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&q=80"],
   },
@@ -108,7 +107,7 @@ export default function RootLayout({ children }) {
           height: 512,
         },
         description:
-          "AI-powered climate intelligence platform protecting Africa's forests and cities through real-time monitoring, research, and community reforestation.",
+          "AI-powered climate intelligence platform fighting deforestation, delivering urban early warning, and turning climate data into children's health foresight across Africa.",
         foundingDate: "2024",
         sameAs: [
           "https://twitter.com/KibiraAI",
@@ -122,7 +121,7 @@ export default function RootLayout({ children }) {
         alternateName: ["KibiraAI", "kibiraai.com"],
         publisher: { "@id": "https://www.kibiraai.com/#organization" },
         description:
-          "AI-powered climate intelligence for Africa — forest monitoring, urban risk prediction, climate research, and reforestation.",
+          "AI-powered climate intelligence for Africa — forest monitoring, urban risk prediction, children's climate health, and reforestation.",
         potentialAction: {
           "@type": "SearchAction",
           target: "https://www.kibiraai.com/dashboard?q={search_term_string}",

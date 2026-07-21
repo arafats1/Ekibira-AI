@@ -18,9 +18,11 @@ function LoginForm() {
     switch (type) {
       case "farmer": return "/dashboard/farmer";
       case "insurance": return "/dashboard/insurance";
-      case "eu_compliance": return "/dashboard/eu-compliance";
+      case "local_gov":
+      case "school_health": return "/urban-warning";
       case "forestry": return "/dashboard/forestry";
       case "general": return "/dashboard/forestry";
+      case "eu_compliance": return "/dashboard/forestry"; // legacy accounts
       default: return "/dashboard";
     }
   };

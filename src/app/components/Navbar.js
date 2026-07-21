@@ -22,14 +22,14 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#1a2e1a]/80">
           <a href="/problem" className="hover:text-[#2d6a4f] transition-colors">The Problem</a>
           <a href="/solution" className="hover:text-[#2d6a4f] transition-colors">Solution</a>
+          <a href="/urban-warning" className="hover:text-[#2d6a4f] transition-colors flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            Early Warning
+          </a>
           <a href="/advisor" className="hover:text-[#2d6a4f] transition-colors">Try Dr. Kibira AI</a>
           <a href="/forest-sentinel" className="hover:text-[#2d6a4f] transition-colors flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Forest Sentinel
-          </a>
-          <a href="/urban-warning" className="hover:text-[#2d6a4f] transition-colors flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            Urban Warning
           </a>
           <a href="/plant-a-tree" className="hover:text-[#2d6a4f] transition-colors flex items-center gap-1">
             🌱 Plant a Tree
@@ -88,14 +88,14 @@ export default function Navbar() {
         <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-[#eef2e6] px-4 sm:px-6 py-3 flex flex-col gap-1 text-sm font-medium">
           <a href="/problem" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">The Problem</a>
           <a href="/solution" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Solution</a>
+          <a href="/urban-warning" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            Early Warning
+          </a>
           <a href="/advisor" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6]">Try Advisor</a>
           <a href="/forest-sentinel" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Forest Sentinel
-          </a>
-          <a href="/urban-warning" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            Urban Warning
           </a>
           <a href="/plant-a-tree" onClick={() => setOpen(false)} className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] flex items-center gap-2">
             🌱 Plant a Tree

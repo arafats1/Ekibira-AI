@@ -2,9 +2,9 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 export const metadata = {
-  title: "Africa's Climate Crisis: Forest and Urban Risks",
+  title: "Africa's Climate Crisis: Forests, Cities & Children's Health",
   description:
-    "Understand the connected climate risks KibiraAI addresses across Africa: deforestation, flood exposure, urban heat stress, food insecurity, and water scarcity.",
+    "Understand the climate risks KibiraAI addresses: deforestation, urban flood and heat exposure, and children's climate–health vulnerability across Africa.",
   alternates: {
     canonical: "/problem",
   },
@@ -84,7 +84,7 @@ export default function ProblemPage() {
     {
       title: "Urban Heat Islands",
       description:
-        "Concrete, metal roofing, and minimal green cover turn African cities into furnaces. Temperatures in dense neighborhoods can exceed surrounding rural areas by 5–8°C. Heat-related illness, lost productivity, and increased energy demand disproportionately affect low-income communities with no access to cooling.",
+        "Concrete, metal roofing, and minimal green cover turn African cities into furnaces. Temperatures in dense neighborhoods can exceed surrounding rural areas by 5–8°C. Heat-related illness hits children, outdoor learners, and clinic waiting areas hardest — often with no facility-level early warning.",
       stat: "Up to 8°C hotter in informal settlements vs. rural areas",
       icon: "🌡️",
       color: "border-l-red-500",
@@ -92,7 +92,7 @@ export default function ProblemPage() {
     {
       title: "Flash Flooding & Drainage Failure",
       description:
-        "Rapid, unplanned urbanization paves over natural drainage. When heavy rains hit, water has nowhere to go. Informal settlements in Kampala, Lagos, Dar es Salaam, and Nairobi experience devastating floods that destroy homes, spread waterborne disease, and displace thousands — often with zero advance warning.",
+        "Rapid, unplanned urbanization paves over natural drainage. When heavy rains hit, water has nowhere to go. Informal settlements experience devastating floods that close schools, disrupt clinics, spread waterborne disease, and displace families — often with zero advance warning to headteachers or community leaders.",
       stat: "86% of Africa's urban growth occurs in flood-prone informal zones",
       icon: "🌊",
       color: "border-l-blue-500",
@@ -157,8 +157,9 @@ export default function ProblemPage() {
                 Two Crises, <span className="text-[#c1440e]">One Continent</span>
               </h1>
               <p className="text-[#5d6f5d] text-lg sm:text-xl leading-relaxed font-[family-name:var(--font-body)]">
-                Africa&rsquo;s forests are disappearing while its cities overheat, flood, and run short of food and water.
-                These aren&rsquo;t separate problems — they&rsquo;re deeply interconnected, and they demand a unified response.
+                Africa&rsquo;s forests are disappearing while its cities overheat, flood, and pollute —
+                and children carry much of the health burden. These aren&rsquo;t separate problems;
+                they demand a unified climate response.
               </p>
               <div className="mt-8 flex flex-wrap gap-3 justify-center">
                 <a href="#forest-crisis" className="border border-[#2d6a4f]/30 text-[#2d6a4f] hover:bg-[#2d6a4f]/10 font-semibold px-6 py-3 rounded-full transition-colors text-sm">

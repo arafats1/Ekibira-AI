@@ -1,22 +1,6 @@
 export default function Solution() {
   const useCases = [
     {
-      icon: "🌾",
-      role: "Farmers & Agribusiness",
-      title: "Climate-Smart Farming",
-      description:
-        "Farmers access AI-powered crop management with seasonal weather forecasts, flood and heat risk alerts, and smart irrigation recommendations. Add crops to your farm profile and get tailored plans for each growing season.",
-      features: [
-        "My Farm dashboard with crop tracking and calendar",
-        "Flood & heat risk predictions for your location",
-        "AI advisor for soil, pest, and harvest guidance",
-        "Market price tracking and carbon credit opportunities",
-      ],
-      color: "from-amber-500/20 to-amber-600/10",
-      accent: "text-amber-400",
-      border: "border-amber-500/30",
-    },
-    {
       icon: "🌲",
       role: "Forestry & Conservation",
       title: "Real-Time Forest Protection",
@@ -49,59 +33,75 @@ export default function Solution() {
       border: "border-blue-500/30",
     },
     {
+      icon: "👧",
+      role: "Schools & Health",
+      title: "Children's Climate Health",
+      description:
+        "Turn climate data into early action for children — hyper-local heat, flood, air quality, and humidity alerts with playbooks for schools, clinics, and community health workers.",
+      features: [
+        "Facility-aware flood, heat & AQI risk",
+        "Anticipatory action for schools and clinics",
+        "Climate-sensitive health risk guidance",
+        "Alerts to caregivers and local leaders",
+      ],
+      color: "from-rose-500/20 to-rose-600/10",
+      accent: "text-rose-400",
+      border: "border-rose-500/30",
+    },
+    {
+      icon: "🌾",
+      role: "Farmers & Agribusiness",
+      title: "Climate-Smart Farming",
+      description:
+        "Farmers access AI-powered crop management with seasonal weather forecasts, flood and heat risk alerts, and smart irrigation recommendations tailored to each growing season.",
+      features: [
+        "My Farm dashboard with crop tracking and calendar",
+        "Flood & heat risk predictions for your location",
+        "AI advisor for soil, pest, and harvest guidance",
+        "Market price tracking and climate-smart plans",
+      ],
+      color: "from-amber-500/20 to-amber-600/10",
+      accent: "text-amber-400",
+      border: "border-amber-500/30",
+    },
+    {
       icon: "🛡️",
-      role: "Insurance Companies",
+      role: "Insurance & Disaster Finance",
       title: "Climate Risk Underwriting",
       description:
-        "Insurers access location-based climate risk scores for underwriting — AI-powered flood, heat, and drought risk analysis per area, with premium multiplier recommendations and portfolio risk analytics.",
+        "Insurers and disaster-finance partners access location-based climate risk scores — flood, heat, and drought analysis with anomaly-ready triggers for rapid response.",
       features: [
         "Flood and heat risk scoring per GPS location",
         "AI-generated risk reports for underwriting",
-        "Premium multiplier recommendations",
-        "Historical climate data and loss prediction",
+        "Anomaly thresholds for anticipatory finance",
+        "Portfolio and community exposure analytics",
       ],
       color: "from-purple-500/20 to-purple-600/10",
       accent: "text-purple-400",
       border: "border-purple-500/30",
-    },
-    {
-      icon: "🇪🇺",
-      role: "EU Compliance & Trade",
-      title: "EUDR Supply Chain Verification",
-      description:
-        "Companies exporting to the EU verify deforestation-free sourcing with real environmental data. Search any area by name or coordinates, get AI compliance assessments, and generate documentation for EU market access.",
-      features: [
-        "Area search with interactive map and analysis",
-        "AI-powered EUDR compliance risk scoring",
-        "Commodity-level deforestation risk assessment",
-        "Due diligence documentation generator",
-      ],
-      color: "from-indigo-500/20 to-indigo-600/10",
-      accent: "text-indigo-400",
-      border: "border-indigo-500/30",
     },
   ];
 
   const steps = [
     {
       step: "01",
-      title: "Create Your Account",
-      description: "Sign up and select your role — farmer, forestry, insurance, EU compliance, or general",
+      title: "Try Before You Commit",
+      description: "Explore Dr. Kibira AI and Early Warning free — no signup required",
     },
     {
       step: "02",
-      title: "Get Your Dashboard",
-      description: "Access a personalized dashboard with tools tailored to your workflow",
+      title: "Create Your Account",
+      description: "Select your role — forestry, farmer, schools/health, local gov, insurance, or research",
     },
     {
       step: "03",
       title: "AI Analyzes Data",
-      description: "Our AI processes real-time climate, soil, weather, and environmental data",
+      description: "Our AI processes climate, forest, weather, and environmental signals in real time",
     },
     {
       step: "04",
       title: "Act on Insights",
-      description: "Get actionable recommendations, alerts, and reports specific to your needs",
+      description: "Get alerts, recommendations, and reports tailored to forests, cities, and health",
     },
   ];
 
@@ -111,21 +111,19 @@ export default function Solution() {
       <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f13]/85 via-[#0a1f13]/75 to-[#0a1f13]/90" />
 
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* Section header */}
         <div className="text-center mb-10 sm:mb-16">
           <span className="inline-block text-[#4ade80] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">
             How It Works
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6">
-            One Platform, <span className="text-[#4ade80]">Five Use Cases</span>
+            One Platform, <span className="text-[#4ade80]">Many Use Cases</span>
           </h2>
           <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
             KibiraAI gives every user a role-specific dashboard powered by real-time environmental
-            data and AI — from smallholder farmers to EU compliance teams.
+            data and AI — from forest protection and urban early warning to children&rsquo;s climate health.
           </p>
         </div>
 
-        {/* Use case cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-14 sm:mb-20">
           {useCases.map((uc, i) => (
             <div
@@ -154,7 +152,6 @@ export default function Solution() {
           ))}
         </div>
 
-        {/* How it works steps */}
         <div className="text-center mb-8 sm:mb-12">
           <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
             Getting Started

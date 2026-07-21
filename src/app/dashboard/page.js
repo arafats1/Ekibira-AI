@@ -8,9 +8,11 @@ const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337"
 const ROUTE_MAP = {
   farmer: "/dashboard/farmer",
   insurance: "/dashboard/insurance",
-  eu_compliance: "/dashboard/eu-compliance",
+  local_gov: "/urban-warning",
+  school_health: "/urban-warning",
   forestry: "/dashboard/forestry",
   general: "/dashboard/forestry",
+  eu_compliance: "/dashboard/forestry", // legacy accounts
 };
 
 export default function DashboardPage() {

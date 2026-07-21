@@ -25,10 +25,10 @@ export default function Impact() {
       description: "Smallholders gaining climate-smart tools",
     },
     {
-      icon: "💰",
-      value: "$45M",
-      label: "Carbon Credit Revenue",
-      description: "Projected community income from verified credits",
+      icon: "👧",
+      value: "Health",
+      label: "Children Protected",
+      description: "Climate early warning for schools, clinics, and communities",
     },
     {
       icon: "📱",
@@ -41,9 +41,9 @@ export default function Impact() {
   const sdgs = [
     { number: 13, title: "Climate Action", color: "bg-green-600" },
     { number: 15, title: "Life on Land", color: "bg-emerald-600" },
+    { number: 3, title: "Good Health", color: "bg-rose-600" },
     { number: 11, title: "Sustainable Cities", color: "bg-orange-600" },
     { number: 2, title: "Zero Hunger", color: "bg-amber-600" },
-    { number: 6, title: "Clean Water", color: "bg-blue-600" },
     { number: 17, title: "Partnerships", color: "bg-blue-800" },
   ];
 
@@ -62,7 +62,7 @@ export default function Impact() {
           </h2>
           <p className="text-[#6b7c6b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
             KibiraAI isn&rsquo;t just a tool — it&rsquo;s a movement. Here&rsquo;s what we aim to achieve
-            with your support in the first 5 years.
+            across forests, cities, farms, and children&rsquo;s climate health.
           </p>
         </div>
 
@@ -136,7 +136,7 @@ export default function Impact() {
             </div>
             <h4 className="font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">Community</h4>
             <p className="text-[#6b7c6b] text-sm font-[family-name:var(--font-body)]">
-              Empowering farmers, local leaders, and organizations to become climate champions in their communities
+              Empowering farmers, rangers, local leaders, schools, and clinics to become climate champions
             </p>
           </div>
           <div className="bg-white rounded-2xl p-5 sm:p-6 text-center border border-[#eef2e6]" style={{ boxShadow: "var(--card-shadow)" }}>

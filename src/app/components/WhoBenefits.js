@@ -3,16 +3,6 @@ import Link from "next/link";
 export default function WhoBenefits() {
   const activeRoles = [
     {
-      id: "farmer",
-      icon: "🌾",
-      title: "Farmers & Agribusiness",
-      desc: "Flood/heat risk predictions, seasonal weather forecasts, crop management, AI advisor for soil and pest guidance, and market price tracking.",
-      color: "from-amber-500 to-amber-600",
-      borderColor: "border-amber-200 hover:border-amber-400",
-      href: "/signup?type=farmer",
-      cta: "Get Started Free",
-    },
-    {
       id: "forestry",
       icon: "🌲",
       title: "Forestry & Conservation",
@@ -23,14 +13,34 @@ export default function WhoBenefits() {
       cta: "Protect Forests",
     },
     {
-      id: "general",
-      icon: "🔬",
-      title: "Researchers & General",
-      desc: "Full access to Dr. Kibira AI for climate research, deforestation analysis, environmental data queries, and reforestation strategy planning.",
-      color: "from-teal-500 to-teal-600",
-      borderColor: "border-teal-200 hover:border-teal-400",
-      href: "/signup?type=general",
-      cta: "Start Researching",
+      id: "farmer",
+      icon: "🌾",
+      title: "Farmers & Agribusiness",
+      desc: "Flood/heat risk predictions, seasonal weather forecasts, crop management, AI advisor for soil and pest guidance, and market price tracking.",
+      color: "from-amber-500 to-amber-600",
+      borderColor: "border-amber-200 hover:border-amber-400",
+      href: "/signup?type=farmer",
+      cta: "Get Started Free",
+    },
+    {
+      id: "school_health",
+      icon: "🏫",
+      title: "Schools & Children's Health",
+      desc: "Use climate data for child health early warning — heat, floods, air pollution, and humidity alerts so schools and clinics can act before hazards peak.",
+      color: "from-rose-500 to-rose-600",
+      borderColor: "border-rose-200 hover:border-rose-400",
+      href: "/signup?type=school_health",
+      cta: "Protect Children",
+    },
+    {
+      id: "local_gov",
+      icon: "🏛️",
+      title: "Local Governments & Leaders",
+      desc: "Ward-level flood, heat, and air-quality early warning with anticipatory action playbooks for community leaders and disaster response teams.",
+      color: "from-sky-500 to-sky-600",
+      borderColor: "border-sky-200 hover:border-sky-400",
+      href: "/signup?type=local_gov",
+      cta: "Get Early Warning",
     },
     {
       id: "insurance",
@@ -43,14 +53,14 @@ export default function WhoBenefits() {
       cta: "Access Risk Data",
     },
     {
-      id: "eu_compliance",
-      icon: "🇪🇺",
-      title: "EU Compliance & Trade",
-      desc: "EUDR deforestation-free supply chain verification with interactive maps, AI compliance scoring, commodity risk assessments, and documentation generation.",
-      color: "from-indigo-500 to-indigo-600",
-      borderColor: "border-indigo-200 hover:border-indigo-400",
-      href: "/signup?type=eu_compliance",
-      cta: "Verify Compliance",
+      id: "general",
+      icon: "🔬",
+      title: "Researchers & General",
+      desc: "Full access to Dr. Kibira AI for climate research, deforestation analysis, urban early warning, and reforestation strategy planning.",
+      color: "from-teal-500 to-teal-600",
+      borderColor: "border-teal-200 hover:border-teal-400",
+      href: "/signup?type=general",
+      cta: "Start Researching",
     },
   ];
 
@@ -60,7 +70,6 @@ export default function WhoBenefits() {
       <div className="absolute bottom-20 left-0 w-72 h-72 bg-[#d4a843]/5 rounded-full blur-3xl" />
 
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* Header */}
         <div className="text-center mb-10 sm:mb-16">
           <span className="inline-block text-[#2d6a4f] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">
             Who Benefits
@@ -69,11 +78,10 @@ export default function WhoBenefits() {
             Built for <span className="gradient-text">Every Sector</span>
           </h2>
           <p className="text-[#6b7c6b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            KibiraAI provides customized climate intelligence dashboards tailored to your industry and workflow.
+            Forests, farms, cities, schools, and health facilities — KibiraAI provides climate intelligence dashboards tailored to your workflow.
           </p>
         </div>
 
-        {/* Active Roles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {activeRoles.map((role) => (
             <div

@@ -25,25 +25,33 @@ const ACCOUNT_TYPES = [
     id: "general",
     icon: "🌿",
     title: "General / Researcher",
-    desc: "Full access to Dr. Kibira AI, Forest Sentinel, Urban Warning, and all climate intelligence tools",
+    desc: "Full access to Dr. Kibira AI, Early Warning, Forest Sentinel, and climate–health intelligence tools",
     color: "border-teal-400 bg-teal-50",
     activeColor: "border-teal-500 bg-teal-100 ring-2 ring-teal-400",
   },
   {
     id: "insurance",
     icon: "🛡️",
-    title: "Insurance Company",
-    desc: "Climate risk underwriting data, flood/heat risk scoring, loss prediction modeling, portfolio risk analytics",
+    title: "Insurance / Disaster Finance",
+    desc: "Climate risk scores, anomaly-triggered alerts, and anticipatory action data for parametric and community disaster financing",
     color: "border-blue-400 bg-blue-50",
     activeColor: "border-blue-500 bg-blue-100 ring-2 ring-blue-400",
   },
   {
-    id: "eu_compliance",
-    icon: "🇪🇺",
-    title: "EU Compliance / Trade",
-    desc: "Deforestation-free supply chain verification, EUDR compliance reports, satellite area overviews for market access",
-    color: "border-indigo-400 bg-indigo-50",
-    activeColor: "border-indigo-500 bg-indigo-100 ring-2 ring-indigo-400",
+    id: "local_gov",
+    icon: "🏛️",
+    title: "Local Government / Community",
+    desc: "Hyper-local flood, heat, air quality and humidity alerts for wards, schools, and community leaders — with anticipatory action playbooks",
+    color: "border-sky-400 bg-sky-50",
+    activeColor: "border-sky-500 bg-sky-100 ring-2 ring-sky-400",
+  },
+  {
+    id: "school_health",
+    icon: "🏫",
+    title: "Schools & Health Facilities",
+    desc: "Early warning for heat illness, flood, air pollution and climate-sensitive health risks affecting children, clinics, and school communities",
+    color: "border-rose-400 bg-rose-50",
+    activeColor: "border-rose-500 bg-rose-100 ring-2 ring-rose-400",
   },
 ];
 
@@ -51,9 +59,11 @@ function getDashboardRoute(type) {
   switch (type) {
     case "farmer": return "/dashboard/farmer";
     case "insurance": return "/dashboard/insurance";
-    case "eu_compliance": return "/dashboard/eu-compliance";
+    case "local_gov":
+    case "school_health": return "/urban-warning";
     case "forestry": return "/dashboard/forestry";
     case "general": return "/dashboard/forestry";
+    case "eu_compliance": return "/dashboard/forestry"; // legacy accounts
     default: return "/dashboard";
   }
 }
@@ -143,8 +153,9 @@ function SignupForm() {
   const getCompanyLabel = () => {
     switch (form.accountType) {
       case "farmer": return "Farm / Cooperative Name";
-      case "insurance": return "Insurance Company";
-      case "eu_compliance": return "Company / Agency";
+      case "insurance": return "Insurance / Finance Org";
+      case "local_gov": return "Government / Community Org";
+      case "school_health": return "School / Health Facility";
       case "forestry": return "Organization / NGO";
       default: return "Organization";
     }
@@ -153,8 +164,9 @@ function SignupForm() {
   const getPositionLabel = () => {
     switch (form.accountType) {
       case "farmer": return "Role (e.g. Farm Owner)";
-      case "insurance": return "Role (e.g. Underwriter)";
-      case "eu_compliance": return "Role (e.g. Compliance Officer)";
+      case "insurance": return "Role (e.g. Risk Analyst)";
+      case "local_gov": return "Role (e.g. Ward Officer)";
+      case "school_health": return "Role (e.g. Headteacher / CHW)";
       case "forestry": return "Role (e.g. Forest Ranger)";
       default: return "Position";
     }

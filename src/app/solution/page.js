@@ -2,9 +2,9 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
 export const metadata = {
-  title: "Climate Solutions for Forests and Cities",
+  title: "Climate Solutions for Forests, Cities & Children's Health",
   description:
-    "Explore KibiraAI's climate solutions: AI forest intelligence, acoustic logging detection, flood prediction, heat risk mapping, and community reforestation programs.",
+    "Explore KibiraAI's solutions: forest protection, flood and heat early warning, children's climate–health action, and community reforestation.",
   alternates: {
     canonical: "/solution",
   },
@@ -59,7 +59,7 @@ export default function SolutionPage() {
   const urbanResilienceServices = [
     {
       title: "Heat Stress Mitigation",
-      description: "Our AI maps 'Urban Heat Islands' and provides digital roadmaps for cooling corridors, recommending native species placement to reduce neighborhood heat by up to 5°C.",
+      description: "Our AI maps urban heat islands and provides roadmaps for cooling corridors — plus children's heat-illness foresight for schools and clinics.",
       icon: "🌡️"
     },
     {
@@ -68,13 +68,13 @@ export default function SolutionPage() {
       icon: "🌊"
     },
     {
-      title: "Urban Garden Advisory",
-      description: "Innovation for food insecurity: Digital technical support for vertical and rooftop farming, optimizing yield in limited urban spaces.",
-      icon: "🥬"
+      title: "Children's Climate Health",
+      description: "Turn flood, heat, and air-quality signals into anticipatory action for child-serving facilities — hydrate, shift schedules, and alert caregivers.",
+      icon: "👧"
     },
     {
-      title: "Smart Water Monitoring",
-      description: "Addressing water scarcity through digital leakage detection and smart distribution patterns, ensuring reliable access to clean water in growing cities.",
+      title: "Smart Water & Air Monitoring",
+      description: "Addressing water stress and air pollution through localized environmental cues that support community preparedness and health readiness.",
       icon: "💧"
     }
   ];
@@ -82,7 +82,7 @@ export default function SolutionPage() {
   const urbanFloodHeatFeatures = [
     {
       title: "Hyperlocal Heat Island Mapping",
-      description: "Satellite thermal imagery (Landsat Band 10) combined with ground-level data maps neighborhood-level heat intensity across African cities, identifying which informal settlements like Bwaise, Katanga, and Namuwongo are dangerously hot.",
+      description: "Satellite thermal imagery combined with ground-level data maps neighborhood-level heat intensity across African cities, identifying which informal settlements are dangerously hot — and which schools and clinics sit in those zones.",
       icon: "🌡️",
       stat: "50m resolution heat maps"
     },
@@ -94,13 +94,13 @@ export default function SolutionPage() {
     },
     {
       title: "Parish-Level Climate Action Plans",
-      description: "AI generates specific intervention plans per neighborhood — e.g., 'Plant 200 Terminalia mantaly trees along Jinja Road to reduce heat by 3°C and intercept 40% of stormwater runoff' — ready for KCCA and NGO implementation.",
+      description: "AI generates specific intervention plans per neighborhood — cooling trees, drainage fixes, and children's health playbooks — ready for city and NGO implementation.",
       icon: "📋",
       stat: "Actionable per-ward plans"
     },
     {
       title: "Climate Justice Evidence",
-      description: "Maps and data proving which communities bear the worst climate impact help NGOs and city authorities direct adaptation funding equitably — supporting advocacy, policy change, and international climate finance applications.",
+      description: "Maps and data proving which communities and child populations bear the worst climate impact help NGOs and city authorities direct adaptation funding equitably.",
       icon: "⚖️",
       stat: "Data-backed equity reports"
     }
@@ -153,10 +153,12 @@ export default function SolutionPage() {
                   The KibiraAI Innovation
                 </span>
                 <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold text-[#1a2e1a] leading-tight mb-6 font-[family-name:var(--font-display)]">
-                  Intelligence That <span className="text-[#2d6a4f]">Adapts</span> and <span className="text-[#2d6a4f]">Restores</span>
+                  Intelligence That <span className="text-[#2d6a4f]">Adapts</span> and <span className="text-[#2d6a4f]">Protects</span>
                 </h1>
                 <p className="text-[#5d6f5d] text-lg sm:text-xl max-w-2xl leading-relaxed font-[family-name:var(--font-body)]">
-                  KibiraAI delivers climate services for Africa's forests and cities, transforming raw data into actionable guidance that reduces emissions and protects lives.
+                  KibiraAI delivers climate services for Africa&rsquo;s forests and cities — stopping
+                  deforestation, warning of floods and heat, and turning climate data into
+                  children&rsquo;s health foresight.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <a
@@ -310,19 +312,19 @@ export default function SolutionPage() {
                   />
                 </div>
                 <div className="order-1 lg:order-2">
-                  <p className="text-xs uppercase tracking-[0.3em] text-[#2d6a4f] font-semibold mb-4 font-[family-name:var(--font-body)]">Pillar 2 &mdash; Urban Resilience</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-[#2d6a4f] font-semibold mb-4 font-[family-name:var(--font-body)]">Pillar 2 &mdash; Urban Early Warning &amp; Health</p>
                   <h2 className="text-3xl sm:text-4xl font-bold text-[#1a2e1a] mb-6 font-[family-name:var(--font-display)]">
-                    Digital Services That Cool, Protect &amp; Feed Cities
+                    Cool Cities, Protect Communities &amp; Children
                   </h2>
                   <div className="space-y-6 text-[#5d6f5d] font-[family-name:var(--font-body)] text-lg">
                     <p>
-                      KibiraAI delivers lightweight, data-driven services that help urban communities
-                      manage heat, avoid floods, grow food, and secure water — all without heavy
-                      capital infrastructure.
+                      KibiraAI delivers hyper-local flood, heat, and air-quality early warning for
+                      African cities — helping planners, community leaders, schools, and clinics act
+                      before climate shocks hit.
                     </p>
                     <p>
-                      Through early-warning analytics, localized advisories, and AI-powered planning,
-                      city leaders and residents get the intelligence they need to act before crises hit.
+                      Risk scores become anticipatory playbooks: cooling actions, flood response,
+                      and children&rsquo;s climate–health guidance for the people closest to neighborhoods.
                     </p>
                   </div>
                 </div>

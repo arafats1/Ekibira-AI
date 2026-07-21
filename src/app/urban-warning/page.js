@@ -250,7 +250,7 @@ export default function UrbanWarningPage() {
       setSimulationResult({
         recipients: Math.floor(popNum * 0.6),
         channels: ["SMS", "WhatsApp", "Community Leaders"],
-        message: `⚠️ FLOOD ALERT — ${selectedArea.name}: Heavy rainfall expected in the next 24-48 hours. Risk Level: ${selectedArea.floodRisk}/100. Move valuables to higher ground. Avoid low-lying areas near drainage channels. Stay tuned for updates. — KibiraAI Early Warning`,
+        message: `⚠️ EARLY WARNING — ${selectedArea.name}: Elevated climate risk in the next 24-48 hours. Flood risk: ${selectedArea.floodRisk}/100 · Heat risk: ${selectedArea.heatRisk}/100. Move valuables to higher ground if flooding is likely. Protect children from extreme heat. Stay tuned for updates. — KibiraAI`,
         timestamp: (() => { const d = new Date(); return `${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; })(),
       });
     }, 2500);
@@ -269,7 +269,7 @@ export default function UrbanWarningPage() {
               </span>
             </Link>
             <span className="text-white/30">|</span>
-            <span className="text-blue-400 text-sm font-semibold font-[family-name:var(--font-body)]">Urban Early Warning</span>
+            <span className="text-blue-400 text-sm font-semibold font-[family-name:var(--font-body)]">Early Warning</span>
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm font-medium text-white/70">
             <Link href="/solution" className="hover:text-white transition-colors">← Back to Solutions</Link>
@@ -286,7 +286,7 @@ export default function UrbanWarningPage() {
       {!user && !showLimitReached && (
         <div className="fixed top-[52px] sm:top-[56px] left-0 right-0 z-40 bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between">
           <p className="text-xs text-amber-800 font-[family-name:var(--font-body)]">
-            👋 You&apos;re browsing as a visitor — <strong>{VISITOR_QUERY_LIMIT - visitorQueries} free area {VISITOR_QUERY_LIMIT - visitorQueries === 1 ? "analysis" : "analyses"}</strong> remaining. Create an account for unlimited access.
+            👋 Try before you commit — <strong>{VISITOR_QUERY_LIMIT - visitorQueries} free area {VISITOR_QUERY_LIMIT - visitorQueries === 1 ? "analysis" : "analyses"}</strong> remaining. Create an account for unlimited access.
           </p>
           <Link href="/signup" className="text-xs font-bold text-amber-900 hover:underline font-[family-name:var(--font-body)] whitespace-nowrap ml-3">Sign Up →</Link>
         </div>
@@ -299,7 +299,7 @@ export default function UrbanWarningPage() {
             <div className="text-5xl mb-4">🏙️</div>
             <h2 className="text-xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-2">Free Analyses Used Up</h2>
             <p className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)] mb-6">
-              You&apos;ve used all {VISITOR_QUERY_LIMIT} free visitor area analyses for Urban Early Warning. Create a free account to analyze unlimited locations with full flood and heat risk data.
+              You&apos;ve used all {VISITOR_QUERY_LIMIT} free visitor analyses. Create a free account for unlimited flood, heat, air-quality, and children&apos;s climate–health early warning.
             </p>
             <div className="flex flex-col gap-3">
               <Link href="/signup" className="w-full py-3 rounded-xl bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-semibold text-sm transition-colors font-[family-name:var(--font-body)] block">
@@ -325,7 +325,7 @@ export default function UrbanWarningPage() {
                 <div className="flex items-center gap-2 mb-4">
                   <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse-soft" />
                   <span className="text-blue-400 text-xs font-semibold tracking-widest uppercase font-[family-name:var(--font-body)]">
-                    AI-Powered Analysis
+                    Urban Climate · Children&apos;s Health
                   </span>
                 </div>
                 <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6 font-[family-name:var(--font-display)]">
@@ -334,7 +334,9 @@ export default function UrbanWarningPage() {
                   <span className="text-blue-400">Early Warning</span>
                 </h1>
                 <p className="text-white/70 text-lg max-w-xl mb-8 font-[family-name:var(--font-body)]">
-                  Enter any location worldwide to get AI-generated urban climate risk analysis — flood risk, heat island effects, interventions, and 5-day forecasts.
+                  Enter any location for AI-generated flood, heat, and air-quality risk analysis —
+                  plus interventions and children&rsquo;s climate–health guidance for communities,
+                  schools, and clinics. Try it free before you commit.
                 </p>
 
                 {/* ─── Location Search ─── */}
@@ -438,13 +440,13 @@ export default function UrbanWarningPage() {
               <span className="text-6xl mb-6">🗺️</span>
               <h2 className="text-2xl font-bold text-gray-800 font-[family-name:var(--font-display)]">Enter a Location to Begin</h2>
               <p className="text-gray-500 mt-2 max-w-md text-center font-[family-name:var(--font-body)]">
-                Search for any neighborhood, city, or town above. Our AI will generate a comprehensive climate risk analysis with flood and heat risk scores, interventions, and tree recommendations.
+                Search any neighborhood or city. Our AI generates flood and heat risk scores, interventions, and children&apos;s climate–health guidance.
               </p>
               <div className="mt-8 grid sm:grid-cols-3 gap-4 max-w-2xl">
                 {[
                   { icon: "🌊", title: "Flood Risk", desc: "Drainage, elevation, and historical flood pattern analysis" },
-                  { icon: "🌡️", title: "Heat Islands", desc: "Urban heat drivers, canopy coverage, and cooling solutions" },
-                  { icon: "🌳", title: "Tree Prescriptions", desc: "Native species recommendations with quantities and placement" },
+                  { icon: "🌡️", title: "Heat & Health", desc: "Urban heat islands plus children's heat-illness foresight" },
+                  { icon: "💨", title: "Air & Action", desc: "AQI cues and anticipatory playbooks for communities" },
                 ].map((card) => (
                   <div key={card.title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
                     <span className="text-3xl">{card.icon}</span>
@@ -1378,8 +1380,8 @@ export default function UrbanWarningPage() {
                   </h2>
                 </div>
                 <p className="text-sm text-gray-500 mb-8 font-[family-name:var(--font-body)]">
-                  Simulate sending a flood/heat early warning to {selectedArea.name} residents via SMS and WhatsApp.
-                  In production, this triggers automatically when AI-predicted risk exceeds threshold.
+                  Simulate sending a flood/heat early warning to {selectedArea.name} residents, community leaders,
+                  schools, and clinics via SMS and WhatsApp. In production, this triggers automatically when risk exceeds threshold.
                 </p>
 
                 {/* Current risk summary */}

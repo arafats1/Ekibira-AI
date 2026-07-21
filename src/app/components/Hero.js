@@ -1,7 +1,6 @@
 export default function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 sm:pt-20">
-      {/* Video background */}
       <video
         autoPlay
         muted
@@ -16,35 +15,31 @@ export default function Hero() {
         />
       </video>
 
-      {/* Dark overlay for text readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f13]/70 via-[#0a1f13]/50 to-[#0a1f13]/80" />
 
-      {/* Colored accent overlays */}
       <div className="absolute top-20 left-10 w-40 sm:w-72 h-40 sm:h-72 bg-[#2d6a4f]/20 rounded-full blur-3xl animate-float" />
       <div className="absolute bottom-20 right-10 w-52 sm:w-96 h-52 sm:h-96 bg-[#d4a843]/10 rounded-full blur-3xl animate-float delay-300" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-24 text-center">
-        {/* Badge */}
         <div className="animate-fade-in-up inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 sm:px-5 py-2 mb-6 sm:mb-8">
           <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse-soft" />
           <span className="text-white text-xs sm:text-sm font-medium tracking-wide">
-            AI-Powered Climate Action for Africa
+            AI-Powered Climate Intelligence for Africa
           </span>
         </div>
 
-        {/* Main headline */}
         <h1 className="animate-fade-in-up delay-100 text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.08] tracking-tight mb-6 sm:mb-8 drop-shadow-lg">
-          Restoring Africa’s Climate
+          Restoring Africa&rsquo;s Climate
           <br />
           <span className="text-[#4ade80]">with Intelligence</span>
         </h1>
 
-        {/* Subheadline */}
         <p className="animate-fade-in-up delay-200 text-base sm:text-lg md:text-xl text-white/85 max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-12 font-[family-name:var(--font-body)]">
-         KibiraAI uses artificial intelligence to analyze deforestation patterns,  emerging urban climate challenges, recommend native reforestation strategies, and track carbon sequestration — empowering communities across Africa to fight climate change
+          KibiraAI uses AI to fight deforestation, deliver urban flood and heat early warning,
+          support climate-smart farming, and turn climate data into children&rsquo;s health foresight —
+          empowering communities across Africa to act before crises hit.
         </p>
 
-        {/* CTAs */}
         <div className="animate-fade-in-up delay-300 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
             href="/advisor"
@@ -53,20 +48,19 @@ export default function Hero() {
             Try the AI Researcher →
           </a>
           <a
-            href="#problem"
+            href="/urban-warning"
             className="border-2 border-white/30 text-white hover:bg-white/10 font-semibold px-6 sm:px-8 py-3.5 sm:py-4 rounded-full text-base sm:text-lg transition-all backdrop-blur-sm w-full sm:w-auto text-center"
           >
-            Learn More
+            Try Early Warning Free
           </a>
         </div>
 
-        {/* Stats bar */}
         <div className="animate-fade-in-up delay-500 mt-12 sm:mt-20 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 max-w-4xl mx-auto">
           {[
-            { value: "3.9M", label: "Hectares lost yearly in Africa", icon: "🌳" },
-            { value: "15-20%", label: "Global emissions from deforestation", icon: "💨" },
-            { value: "600M+", label: "Africans affected by climate change", icon: "👥" },
-            { value: "~$82B", label: "Carbon credit market potential", icon: "💰" },
+            { value: "3.9M", label: "Hectares lost yearly to deforestation in Africa", icon: "🌳" },
+            { value: "72h", label: "Advance flood & heat early warning window", icon: "⚡" },
+            { value: "Health", label: "Children's climate–health early action", icon: "👧" },
+            { value: "Try free", label: "Test the systems before you commit", icon: "🔓" },
           ].map((stat, i) => (
             <div
               key={i}
@@ -84,7 +78,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Scroll indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
         <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" className="opacity-60">
           <path d="M6 9l6 6 6-6" />
