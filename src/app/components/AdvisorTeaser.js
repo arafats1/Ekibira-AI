@@ -93,10 +93,10 @@ export default function AdvisorTeaser() {
             </svg>
           </Link>
           <Link
-            href="/urban-warning"
+            href="/childrens-early-warning"
             className="inline-flex items-center gap-3 border-2 border-white/30 text-white hover:bg-white/10 font-semibold px-8 sm:px-10 py-4 sm:py-5 rounded-full text-base sm:text-lg transition-all"
           >
-            Try Early Warning
+            Try Children&apos;s Early Warning
           </Link>
         </div>
       </div>

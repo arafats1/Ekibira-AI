@@ -60,7 +60,7 @@ function getDashboardRoute(type) {
     case "farmer": return "/dashboard/farmer";
     case "insurance": return "/dashboard/insurance";
     case "local_gov":
-    case "school_health": return "/urban-warning";
+    case "school_health": return "/childrens-early-warning";
     case "forestry": return "/dashboard/forestry";
     case "general": return "/dashboard/forestry";
     case "eu_compliance": return "/dashboard/forestry"; // legacy accounts

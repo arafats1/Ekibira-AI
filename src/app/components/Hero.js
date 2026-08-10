@@ -48,10 +48,10 @@ export default function Hero() {
             Try the AI Researcher →
           </a>
           <a
-            href="/urban-warning"
+            href="/childrens-early-warning"
             className="border-2 border-white/30 text-white hover:bg-white/10 font-semibold px-6 sm:px-8 py-3.5 sm:py-4 rounded-full text-base sm:text-lg transition-all backdrop-blur-sm w-full sm:w-auto text-center"
           >
-            Try Early Warning Free
+            Try Children&apos;s Early Warning
           </a>
         </div>
 

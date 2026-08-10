@@ -46,6 +46,29 @@ export default function LiveSystems() {
       buttonBg: "bg-blue-500 hover:bg-blue-600 text-white",
       icon: "🌊",
     },
+    {
+      title: "Children's Climate Health Early Warning",
+      subtitle: "Schools, Clinics & Local Leaders",
+      description:
+        "Facility-aware early warning for children — heat, humidity, UV, air quality, flood, heat-illness and vector risk — with playbooks for headteachers, CHWs, and community leaders. Public APIs and school/clinic sensor telemetry included.",
+      href: "/childrens-early-warning",
+      badge: "👧 LIVE",
+      badgeColor: "bg-rose-500/20 text-rose-300 border-rose-500/30",
+      stats: [
+        { value: "12", label: "Facilities" },
+        { value: "10", label: "AQ/Weather Stations" },
+        { value: "v1.0", label: "Open Source" },
+      ],
+      features: [
+        "Child-sensitive thresholds for schools and clinics",
+        "Heat-illness + vector suitability predictions",
+        "Public status dashboard and open JSON APIs",
+      ],
+      gradient: "from-[#4a1c2a] to-[#2d1a24]",
+      accentColor: "text-rose-300",
+      buttonBg: "bg-rose-500 hover:bg-rose-600 text-white",
+      icon: "🏫",
+    },
   ];
 
   return (
@@ -61,8 +84,8 @@ export default function LiveSystems() {
             Beyond Data — <span className="gradient-text">Active Protection</span>
           </h2>
           <p className="text-[#6b7c6b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            Two AI-powered systems that turn climate intelligence into real-time action — 
-            protecting Uganda&apos;s forests and city residents right now.
+            AI-powered systems that turn climate intelligence into real-time action —
+            protecting forests, cities, and children&apos;s health.
           </p>
         </div>
 

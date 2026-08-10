@@ -106,6 +106,33 @@ export default function SolutionPage() {
     }
   ];
 
+  const childrensEarlyWarningFeatures = [
+    {
+      title: "Facility Registry for Schools & Clinics",
+      description: "A living registry of child-serving facilities with location, capacity, canopy cover, and drainage context — so warnings reach the places where children actually spend their day.",
+      icon: "🏫",
+      stat: "Schools & clinics first"
+    },
+    {
+      title: "Child-Sensitive Thresholds",
+      description: "Heat, humidity, UV, air quality, and flood signals are scored against thresholds designed for children — not generic adult weather alerts — with clear watch, warning, and critical bands.",
+      icon: "👧",
+      stat: "Age-aware risk bands"
+    },
+    {
+      title: "Heat-Illness & Vector Foresight",
+      description: "Transparent models convert weather and air-quality inputs into heat-illness risk and malaria/vector climate suitability scores that headteachers, CHWs, and clinic leads can act on.",
+      icon: "🧬",
+      stat: "0–100 risk scores"
+    },
+    {
+      title: "Anticipatory Action Playbooks",
+      description: "Each risk level ships with practical next steps — hydrate, shade, shift outdoor schedules, open cooling spaces, alert caregivers — tailored to schools and primary care facilities.",
+      icon: "📋",
+      stat: "Ready-to-run playbooks"
+    }
+  ];
+
   const solutionPillars = [
     {
       title: "Data-to-Action",
@@ -134,6 +161,7 @@ export default function SolutionPage() {
     { layer: "Educate & Advise", tool: "Dr. Kibira AI", description: "Users query the AI for region-specific data on deforestation, native species, carbon potential, and climate-smart farming practices.", color: "bg-emerald-500" },
     { layer: "Detect & Protect", tool: "Forest Acoustic Sentinel", description: "IoT sound sensors detect illegal logging in real-time, alert rangers, and feed data back into the deforestation risk model.", color: "bg-amber-500" },
     { layer: "Predict & Prepare", tool: "Urban Heat & Flood AI", description: "Satellite and weather data predict heat extremes and flash floods, push early warnings, and generate neighborhood-level climate action plans.", color: "bg-blue-500" },
+    { layer: "Protect Children", tool: "Children's Early Warning", description: "Facility-aware heat, flood, air-quality, and vector foresight turns climate signals into school and clinic playbooks before children are exposed.", color: "bg-rose-500" },
   ];
 
   return (
@@ -411,6 +439,73 @@ export default function SolutionPage() {
             </div>
           </section>
 
+          {/* === PRACTICAL INNOVATION: Children's Early Warning === */}
+          <section id="childrens-early-warning" className="mb-20 sm:mb-28 scroll-mt-28">
+            <div className="bg-gradient-to-br from-[#4a1c2a] to-[#2d1a24] rounded-[3rem] p-8 sm:p-14 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-72 h-72 bg-orange-500/8 rounded-full blur-3xl" />
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="inline-flex items-center gap-2 bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full font-[family-name:var(--font-body)]">
+                    👧 Practical Innovation
+                  </span>
+                </div>
+                <h2 className="text-3xl sm:text-5xl font-bold text-white mb-4 font-[family-name:var(--font-display)]">
+                  Children&apos;s Climate Health Early Warning
+                </h2>
+                <p className="text-white/70 text-lg max-w-3xl mb-4 font-[family-name:var(--font-body)]">
+                  Beyond citywide alerts — facility-aware early action for children. KibiraAI combines Open-Meteo weather and air-quality feeds, on-facility station telemetry, and child-sensitive thresholds to warn schools and clinics before heat, flood, pollution, or vector-suitable conditions put children at risk.
+                </p>
+                <a
+                  href="/childrens-early-warning"
+                  className="inline-flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white font-bold px-6 py-3 rounded-full transition-all hover:scale-105 shadow-lg shadow-rose-500/25 mb-10"
+                >
+                  🚀 Launch Live System →
+                </a>
+
+                <div className="grid sm:grid-cols-2 gap-5">
+                  {childrensEarlyWarningFeatures.map((feature, i) => (
+                    <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all group">
+                      <div className="flex items-start gap-4">
+                        <span className="text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">{feature.icon}</span>
+                        <div>
+                          <h3 className="text-lg font-bold text-white mb-2 font-[family-name:var(--font-display)]">{feature.title}</h3>
+                          <p className="text-white/60 text-sm leading-relaxed font-[family-name:var(--font-body)]">{feature.description}</p>
+                          <span className="inline-block mt-3 text-rose-300 text-xs font-semibold tracking-wide uppercase font-[family-name:var(--font-body)]">{feature.stat}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-10 border-t border-white/10 pt-8">
+                  <p className="text-xs uppercase tracking-[0.3em] text-rose-300 font-semibold mb-6 font-[family-name:var(--font-body)]">Early Action Pipeline</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {[
+                      { step: "1", label: "Signals Ingested", desc: "Weather, AQ, flood & station feeds" },
+                      { step: "2", label: "Child Risk Scored", desc: "Heat-illness + vector suitability" },
+                      { step: "3", label: "Facility Alerted", desc: "Watch / warning / critical levels" },
+                      { step: "4", label: "Playbook Triggered", desc: "School & clinic actions ready" },
+                    ].map((item, i) => (
+                      <div key={i} className="text-center">
+                        <div className="w-10 h-10 rounded-full bg-rose-500/20 text-rose-300 font-bold text-sm flex items-center justify-center mx-auto mb-3">{item.step}</div>
+                        <p className="text-white text-sm font-semibold font-[family-name:var(--font-display)]">{item.label}</p>
+                        <p className="text-white/50 text-xs mt-1 font-[family-name:var(--font-body)]">{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 bg-white/5 border border-white/10 rounded-xl p-5">
+                  <p className="text-white/80 text-sm font-[family-name:var(--font-body)]">
+                    <span className="text-rose-300 font-semibold">Built for UNICEF Area 2:</span> Early warning, early action for children&apos;s climate health. Public status dashboard, open JSON APIs, and transparent models for partners — with school and clinic playbooks that turn risk scores into same-day decisions.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* === DATA → DETECTION → ACTION Pipeline === */}
           <section className="mb-20 sm:mb-28">
             <div className="text-center mb-12">
@@ -419,16 +514,24 @@ export default function SolutionPage() {
                 Data → Detection → Action
               </h2>
               <p className="text-[#5d6f5d] text-lg mt-4 max-w-2xl mx-auto font-[family-name:var(--font-body)]">
-                Three integrated layers that transform climate intelligence into measurable impact across Africa&apos;s forests and cities.
+                Four integrated layers that transform climate intelligence into measurable impact across Africa&apos;s forests, cities, and child-serving facilities.
               </p>
             </div>
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {dataToActionPipeline.map((item, i) => (
                 <div key={i} className="relative bg-white rounded-3xl border border-[#dce9dc] p-8 shadow-sm hover:shadow-lg transition-all group overflow-hidden">
                   <div className={`absolute top-0 left-0 w-full h-1.5 ${item.color}`} />
                   <p className="text-xs uppercase tracking-widest text-[#5d6f5d] font-semibold mb-3 font-[family-name:var(--font-body)]">Layer {i + 1}</p>
                   <h3 className="text-2xl font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">{item.layer}</h3>
-                  <p className={`text-sm font-semibold mb-3 font-[family-name:var(--font-body)] ${item.color === 'bg-emerald-500' ? 'text-emerald-600' : item.color === 'bg-amber-500' ? 'text-amber-600' : 'text-blue-600'}`}>{item.tool}</p>
+                  <p className={`text-sm font-semibold mb-3 font-[family-name:var(--font-body)] ${
+                    item.color === "bg-emerald-500"
+                      ? "text-emerald-600"
+                      : item.color === "bg-amber-500"
+                        ? "text-amber-600"
+                        : item.color === "bg-rose-500"
+                          ? "text-rose-600"
+                          : "text-blue-600"
+                  }`}>{item.tool}</p>
                   <p className="text-[#5d6f5d] text-sm leading-relaxed font-[family-name:var(--font-body)]">{item.description}</p>
                 </div>
               ))}

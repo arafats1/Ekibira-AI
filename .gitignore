@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# UNICEF / grant proposal drafts (do not publish answers)
+UNICEF_PROJECT_DESIGN_STATEMENT.md
+**/UNICEF_PROJECT_DESIGN_STATEMENT.md

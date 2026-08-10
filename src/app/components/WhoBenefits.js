@@ -29,8 +29,8 @@ export default function WhoBenefits() {
       desc: "Use climate data for child health early warning — heat, floods, air pollution, and humidity alerts so schools and clinics can act before hazards peak.",
       color: "from-rose-500 to-rose-600",
       borderColor: "border-rose-200 hover:border-rose-400",
-      href: "/signup?type=school_health",
-      cta: "Protect Children",
+      href: "/childrens-early-warning",
+      cta: "Open Children's Early Warning",
     },
     {
       id: "local_gov",
@@ -39,8 +39,8 @@ export default function WhoBenefits() {
       desc: "Ward-level flood, heat, and air-quality early warning with anticipatory action playbooks for community leaders and disaster response teams.",
       color: "from-sky-500 to-sky-600",
       borderColor: "border-sky-200 hover:border-sky-400",
-      href: "/signup?type=local_gov",
-      cta: "Get Early Warning",
+      href: "/childrens-early-warning",
+      cta: "View Facility Alerts",
     },
     {
       id: "insurance",
