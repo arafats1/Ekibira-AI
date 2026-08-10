@@ -375,6 +375,12 @@ export default function ChildrensEarlyWarningPage() {
                   7-day predictive outlook for heat-illness risk and vector/malaria climate suitability
                   at this facility.
                 </p>
+                {risk.dataSources?.outlook === "synthetic-7-day" && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 font-[family-name:var(--font-body)]">
+                    Showing model outlook (live daily forecast unavailable). Values use current readings +
+                    facility microclimate. Refresh to retry Open-Meteo.
+                  </p>
+                )}
                 {chartData.length > 0 ? (
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -391,6 +397,7 @@ export default function ChildrensEarlyWarningPage() {
                 ) : (
                   <p className="text-sm text-gray-500">Outlook unavailable — try refresh.</p>
                 )}
+                {(risk.outlook || []).length > 0 && (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left font-[family-name:var(--font-body)]">
                     <thead>
@@ -417,6 +424,7 @@ export default function ChildrensEarlyWarningPage() {
                     </tbody>
                   </table>
                 </div>
+                )}
               </div>
             )}
 

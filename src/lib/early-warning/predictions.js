@@ -106,10 +106,10 @@ export function buildSevenDayOutlook(dailyWeather, facility) {
     temperature_2m_max = [],
     precipitation_sum = [],
     relative_humidity_2m_mean,
+    relative_humidity_2m_max,
     uv_index_max = [],
   } = dailyWeather;
 
-  // Open-Meteo daily may not include humidity mean — approximate from precip
   const precipArr = precipitation_sum;
   let rain7 = 0;
   for (let i = 0; i < Math.min(7, precipArr.length); i++) rain7 += precipArr[i] || 0;
@@ -119,6 +119,7 @@ export function buildSevenDayOutlook(dailyWeather, facility) {
     const precip = precipArr[i] || 0;
     const humidity =
       relative_humidity_2m_mean?.[i] ??
+      relative_humidity_2m_max?.[i] ??
       (precip > 20 ? 85 : precip > 5 ? 72 : 60);
     const uv = uv_index_max[i] || 0;
 
@@ -150,4 +151,60 @@ export function buildSevenDayOutlook(dailyWeather, facility) {
       vectorRisk: vector,
     };
   });
+}
+
+/**
+ * Always-available 7-day outlook when Open-Meteo daily forecast is missing.
+ * Uses current readings + facility microclimate with mild day-to-day variation.
+ */
+export function buildSyntheticOutlook(facility, base = {}) {
+  const baseTemp = base.temperature ?? 28;
+  const baseHumidity = base.humidity ?? 65;
+  const baseUv = base.uvIndex ?? 7;
+  const baseRain = base.rainfallMm24h ?? 5;
+  const seed = Math.abs(Math.round((facility.lat + facility.lng) * 1000)) || 1;
+
+  const days = [];
+  let rainAccum = 0;
+  for (let i = 0; i < 7; i++) {
+    const wobble = Math.sin((seed + i) * 1.7) * 1.8;
+    const temp = baseTemp + wobble + (i % 3) * 0.4;
+    const humidity = Math.min(95, Math.max(40, baseHumidity + Math.cos((seed + i) * 0.9) * 6));
+    const uv = Math.max(0, Math.round((baseUv + Math.sin((seed + i) * 0.5) * 1.2) * 10) / 10);
+    const precip = Math.max(0, Math.round(baseRain + Math.sin((seed + i) * 2.1) * 8));
+    rainAccum += precip;
+
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().slice(0, 10);
+
+    const heat = computeHeatIllnessRisk({
+      tempC: temp,
+      humidity,
+      uvIndex: uv,
+      urbanHeatIslandDelta: facility.urbanHeatIslandDelta,
+      facilityType: facility.type,
+      treeCanopyCoverage: facility.treeCanopyCoverage,
+    });
+    const vector = computeVectorRisk({
+      tempC: temp,
+      humidity,
+      rainfallMm24h: precip,
+      rainfallMm7d: rainAccum,
+      standingWaterProxy: facility.drainageVulnerability,
+    });
+
+    days.push({
+      date: dateStr,
+      tempHigh: Math.round(temp),
+      rainfall: precip,
+      humidity: Math.round(humidity),
+      uvIndex: uv,
+      heatIllnessRisk: heat.score,
+      heatIndex: heat.heatIndex,
+      vectorRisk: vector,
+      synthetic: true,
+    });
+  }
+  return days;
 }

@@ -3,6 +3,7 @@ import {
   computeHeatIllnessRisk,
   computeVectorRisk,
   buildSevenDayOutlook,
+  buildSyntheticOutlook,
 } from "./predictions";
 import { fetchWeatherBundle, computeFloodRiskScore, liveSnapshot } from "./weather";
 import { getStation, buildTelemetry } from "./stations";
@@ -53,7 +54,16 @@ export async function buildFacilityRisk(facility) {
 
   const alerts = evaluateAlerts(readings, facility.type);
   const alertLevel = overallAlertLevel(alerts);
-  const outlook = buildSevenDayOutlook(weather?.daily, facility);
+
+  let outlook = buildSevenDayOutlook(weather?.daily, facility);
+  if (!outlook.length) {
+    outlook = buildSyntheticOutlook(facility, {
+      temperature: temp,
+      humidity,
+      uvIndex,
+      rainfallMm24h: rainToday || 5,
+    });
+  }
 
   let station = null;
   if (facility.stationId) {
@@ -88,6 +98,7 @@ export async function buildFacilityRisk(facility) {
       weather: weather ? "Open-Meteo" : "fallback",
       airQuality: air ? "Open-Meteo Air Quality" : "fallback",
       flood: flood ? "GloFAS via Open-Meteo" : "terrain-only",
+      outlook: weather?.daily?.time?.length ? "Open-Meteo daily" : "synthetic-7-day",
       station: station ? station.telemetry.source : "none",
       models: "KibiraAI heat-illness + vector suitability v1.0",
     },
@@ -96,7 +107,6 @@ export async function buildFacilityRisk(facility) {
 }
 
 export function buildFacilityRiskOffline(facility) {
-  // Deterministic fallback when weather APIs fail
   const seed = facility.lat + facility.lng;
   const temp = 27 + (seed % 3);
   const humidity = 68 + Math.round((seed * 10) % 12);
@@ -131,6 +141,13 @@ export function buildFacilityRiskOffline(facility) {
     vectorRisk,
   };
   const alerts = evaluateAlerts(readings, facility.type);
+  const outlook = buildSyntheticOutlook(facility, {
+    temperature: temp,
+    humidity,
+    uvIndex,
+    rainfallMm24h: 8,
+  });
+
   return {
     facilityId: facility.id,
     name: facility.name,
@@ -144,7 +161,7 @@ export function buildFacilityRiskOffline(facility) {
     alertLevel: overallAlertLevel(alerts),
     readings,
     alerts,
-    outlook: [],
+    outlook,
     station: facility.stationId
       ? buildTelemetry(getStation(facility.stationId), {
           temperature: temp,
@@ -154,7 +171,11 @@ export function buildFacilityRiskOffline(facility) {
           uvIndex,
         })
       : null,
-    dataSources: { weather: "offline-model", models: "KibiraAI v1.0" },
+    dataSources: {
+      weather: "offline-model",
+      outlook: "synthetic-7-day",
+      models: "KibiraAI heat-illness + vector suitability v1.0",
+    },
     generatedAt: new Date().toISOString(),
   };
 }
