@@ -124,7 +124,7 @@ export default function CTA() {
         <div className="text-center">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <a
-              href="mailto:hello@KibiraAI.org?subject=Grant%20Partnership%20Inquiry%20-%20KibiraAI&body=I%20am%20interested%20in%20supporting%20KibiraAI.%20Please%20share%20more%20details%20about%20partnership%20opportunities."
+              href="mailto:arafats144@gmail.com?subject=Grant%20Partnership%20Inquiry%20-%20KibiraAI&body=I%20am%20interested%20in%20supporting%20KibiraAI.%20Please%20share%20more%20details%20about%20partnership%20opportunities."
               className="bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13] font-bold px-10 py-4 rounded-full text-lg transition-all hover:scale-105 shadow-lg shadow-[#4ade80]/25 font-[family-name:var(--font-body)]"
             >
               Contact Us for Partnership

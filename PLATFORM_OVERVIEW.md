@@ -305,4 +305,4 @@ User → Next.js Frontend → API Routes → OpenAI GPT-4o (AI)
 ---
 
 *Built with 💚 in Uganda for Africa*
-*Contact: hello@KibiraAI.org*
+*Contact: arafats144@gmail.com*

@@ -36,7 +36,7 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-3 font-[family-name:var(--font-display)]">Get in Touch</h4>
             <div className="space-y-2 text-sm font-[family-name:var(--font-body)]">
-              <p>📧 hello@KibiraAI.org</p>
+              <p>📧 arafats144@gmail.com</p>
               <p>📍 Kampala, Uganda</p>
               <p>🌍 Serving communities across Africa</p>
             </div>
