@@ -14,6 +14,19 @@ export default function ForestryDashboard() {
   }, [user, loading, router]);
 
   useEffect(() => {
+    if (loading || !user) return;
+    const type = user.accountType;
+    if (user.role === "admin") return;
+    if (type === "school_health" || type === "local_gov") {
+      router.replace("/dashboard/school");
+    } else if (type === "farmer") {
+      router.replace("/dashboard/farmer");
+    } else if (type === "insurance") {
+      router.replace("/dashboard/insurance");
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
     const h = new Date().getHours();
     setGreeting(h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening");
   }, []);
@@ -40,16 +53,8 @@ export default function ForestryDashboard() {
       icon: "🌿",
       title: "Dr. Kibira AI",
       desc: "AI-powered climate risk analysis with deforestation data, carbon metrics, biodiversity insights, and projections.",
-      tag: "AI Analysis",
+      tag: "Free for everyone",
       tagColor: "bg-blue-100 text-blue-700",
-    },
-    {
-      href: "/urban-warning",
-      icon: "🏙️",
-      title: "Urban Warning",
-      desc: "Flood and heat mapping with 5-day forecasts and neighborhood-level vulnerability data for urban areas.",
-      tag: "Risk Data",
-      tagColor: "bg-amber-100 text-amber-700",
     },
   ];
 

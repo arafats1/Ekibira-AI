@@ -312,43 +312,16 @@ export async function POST(request) {
       return Response.json({ error: "Message too long" }, { status: 400 });
     }
 
-    // Check usage limits for logged-in users
+    // Usage tracking for analytics only — Dr. Kibira is free for everyone (no daily caps)
     let advisorUserId = null;
-    let advisorToken = null;
     if (userEmail) {
       try {
-        // Find user by email to get their ID
         const userRes = await fetch(
           `${ADVISOR_STRAPI_URL}/api/users?filters[email][$eq]=${encodeURIComponent(userEmail)}`,
         );
         if (userRes.ok) {
           const users = await userRes.json();
-          if (users?.[0]?.id) {
-            advisorUserId = users[0].id;
-            // Check for any active paid subscription (annual or per-crop = unlimited)
-            const subRes = await fetch(
-              `${ADVISOR_STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${advisorUserId}&filters[subStatus][$eq]=active`
-            );
-            const subData = subRes.ok ? await subRes.json() : { data: [] };
-            const hasPaidSub = (subData.data || []).some(s => !s.endDate || new Date(s.endDate) >= new Date());
-
-            if (!hasPaidSub) {
-              // Check daily usage
-              const today = new Date().toISOString().split("T")[0];
-              const usageRes = await fetch(
-                `${ADVISOR_STRAPI_URL}/api/kibira-usages?filters[userId][$eq]=${advisorUserId}&filters[date][$eq]=${today}`
-              );
-              const usageData = usageRes.ok ? await usageRes.json() : { data: [] };
-              const count = usageData.data?.[0]?.advisorChatCount || 0;
-              if (count >= 5) {
-                return Response.json({
-                  reply: "\ud83d\udd12 You've used all 5 free Dr. Kibira messages for today. Upgrade to a paid plan for unlimited conversations, or come back tomorrow!",
-                  limited: true,
-                  remaining: 0,
-                }, { status: 200 });
-              }
-            }
-          }
+          if (users?.[0]?.id) advisorUserId = users[0].id;
         }
       } catch {}
     }

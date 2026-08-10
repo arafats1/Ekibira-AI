@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import EarlyWarningNav from "../components/EarlyWarningNav";
 
 const LEVEL_STYLES = {
   critical: "bg-red-100 text-red-800",
@@ -44,34 +45,16 @@ export default function EarlyWarningStatusPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f7fb]">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0c2d48]/95 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl">🌿</span>
-              <span className="font-[family-name:var(--font-display)] text-xl font-bold text-white">
-                KibiraAI
-              </span>
-            </Link>
-            <span className="text-white/30">|</span>
-            <span className="text-sky-300 text-sm font-semibold">Public Early Warning Status</span>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <Link href="/docs/early-warning" className="text-white/70 hover:text-white">
-              Developer Docs
-            </Link>
-            <Link href="/childrens-early-warning" className="text-white/70 hover:text-white">
-              Children&apos;s UI
-            </Link>
-            <Link
-              href="/docs/early-warning"
-              className="bg-sky-500 text-white px-4 py-2 rounded-full font-semibold hover:bg-sky-600"
-            >
-              API Docs
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <EarlyWarningNav
+        title="Public Status"
+        theme="sky"
+        links={[
+          { href: "/docs/early-warning", label: "Developer Docs" },
+          { href: "/childrens-early-warning", label: "Children's UI" },
+          { href: "/urban-warning", label: "Urban Warning" },
+          { href: "/docs/early-warning", label: "API Docs", cta: true },
+        ]}
+      />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-16">
         <div className="mb-8">

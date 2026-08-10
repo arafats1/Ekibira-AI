@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import EarlyWarningNav from "../../components/EarlyWarningNav";
 
 const ENDPOINTS = [
   {
@@ -100,34 +101,16 @@ export default function EarlyWarningDocsPage() {
 
   return (
     <div className="min-h-screen bg-[#f4f7fb]">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0c2d48]/95 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl">🌿</span>
-              <span className="font-[family-name:var(--font-display)] text-xl font-bold text-white">
-                KibiraAI
-              </span>
-            </Link>
-            <span className="text-white/30">|</span>
-            <span className="text-sky-300 text-sm font-semibold">Developer Docs</span>
-          </div>
-          <div className="flex items-center gap-3 text-sm text-white/70">
-            <Link href="/childrens-early-warning" className="hover:text-white">
-              Product UI
-            </Link>
-            <Link href="/early-warning-status" className="hover:text-white">
-              Status
-            </Link>
-            <a
-              href="/api/early-warning"
-              className="bg-sky-500 text-white px-4 py-2 rounded-full font-semibold hover:bg-sky-600"
-            >
-              API Index
-            </a>
-          </div>
-        </div>
-      </nav>
+      <EarlyWarningNav
+        title="Developer Docs"
+        theme="sky"
+        links={[
+          { href: "/childrens-early-warning", label: "Product UI" },
+          { href: "/early-warning-status", label: "Public Status" },
+          { href: "/urban-warning", label: "Urban Warning" },
+          { href: "/api/early-warning", label: "API Index", cta: true },
+        ]}
+      />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-16">
         <p className="text-xs font-semibold tracking-widest uppercase text-sky-700 mb-2 font-[family-name:var(--font-body)]">

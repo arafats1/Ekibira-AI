@@ -3,6 +3,16 @@ import Link from "next/link";
 export default function WhoBenefits() {
   const activeRoles = [
     {
+      id: "farmer",
+      icon: "🌾",
+      title: "Farmers",
+      desc: "Track every crop with live weather, get AI daily actions, predict yields before harvest, and check market prices when you sell.",
+      color: "from-amber-500 to-amber-600",
+      borderColor: "border-amber-200 hover:border-amber-400",
+      href: "/signup?type=farmer",
+      cta: "Get Started Free",
+    },
+    {
       id: "forestry",
       icon: "🌲",
       title: "Forestry & Conservation",
@@ -13,54 +23,14 @@ export default function WhoBenefits() {
       cta: "Protect Forests",
     },
     {
-      id: "farmer",
-      icon: "🌾",
-      title: "Farmers & Agribusiness",
-      desc: "Flood/heat risk predictions, seasonal weather forecasts, crop management, AI advisor for soil and pest guidance, and market price tracking.",
-      color: "from-amber-500 to-amber-600",
-      borderColor: "border-amber-200 hover:border-amber-400",
-      href: "/signup?type=farmer",
-      cta: "Get Started Free",
-    },
-    {
       id: "school_health",
       icon: "🏫",
-      title: "Schools & Children's Health",
+      title: "Schools & Health Facilities",
       desc: "Use climate data for child health early warning — heat, floods, air pollution, and humidity alerts so schools and clinics can act before hazards peak.",
       color: "from-rose-500 to-rose-600",
       borderColor: "border-rose-200 hover:border-rose-400",
-      href: "/childrens-early-warning",
-      cta: "Open Children's Early Warning",
-    },
-    {
-      id: "local_gov",
-      icon: "🏛️",
-      title: "Local Governments & Leaders",
-      desc: "Ward-level flood, heat, and air-quality early warning with anticipatory action playbooks for community leaders and disaster response teams.",
-      color: "from-sky-500 to-sky-600",
-      borderColor: "border-sky-200 hover:border-sky-400",
-      href: "/childrens-early-warning",
-      cta: "View Facility Alerts",
-    },
-    {
-      id: "insurance",
-      icon: "🛡️",
-      title: "Insurance Companies",
-      desc: "Climate risk underwriting data, flood/heat risk scoring per location, premium multiplier recommendations, and portfolio risk analytics.",
-      color: "from-blue-500 to-blue-600",
-      borderColor: "border-blue-200 hover:border-blue-400",
-      href: "/signup?type=insurance",
-      cta: "Access Risk Data",
-    },
-    {
-      id: "general",
-      icon: "🔬",
-      title: "Researchers & General",
-      desc: "Full access to Dr. Kibira AI for climate research, deforestation analysis, urban early warning, and reforestation strategy planning.",
-      color: "from-teal-500 to-teal-600",
-      borderColor: "border-teal-200 hover:border-teal-400",
-      href: "/signup?type=general",
-      cta: "Start Researching",
+      href: "/signup?type=school_health",
+      cta: "Create School Account",
     },
   ];
 
@@ -75,10 +45,10 @@ export default function WhoBenefits() {
             Who Benefits
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#1a2e1a] leading-tight mb-4 sm:mb-6">
-            Built for <span className="gradient-text">Every Sector</span>
+            Built for <span className="gradient-text">Your Sector</span>
           </h2>
           <p className="text-[#6b7c6b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            Forests, farms, cities, schools, and health facilities — KibiraAI provides climate intelligence dashboards tailored to your workflow.
+            Sign up as a farmer, forestry &amp; conservation team, or school &amp; health facility — plus free public tools for urban warning, Dr. Kibira AI, and children&apos;s early warning.
           </p>
         </div>
 

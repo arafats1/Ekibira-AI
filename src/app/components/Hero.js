@@ -35,9 +35,9 @@ export default function Hero() {
         </h1>
 
         <p className="animate-fade-in-up delay-200 text-base sm:text-lg md:text-xl text-white/85 max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-12 font-[family-name:var(--font-body)]">
-          KibiraAI uses AI to fight deforestation, deliver urban flood and heat early warning,
-          support climate-smart farming, and turn climate data into children&rsquo;s health foresight —
-          empowering communities across Africa to act before crises hit.
+          KibiraAI helps farmers track crops with weather intelligence, predict harvest outcomes and market prices,
+          fights deforestation, delivers urban flood and heat early warning, and turns climate data into
+          children&rsquo;s health foresight — so communities act before crises hit.
         </p>
 
         <div className="animate-fade-in-up delay-300 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -58,9 +58,9 @@ export default function Hero() {
         <div className="animate-fade-in-up delay-500 mt-12 sm:mt-20 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 max-w-4xl mx-auto">
           {[
             { value: "3.9M", label: "Hectares lost yearly to deforestation in Africa", icon: "🌳" },
+            { value: "My Farm", label: "Crop tracking, yield & price predictions for farmers", icon: "🌾" },
             { value: "72h", label: "Advance flood & heat early warning window", icon: "⚡" },
             { value: "Health", label: "Children's climate–health early action", icon: "👧" },
-            { value: "Try free", label: "Test the systems before you commit", icon: "🔓" },
           ].map((stat, i) => (
             <div
               key={i}

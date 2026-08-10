@@ -4,16 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 
-// Auth gate — redirects to signup if not logged in
+// Auth gate — Forest Sentinel is for forestry & conservation accounts only
 function AuthGate({ children }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const allowed =
+    user &&
+    (user.role === "admin" ||
+      user.accountType === "forestry" ||
+      user.accountType === "general" ||
+      user.accountType === "eu_compliance");
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/signup?redirect=/forest-sentinel");
+    if (loading) return;
+    if (!user) {
+      router.push("/signup?type=forestry&redirect=/forest-sentinel");
+      return;
     }
-  }, [user, loading, router]);
+    if (!allowed) {
+      router.push("/dashboard");
+    }
+  }, [user, loading, router, allowed]);
 
   if (loading) {
     return (
@@ -32,17 +43,17 @@ function AuthGate({ children }) {
         <div className="text-center max-w-md">
           <div className="text-4xl mb-4">🌲</div>
           <h2 className="text-xl font-bold text-white mb-2 font-[family-name:var(--font-display)]">
-            Forest Sentinel Requires an Account
+            Forest Sentinel Requires a Forestry Account
           </h2>
           <p className="text-emerald-400/60 mb-6 text-sm font-[family-name:var(--font-body)]">
-            Create a free account to access real-time forest monitoring, acoustic threat detection, and sensor data.
+            Sign up under Forestry &amp; Conservation to access real-time forest monitoring, acoustic threat detection, and sensor data.
           </p>
           <div className="flex gap-3 justify-center">
             <Link
-              href="/signup?redirect=/forest-sentinel"
+              href="/signup?type=forestry&redirect=/forest-sentinel"
               className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm transition-colors font-[family-name:var(--font-body)]"
             >
-              Create Account
+              Forestry Signup
             </Link>
             <Link
               href="/login?redirect=/forest-sentinel"
@@ -51,6 +62,28 @@ function AuthGate({ children }) {
               Sign In
             </Link>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!allowed) {
+    return (
+      <div className="min-h-screen bg-[#0a1a0f] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-4xl mb-4">🌲</div>
+          <h2 className="text-xl font-bold text-white mb-2 font-[family-name:var(--font-display)]">
+            Forestry accounts only
+          </h2>
+          <p className="text-emerald-400/60 mb-6 text-sm font-[family-name:var(--font-body)]">
+            Forest Sentinel is part of the Forestry &amp; Conservation workspace. Your account uses a different dashboard.
+          </p>
+          <Link
+            href="/dashboard"
+            className="inline-block px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm transition-colors font-[family-name:var(--font-body)]"
+          >
+            Go to your dashboard
+          </Link>
         </div>
       </div>
     );

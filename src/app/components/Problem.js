@@ -8,6 +8,13 @@ export default function Problem() {
       stat: "3.9M ha/year",
     },
     {
+      icon: "🌾",
+      title: "Farmers Flying Blind",
+      description:
+        "Smallholders plant and sell without clear weather guidance, yield outlooks, or price signals. One bad season or mistimed market can wipe out a year's income.",
+      stat: "Uncertain harvests & prices",
+    },
+    {
       icon: "🏙️",
       title: "Urban Climate Risk",
       description:
@@ -35,13 +42,13 @@ export default function Problem() {
             The <span className="gradient-text">Climate Challenge</span>
           </h2>
           <p className="text-[#6b7c6b] text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            Africa loses millions of hectares of forest every year while its fastest-growing
-            cities face heat, flooding, and pollution — and children bear the health burden.
-            Communities need tools for forests, cities, and early action.
+            Africa loses millions of hectares of forest every year, farmers face uncertain seasons and prices,
+            cities confront heat and flooding, and children bear the health burden.
+            Communities need tools that turn climate data into action.
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {problems.map((problem, i) => (
             <div
               key={i}
@@ -74,9 +81,8 @@ export default function Problem() {
             The gap? Communities lack the tools and data to act.
           </h3>
           <p className="text-white/80 text-base sm:text-lg max-w-2xl mx-auto font-[family-name:var(--font-body)] mb-6">
-            From forest rangers to city planners, farmers, schools, and clinics —
-            people need accessible climate intelligence to protect ecosystems and lives.
-            That&rsquo;s where KibiraAI comes in.
+            From farmers tracking crops and prices, to forest rangers, city planners, schools, and clinics —
+            people need accessible climate intelligence. That&rsquo;s where KibiraAI comes in.
           </p>
           <a
             href="/problem"

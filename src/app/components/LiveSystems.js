@@ -1,35 +1,12 @@
 export default function LiveSystems() {
   const systems = [
     {
-      title: "AI Forest Acoustic Sentinel",
-      subtitle: "Real-Time Forest Protection",
-      description:
-        "IoT sound sensors powered by neural networks detect illegal logging across Uganda's critical forests — Mabira, Bugoma, Bwindi, and Kibale — in real-time. Rangers receive instant SMS alerts within 30 seconds of detection.",
-      href: "/forest-sentinel",
-      badge: "🔊 LIVE",
-      badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-      stats: [
-        { value: "4", label: "Forests" },
-        { value: "16", label: "Sensor Zones" },
-        { value: "9", label: "Sound Classes" },
-      ],
-      features: [
-        "Chainsaw & axe sound detection via TensorFlow Lite",
-        "GPS triangulation and instant ranger alerts",
-        "Evidence logging for NFA prosecution",
-      ],
-      gradient: "from-[#1a2e1a] to-[#0a1f13]",
-      accentColor: "text-[#4ade80]",
-      buttonBg: "bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13]",
-      icon: "🌳",
-    },
-    {
       title: "Urban Heat & Flood Early Warning",
       subtitle: "Predictive Urban Protection",
       description:
         "AI-powered hyperlocal climate monitoring for Kampala's most vulnerable neighborhoods. Predicts flash floods 24–72 hours ahead and maps urban heat islands at neighborhood level, pushing SMS alerts to at-risk residents.",
       href: "/urban-warning",
-      badge: "🏙️ LIVE",
+      badge: "🏙️ FREE",
       badgeColor: "bg-blue-500/20 text-blue-300 border-blue-500/30",
       stats: [
         { value: "5", label: "Neighborhoods" },
@@ -52,7 +29,7 @@ export default function LiveSystems() {
       description:
         "Facility-aware early warning for children — heat, humidity, UV, air quality, flood, heat-illness and vector risk — with playbooks for headteachers, CHWs, and community leaders. Public APIs and school/clinic sensor telemetry included.",
       href: "/childrens-early-warning",
-      badge: "👧 LIVE",
+      badge: "👧 FREE",
       badgeColor: "bg-rose-500/20 text-rose-300 border-rose-500/30",
       stats: [
         { value: "12", label: "Facilities" },
@@ -68,6 +45,29 @@ export default function LiveSystems() {
       accentColor: "text-rose-300",
       buttonBg: "bg-rose-500 hover:bg-rose-600 text-white",
       icon: "🏫",
+    },
+    {
+      title: "Dr. Kibira AI",
+      subtitle: "Climate Research Assistant",
+      description:
+        "Ask anything about climate risk, deforestation, reforestation, urban heat, and children's climate health. Free for everyone — no signup required.",
+      href: "/advisor",
+      badge: "🌿 FREE",
+      badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+      stats: [
+        { value: "AI", label: "Advisor" },
+        { value: "Live", label: "Weather" },
+        { value: "Free", label: "Access" },
+      ],
+      features: [
+        "Deforestation and reforestation analysis",
+        "Location-aware weather and crop context",
+        "No account required to start asking",
+      ],
+      gradient: "from-[#1a2e1a] to-[#0a1f13]",
+      accentColor: "text-[#4ade80]",
+      buttonBg: "bg-[#4ade80] hover:bg-[#22c55e] text-[#0a1f13]",
+      icon: "🌿",
     },
   ];
 

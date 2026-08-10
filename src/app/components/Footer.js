@@ -28,7 +28,7 @@ export default function Footer() {
               <a href="/childrens-early-warning" className="block hover:text-[#4ade80] transition-colors">Children&apos;s Early Warning</a>
               <a href="/early-warning-status" className="block hover:text-[#4ade80] transition-colors">Public Status Dashboard</a>
               <a href="/urban-warning" className="block hover:text-[#4ade80] transition-colors">Urban Warning</a>
-              <a href="/forest-sentinel" className="block hover:text-[#4ade80] transition-colors">Forest Sentinel</a>
+              <a href="/signup?type=forestry" className="block hover:text-[#4ade80] transition-colors">Forestry &amp; Conservation Signup</a>
               <a href="/#impact" className="block hover:text-[#4ade80] transition-colors">Projected Impact</a>
             </div>
           </div>

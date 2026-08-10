@@ -17,15 +17,15 @@ export default function AdvisorTeaser() {
 
       <div className="relative z-10 max-w-4xl mx-auto text-center">
         <span className="inline-block text-[#4ade80] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">
-          Try Before You Commit
+          Free for Everyone
         </span>
         <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6 font-[family-name:var(--font-display)] drop-shadow-lg">
-          Try the <span className="text-[#4ade80]">Dr. Kibira AI</span>
+          Ask <span className="text-[#4ade80]">Dr. Kibira AI</span>
         </h2>
         <p className="text-white/75 text-base sm:text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-10 font-[family-name:var(--font-body)]">
           Get AI-powered deforestation risk assessments, reforestation plans, urban heat and flood
           analysis, children&rsquo;s climate–health guidance, and climate-resilient strategies for any
-          location in Africa — free to try before you commit.
+          location in Africa — free for everyone, no signup required.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-8 sm:mb-10">

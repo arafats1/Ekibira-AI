@@ -3,17 +3,11 @@ import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { DASHBOARD_ROUTES } from "../../lib/dashboardRoutes";
+
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
-const ROUTE_MAP = {
-  farmer: "/dashboard/farmer",
-  insurance: "/dashboard/insurance",
-  local_gov: "/childrens-early-warning",
-  school_health: "/childrens-early-warning",
-  forestry: "/dashboard/forestry",
-  general: "/dashboard/forestry",
-  eu_compliance: "/dashboard/forestry", // legacy accounts
-};
+const ROUTE_MAP = DASHBOARD_ROUTES;
 
 export default function DashboardPage() {
   const { user, loading, logout, getToken } = useAuth();

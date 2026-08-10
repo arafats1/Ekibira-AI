@@ -3,6 +3,7 @@ import { useState, Suspense } from "react";
 import { useAuth } from "../context/AuthContext";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getDashboardRoute } from "../../lib/dashboardRoutes";
 
 function LoginForm() {
   const { login } = useAuth();
@@ -13,19 +14,6 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const getDashboardRoute = (type) => {
-    switch (type) {
-      case "farmer": return "/dashboard/farmer";
-      case "insurance": return "/dashboard/insurance";
-      case "local_gov":
-      case "school_health": return "/urban-warning";
-      case "forestry": return "/dashboard/forestry";
-      case "general": return "/dashboard/forestry";
-      case "eu_compliance": return "/dashboard/forestry"; // legacy accounts
-      default: return "/dashboard";
-    }
-  };
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));

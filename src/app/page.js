@@ -10,7 +10,7 @@ import Footer from "./components/Footer";
 export const metadata = {
   title: "Kibira AI - AI-Powered Climate Intelligence for Africa",
   description:
-    "Fight deforestation, deliver urban flood and heat early warning, and turn climate data into children's health foresight — try KibiraAI free before you commit.",
+    "Help farmers track crops with weather, predict yields and market prices, fight deforestation, deliver urban early warning, and protect children's climate health — free for everyone.",
   alternates: {
     canonical: "/",
   },

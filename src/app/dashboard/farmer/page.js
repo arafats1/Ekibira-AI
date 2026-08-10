@@ -19,6 +19,15 @@ export default function FarmerDashboard() {
     if (!loading && !user) router.push("/login");
   }, [user, loading, router]);
 
+  useEffect(() => {
+    if (loading || !user) return;
+    if (user.role === "admin") return;
+    const type = user.accountType;
+    if (type && type !== "farmer") {
+      router.replace("/dashboard");
+    }
+  }, [user, loading, router]);
+
   // Load saved location on mount
   useEffect(() => {
     if (!loading && user) {

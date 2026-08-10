@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import EarlyWarningNav from "../components/EarlyWarningNav";
 
 const LEVEL_STYLES = {
   critical: "bg-red-100 text-red-800 border-red-200",
@@ -134,39 +135,16 @@ export default function ChildrensEarlyWarningPage() {
 
   return (
     <div className="min-h-screen bg-[#faf6f5]">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#4a1c2a]/95 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl">🌿</span>
-              <span className="font-[family-name:var(--font-display)] text-xl font-bold text-white tracking-tight">
-                KibiraAI
-              </span>
-            </Link>
-            <span className="text-white/30">|</span>
-            <span className="text-rose-300 text-sm font-semibold font-[family-name:var(--font-body)]">
-              Children&apos;s Early Warning
-            </span>
-          </div>
-          <div className="hidden md:flex items-center gap-5 text-sm font-medium text-white/70">
-            <Link href="/docs/early-warning" className="hover:text-white transition-colors">
-              Developer Docs
-            </Link>
-            <Link href="/early-warning-status" className="hover:text-white transition-colors">
-              Public Status
-            </Link>
-            <Link href="/urban-warning" className="hover:text-white transition-colors">
-              Urban Warning
-            </Link>
-            <Link
-              href="/api/early-warning"
-              className="bg-rose-500 text-white px-4 py-2 rounded-full hover:bg-rose-600 transition-colors font-semibold text-sm"
-            >
-              Open API
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <EarlyWarningNav
+        title="Children's Early Warning"
+        theme="rose"
+        links={[
+          { href: "/docs/early-warning", label: "Developer Docs" },
+          { href: "/early-warning-status", label: "Public Status" },
+          { href: "/urban-warning", label: "Urban Warning" },
+          { href: "/api/early-warning", label: "Open API", cta: true },
+        ]}
+      />
 
       <section className="pt-24 pb-8 px-4 sm:px-6 bg-gradient-to-br from-[#4a1c2a] via-[#6b2d3c] to-[#2d1a24]">
         <div className="max-w-7xl mx-auto">

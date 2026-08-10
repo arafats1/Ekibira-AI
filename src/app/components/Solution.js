@@ -51,14 +51,14 @@ export default function Solution() {
     {
       icon: "🌾",
       role: "Farmers & Agribusiness",
-      title: "Climate-Smart Farming",
+      title: "My Farm — Track, Predict, Sell",
       description:
-        "Farmers access AI-powered crop management with seasonal weather forecasts, flood and heat risk alerts, and smart irrigation recommendations tailored to each growing season.",
+        "Farmers register crops, follow weather-matched daily actions through the season, see expected harvest outcomes, and check market prices so they plant, manage, and sell with foresight.",
       features: [
-        "My Farm dashboard with crop tracking and calendar",
-        "Flood & heat risk predictions for your location",
-        "AI advisor for soil, pest, and harvest guidance",
-        "Market price tracking and climate-smart plans",
+        "My Farm crop tracking from planting to harvest",
+        "Daily actions matched to real local weather",
+        "Yield outcome predictions and risk alerts",
+        "Market price forecasts when you harvest",
       ],
       color: "from-amber-500/20 to-amber-600/10",
       accent: "text-amber-400",
@@ -85,23 +85,23 @@ export default function Solution() {
   const steps = [
     {
       step: "01",
-      title: "Try Before You Commit",
-      description: "Explore Dr. Kibira AI and Early Warning free — no signup required",
+      title: "Explore Free Tools",
+      description: "Use Dr. Kibira AI and Early Warning free — no signup required",
     },
     {
       step: "02",
       title: "Create Your Account",
-      description: "Select your role — forestry, farmer, schools/health, local gov, insurance, or research",
+      description: "Select your role — farmer, forestry & conservation, or schools & health facilities",
     },
     {
       step: "03",
       title: "AI Analyzes Data",
-      description: "Our AI processes climate, forest, weather, and environmental signals in real time",
+      description: "Our AI processes weather, crops, forest, and climate signals in real time",
     },
     {
       step: "04",
       title: "Act on Insights",
-      description: "Get alerts, recommendations, and reports tailored to forests, cities, and health",
+      description: "Get crop plans, price forecasts, forest alerts, and early warning for cities and schools",
     },
   ];
 
@@ -119,8 +119,8 @@ export default function Solution() {
             One Platform, <span className="text-[#4ade80]">Many Use Cases</span>
           </h2>
           <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            KibiraAI gives every user a role-specific dashboard powered by real-time environmental
-            data and AI — from forest protection and urban early warning to children&rsquo;s climate health.
+            KibiraAI gives every user a role-specific dashboard — farmers track crops and prices,
+            rangers protect forests, cities get early warning, and schools act on children&rsquo;s climate health.
           </p>
         </div>
 

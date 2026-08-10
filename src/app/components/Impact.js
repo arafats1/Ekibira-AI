@@ -22,7 +22,7 @@ export default function Impact() {
       icon: "👥",
       value: "500K+",
       label: "Farmers Empowered",
-      description: "Smallholders gaining climate-smart tools",
+      description: "Crop tracking, weather plans, yield & price foresight",
     },
     {
       icon: "👧",
