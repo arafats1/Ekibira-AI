@@ -1,106 +1,70 @@
 import { NextResponse } from "next/server";
 
-const PESAPAL_BASE =
-  process.env.PESAPAL_ENV === "production"
-    ? "https://pay.pesapal.com/v3"
-    : "https://cybqa.pesapal.com/pesapalv3";
-
-async function getAccessToken() {
-  const res = await fetch(`${PESAPAL_BASE}/api/Auth/RequestToken`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({
-      consumer_key: process.env.PESAPAL_CONSUMER_KEY,
-      consumer_secret: process.env.PESAPAL_CONSUMER_SECRET,
-    }),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message || "Token request failed");
-  return data.token;
-}
-
-async function registerIPN(token) {
-  const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.kibiraai.com"}/api/verify-payment`;
-  const res = await fetch(`${PESAPAL_BASE}/api/URLSetup/RegisterIPN`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      url: callbackUrl,
-      ipn_notification_type: "GET",
-    }),
-  });
-  const data = await res.json();
-  return data.ipn_id;
-}
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { amount, currency, description, treeCount, species, customer } = body;
+    const {
+      treeCount,
+      species,
+      amount,
+      currency,
+      description,
+      dedication,
+      customer,
+      provider,
+      paymentPhone,
+    } = body;
 
-    if (!amount || !customer?.name || !customer?.email) {
+    if (!treeCount || !species || !customer?.name || !customer?.email) {
       return NextResponse.json(
-        { error: "Missing required fields: amount, name, email" },
+        { error: "Missing required fields: treeCount, species, name, email" },
         { status: 400 }
       );
     }
 
-    const token = await getAccessToken();
-    const ipnId = await registerIPN(token);
-
-    const merchantRef = `KIBIRA-TREE-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.kibiraai.com"}/plant-a-tree?payment=success&ref=${merchantRef}`;
-
-    const orderPayload = {
-      id: merchantRef,
-      currency: currency || "USD",
-      amount: parseFloat(amount),
-      description: description || `Plant ${treeCount} tree(s) via KibiraAI`,
-      callback_url: callbackUrl,
-      notification_id: ipnId,
-      billing_address: {
-        email_address: customer.email,
-        phone_number: customer.phone || "",
-        first_name: customer.name.split(" ")[0],
-        last_name: customer.name.split(" ").slice(1).join(" ") || "",
-        line_1: "",
-        city: "",
-        state: "",
-        postal_code: "",
-        country_code: "UG",
-      },
-    };
-
-    const orderRes = await fetch(`${PESAPAL_BASE}/api/Transactions/SubmitOrderRequest`, {
+    const res = await fetch(`${STRAPI_URL}/api/kibira/plant-tree`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(orderPayload),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        treeCount,
+        species,
+        amount,
+        currency,
+        description,
+        dedication,
+        customer,
+        provider,
+        paymentPhone: paymentPhone || customer.phone,
+      }),
     });
 
-    const orderData = await orderRes.json();
+    const data = await res.json().catch(() => ({}));
 
-    if (orderData.redirect_url) {
-      return NextResponse.json({
-        redirect_url: orderData.redirect_url,
-        order_tracking_id: orderData.order_tracking_id,
-        merchant_reference: merchantRef,
-      });
+    if (!res.ok) {
+      const message =
+        data?.error?.message ||
+        data?.message ||
+        data?.error ||
+        "Failed to create payment order";
+      return NextResponse.json({ error: message }, { status: res.status || 500 });
     }
 
-    return NextResponse.json(
-      { error: orderData.error?.message || "Failed to create payment order" },
-      { status: 500 }
-    );
+    const payload = data.data || data;
+
+    return NextResponse.json({
+      gateway: payload.gateway || "dgateway",
+      provider: payload.provider,
+      reference: payload.reference,
+      merchant_reference: payload.merchantReference || payload.merchant_reference,
+      amount: payload.amount,
+      currency: payload.currency,
+      status: payload.status,
+      client_secret: payload.client_secret || null,
+      stripe_publishable_key: payload.stripe_publishable_key || null,
+    });
   } catch (err) {
-    // Pesapal create-payment error silently handled
     return NextResponse.json(
       { error: err.message || "Internal server error" },
       { status: 500 }

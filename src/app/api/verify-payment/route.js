@@ -1,70 +1,51 @@
 import { NextResponse } from "next/server";
 
-const PESAPAL_BASE =
-  process.env.PESAPAL_ENV === "production"
-    ? "https://pay.pesapal.com/v3"
-    : "https://cybqa.pesapal.com/pesapalv3";
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
-async function getAccessToken() {
-  const res = await fetch(`${PESAPAL_BASE}/api/Auth/RequestToken`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({
-      consumer_key: process.env.PESAPAL_CONSUMER_KEY,
-      consumer_secret: process.env.PESAPAL_CONSUMER_SECRET,
-    }),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message || "Token request failed");
-  return data.token;
-}
-
-// GET — Pesapal sends IPN notifications here
-export async function GET(request) {
+export async function POST(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const orderTrackingId = searchParams.get("OrderTrackingId");
-    const orderMerchantReference = searchParams.get("OrderMerchantReference");
-    const orderNotificationType = searchParams.get("OrderNotificationType");
+    const body = await request.json();
+    const reference = body.reference || body.orderTrackingId;
 
-    if (!orderTrackingId) {
-      return NextResponse.json({ error: "Missing OrderTrackingId" }, { status: 400 });
+    if (!reference) {
+      return NextResponse.json({ error: "Missing payment reference" }, { status: 400 });
     }
 
-    const token = await getAccessToken();
+    const res = await fetch(`${STRAPI_URL}/api/kibira/plant-tree/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reference }),
+    });
 
-    const statusRes = await fetch(
-      `${PESAPAL_BASE}/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const data = await res.json().catch(() => ({}));
 
-    const statusData = await statusRes.json();
+    if (!res.ok) {
+      const message =
+        data?.error?.message ||
+        data?.message ||
+        data?.error ||
+        "Verification failed";
+      return NextResponse.json({ error: message }, { status: res.status || 500 });
+    }
 
-    // Pesapal IPN received, payment verified
-    // No console logging in production
-
-    // In production, you would update your database here
-    // e.g., mark the tree planting order as confirmed
+    const payload = data.data || data;
 
     return NextResponse.json({
-      orderTrackingId,
-      merchantReference: orderMerchantReference,
-      status: statusData.payment_status_description,
-      amount: statusData.amount,
-      currency: statusData.currency,
-      message: statusData.payment_status_description === "Completed"
-        ? "Payment verified successfully. Trees will be planted!"
-        : `Payment status: ${statusData.payment_status_description}`,
+      status: payload.status,
+      confirmed: payload.confirmed || payload.status === "completed",
+      plantingStatus: payload.plantingStatus,
+      merchantReference: payload.merchantReference,
+      amount: payload.amount,
+      currency: payload.currency,
+      failureReason: payload.failureReason || "",
+      message:
+        payload.status === "completed"
+          ? "Payment verified successfully. Trees will be planted!"
+          : payload.status === "failed"
+            ? payload.failureReason || "Payment failed"
+            : "Payment still pending. Approve the prompt on your phone.",
     });
   } catch (err) {
-    // Pesapal verify-payment error silently handled
     return NextResponse.json(
       { error: err.message || "Verification failed" },
       { status: 500 }
@@ -72,40 +53,41 @@ export async function GET(request) {
   }
 }
 
-// POST — for manual verification from frontend
-export async function POST(request) {
+/** Legacy Pesapal IPN GET — forwards to Strapi verify when a reference is present */
+export async function GET(request) {
   try {
-    const body = await request.json();
-    const { orderTrackingId } = body;
+    const { searchParams } = new URL(request.url);
+    const reference =
+      searchParams.get("reference") ||
+      searchParams.get("OrderTrackingId") ||
+      searchParams.get("OrderMerchantReference");
 
-    if (!orderTrackingId) {
-      return NextResponse.json({ error: "Missing orderTrackingId" }, { status: 400 });
+    if (!reference) {
+      return NextResponse.json({ error: "Missing payment reference" }, { status: 400 });
     }
 
-    const token = await getAccessToken();
+    const res = await fetch(`${STRAPI_URL}/api/kibira/plant-tree/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reference }),
+    });
 
-    const statusRes = await fetch(
-      `${PESAPAL_BASE}/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const statusData = await statusRes.json();
+    const data = await res.json().catch(() => ({}));
+    const payload = data.data || data;
 
     return NextResponse.json({
-      status: statusData.payment_status_description,
-      amount: statusData.amount,
-      currency: statusData.currency,
-      confirmed: statusData.payment_status_description === "Completed",
+      reference,
+      status: payload.status,
+      confirmed: payload.confirmed || payload.status === "completed",
+      message:
+        payload.status === "completed"
+          ? "Payment verified successfully. Trees will be planted!"
+          : `Payment status: ${payload.status || "unknown"}`,
     });
   } catch (err) {
-    // Pesapal verify error silently handled
-    return NextResponse.json({ error: "Verification failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Verification failed" },
+      { status: 500 }
+    );
   }
 }

@@ -1,6 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import StripeCardForm from "../components/StripeCardForm";
 
 const TREE_SPECIES = [
   {
@@ -68,6 +71,22 @@ const IMPACT_TIERS = [
   { trees: 100, label: "Climate Champion", icon: "🌍", impact: "100 trees = a micro-forest absorbing 2.5+ tonnes CO₂/year" },
 ];
 
+/** $1 USD = 4,000 UGX */
+const UGX_PER_USD = 4000;
+const PRICE_USD_PER_TREE = 1;
+
+function formatUGX(amount) {
+  return `UGX ${Number(amount).toLocaleString("en-UG")}`;
+}
+
+function formatUSD(amount) {
+  return `$${Number(amount).toFixed(2)}`;
+}
+
+function usdToUgx(usdAmount) {
+  return Math.round(Number(usdAmount) * UGX_PER_USD);
+}
+
 export default function PlantATreePage() {
   const [treeCount, setTreeCount] = useState(1);
   const [selectedSpecies, setSelectedSpecies] = useState(TREE_SPECIES[0]);
@@ -75,57 +94,181 @@ export default function PlantATreePage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [dedication, setDedication] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [currency, setCurrency] = useState("UGX"); // UGX | USD
+  const [paymentStep, setPaymentStep] = useState("idle"); // idle | processing | polling | card | success | error
   const [paymentError, setPaymentError] = useState("");
+  const [dgatewayRef, setDgatewayRef] = useState("");
+  const [merchantRef, setMerchantRef] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [stripePromise, setStripePromise] = useState(null);
+  const [pollSeconds, setPollSeconds] = useState(0);
+  const pollRef = useRef(null);
+  const successHandled = useRef(false);
 
-  const pricePerTree = 1; // $1 USD
-  const totalAmount = treeCount * pricePerTree;
+  const totalUsd = treeCount * PRICE_USD_PER_TREE;
+  const totalUgx = usdToUgx(totalUsd);
+  const displayAmount = currency === "USD" ? formatUSD(totalUsd) : formatUGX(totalUgx);
+  const altAmount = currency === "USD" ? formatUGX(totalUgx) : formatUSD(totalUsd);
   const totalCO2 = (treeCount * parseFloat(selectedSpecies.co2)).toFixed(0);
   const currentTier = [...IMPACT_TIERS].reverse().find((t) => treeCount >= t.trees) || IMPACT_TIERS[0];
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  const markSuccess = useCallback((ref) => {
+    if (successHandled.current) return;
+    successHandled.current = true;
+    stopPolling();
+    setMerchantRef(ref || merchantRef);
+    setPaymentStep("success");
+  }, [merchantRef, stopPolling]);
+
+  const verifyOnce = useCallback(async (reference) => {
+    const res = await fetch("/api/verify-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reference }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Verification failed");
+    return data;
+  }, []);
+
+  useEffect(() => {
+    if (paymentStep !== "polling" || !dgatewayRef) return undefined;
+
+    setPollSeconds(0);
+    successHandled.current = false;
+    stopPolling();
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const data = await verifyOnce(dgatewayRef);
+        if (data.confirmed || data.status === "completed") {
+          markSuccess(data.merchantReference);
+        } else if (data.status === "failed") {
+          stopPolling();
+          setPaymentError(data.failureReason || data.message || "Payment failed. Please try again.");
+          setPaymentStep("error");
+        }
+      } catch {
+        // keep polling through transient errors
+      }
+    }, 2500);
+
+    const tick = setInterval(() => {
+      setPollSeconds((s) => {
+        if (s >= 90) {
+          stopPolling();
+          clearInterval(tick);
+          setPaymentError(
+            "Still waiting for confirmation. If you approved the payment, keep this page open or contact support with your reference."
+          );
+          setPaymentStep("error");
+          return s;
+        }
+        return s + 1;
+      });
+    }, 1000);
+
+    return () => {
+      stopPolling();
+      clearInterval(tick);
+    };
+  }, [paymentStep, dgatewayRef, verifyOnce, markSuccess, stopPolling]);
 
   const handlePayment = async () => {
     if (!name.trim() || !email.trim()) {
       setPaymentError("Please enter your name and email address.");
+      setPaymentStep("error");
       return;
     }
+
+    if (currency === "UGX" && !phone.trim()) {
+      setPaymentError("Enter your MTN or Airtel number to receive the mobile money prompt.");
+      setPaymentStep("error");
+      return;
+    }
+
     setPaymentError("");
-    setIsProcessing(true);
+    setPaymentStep("processing");
+    successHandled.current = false;
+    setDgatewayRef("");
+    setClientSecret("");
+    setStripePromise(null);
 
     try {
       const res = await fetch("/api/create-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: totalAmount,
-          currency: "USD",
-          description: `Plant ${treeCount} ${selectedSpecies.name} tree(s) via KibiraAI`,
           treeCount,
           species: selectedSpecies.name,
+          amount: currency === "USD" ? totalUsd : totalUgx,
+          currency,
+          provider: currency === "USD" ? "stripe" : "iotec",
+          paymentPhone: phone,
           dedication: dedication || null,
+          description: `Plant ${treeCount} ${selectedSpecies.name} tree(s) via KibiraAI`,
           customer: { name, email, phone },
         }),
       });
 
       const data = await res.json();
 
-      if (data.redirect_url) {
-        window.location.href = data.redirect_url;
-      } else if (data.error) {
+      if (!res.ok || data.error) {
         setPaymentError(data.error || "Payment initiation failed. Please try again.");
-        setIsProcessing(false);
-      } else {
-        setPaymentError("Payment gateway returned an unexpected response. Please try again.");
-        setIsProcessing(false);
+        setPaymentStep("error");
+        return;
       }
-    } catch (err) {
+
+      setDgatewayRef(data.reference || "");
+      setMerchantRef(data.merchant_reference || "");
+
+      if (data.client_secret && data.stripe_publishable_key) {
+        setClientSecret(data.client_secret);
+        setStripePromise(loadStripe(data.stripe_publishable_key));
+        setPaymentStep("card");
+        return;
+      }
+
+      if (data.reference) {
+        setPaymentStep("polling");
+        return;
+      }
+
+      setPaymentError("Payment gateway returned an unexpected response. Please try again.");
+      setPaymentStep("error");
+    } catch {
       setPaymentError("Network error. Please check your connection and try again.");
-      setIsProcessing(false);
+      setPaymentStep("error");
     }
   };
 
+  const handleStripeSuccess = () => {
+    if (dgatewayRef) setPaymentStep("polling");
+    else markSuccess(merchantRef);
+  };
+
+  const resetPayment = () => {
+    stopPolling();
+    successHandled.current = false;
+    setPaymentStep("idle");
+    setPaymentError("");
+    setDgatewayRef("");
+    setClientSecret("");
+    setStripePromise(null);
+    setPollSeconds(0);
+  };
+
+  const busy = paymentStep === "processing" || paymentStep === "polling" || paymentStep === "card";
+
   return (
     <div className="min-h-screen bg-[#f7faf6]">
-      {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#2d6a4f]/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
@@ -143,7 +286,6 @@ export default function PlantATreePage() {
       </nav>
 
       <main className="pt-20 sm:pt-24 pb-20">
-        {/* Hero */}
         <div className="bg-gradient-to-br from-[#1a2e1a] to-[#14532d] py-12 sm:py-20 mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-72 h-72 bg-[#4ade80]/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#d4a843]/10 rounded-full blur-3xl" />
@@ -158,16 +300,14 @@ export default function PlantATreePage() {
             </h1>
             <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto font-[family-name:var(--font-body)]">
               Choose a native species, pick how many trees you want to plant, and we&apos;ll put them in the ground
-              in Uganda&apos;s most deforested areas. Each tree is GPS-tagged and tracked on KibiraAI.
+              in Uganda&apos;s most deforested areas. Pay in UGX (mobile money) or USD (card).
             </p>
           </div>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-[1.1fr,0.9fr] gap-6 sm:gap-8">
-            {/* Left — Configuration */}
             <div className="space-y-6">
-              {/* Species selector */}
               <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#dce9dc] shadow-sm p-5 sm:p-7">
                 <p className="text-xs uppercase tracking-widest text-[#2d6a4f] font-semibold mb-4 font-[family-name:var(--font-body)]">
                   1. Choose Your Species
@@ -178,7 +318,9 @@ export default function PlantATreePage() {
                     return (
                       <button
                         key={sp.id}
+                        type="button"
                         onClick={() => setSelectedSpecies(sp)}
+                        disabled={busy}
                         className={`text-left rounded-xl p-3 sm:p-4 border transition-all
                           ${isActive
                             ? "bg-[#f0fdf4] border-[#4ade80] shadow-sm"
@@ -194,7 +336,6 @@ export default function PlantATreePage() {
                     );
                   })}
                 </div>
-                {/* Selected species detail */}
                 <div className="mt-4 bg-[#f7faf6] rounded-xl p-4 border border-[#dce9dc]">
                   <p className="text-sm font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{selectedSpecies.name}</p>
                   <p className="text-xs text-[#5d6f5d] mt-1 font-[family-name:var(--font-body)]">{selectedSpecies.description}</p>
@@ -206,17 +347,17 @@ export default function PlantATreePage() {
                 </div>
               </div>
 
-              {/* Tree count */}
               <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#dce9dc] shadow-sm p-5 sm:p-7">
                 <p className="text-xs uppercase tracking-widest text-[#2d6a4f] font-semibold mb-4 font-[family-name:var(--font-body)]">
                   2. How Many Trees?
                 </p>
-                {/* Quick select */}
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
                   {[1, 5, 10, 25, 50, 100].map((n) => (
                     <button
                       key={n}
+                      type="button"
                       onClick={() => setTreeCount(n)}
+                      disabled={busy}
                       className={`py-2.5 rounded-xl text-sm font-bold transition-all font-[family-name:var(--font-body)]
                         ${treeCount === n
                           ? "bg-[#2d6a4f] text-white shadow-md"
@@ -227,14 +368,14 @@ export default function PlantATreePage() {
                     </button>
                   ))}
                 </div>
-                {/* Slider */}
                 <div className="flex items-center gap-4">
                   <input
                     type="range"
                     min="1"
                     max="200"
                     value={treeCount}
-                    onChange={(e) => setTreeCount(parseInt(e.target.value))}
+                    disabled={busy}
+                    onChange={(e) => setTreeCount(parseInt(e.target.value, 10))}
                     className="flex-1 accent-[#2d6a4f] h-2"
                   />
                   <div className="bg-[#f0fdf4] border border-[#4ade80] rounded-xl px-4 py-2 min-w-[80px] text-center">
@@ -243,12 +384,12 @@ export default function PlantATreePage() {
                       min="1"
                       max="1000"
                       value={treeCount}
-                      onChange={(e) => setTreeCount(Math.max(1, parseInt(e.target.value) || 1))}
+                      disabled={busy}
+                      onChange={(e) => setTreeCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
                       className="w-full text-center text-xl font-bold text-[#2d6a4f] bg-transparent outline-none font-[family-name:var(--font-display)]"
                     />
                   </div>
                 </div>
-                {/* Impact tier */}
                 <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
                   <span className="text-2xl">{currentTier.icon}</span>
                   <div>
@@ -258,7 +399,6 @@ export default function PlantATreePage() {
                 </div>
               </div>
 
-              {/* Personal details */}
               <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#dce9dc] shadow-sm p-5 sm:p-7">
                 <p className="text-xs uppercase tracking-widest text-[#2d6a4f] font-semibold mb-4 font-[family-name:var(--font-body)]">
                   3. Your Details
@@ -268,6 +408,7 @@ export default function PlantATreePage() {
                     type="text"
                     placeholder="Your full name *"
                     value={name}
+                    disabled={busy}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f]/20 font-[family-name:var(--font-body)]"
                   />
@@ -275,19 +416,22 @@ export default function PlantATreePage() {
                     type="email"
                     placeholder="Email address *"
                     value={email}
+                    disabled={busy}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f]/20 font-[family-name:var(--font-body)]"
                   />
                   <input
                     type="tel"
-                    placeholder="Phone number (optional)"
+                    placeholder={currency === "UGX" ? "Mobile money number * (07XXXXXXXX)" : "Phone number (optional)"}
                     value={phone}
+                    disabled={busy}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f]/20 font-[family-name:var(--font-body)]"
                   />
                   <textarea
                     placeholder="Dedicate these trees to someone (optional)"
                     value={dedication}
+                    disabled={busy}
                     onChange={(e) => setDedication(e.target.value)}
                     rows={2}
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f]/20 font-[family-name:var(--font-body)] resize-none"
@@ -296,9 +440,7 @@ export default function PlantATreePage() {
               </div>
             </div>
 
-            {/* Right — Summary & Payment */}
             <div className="lg:sticky lg:top-24 h-fit space-y-6">
-              {/* Order summary */}
               <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#dce9dc] shadow-sm p-5 sm:p-7">
                 <p className="text-xs uppercase tracking-widest text-[#2d6a4f] font-semibold mb-4 font-[family-name:var(--font-body)]">
                   Planting Summary
@@ -315,57 +457,138 @@ export default function PlantATreePage() {
                     <p className="text-lg font-bold text-[#2d6a4f] font-[family-name:var(--font-display)]">×{treeCount}</p>
                   </div>
 
-                  <div className="border-t border-gray-100 pt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500 font-[family-name:var(--font-body)]">{treeCount} tree{treeCount > 1 ? "s" : ""} × ${pricePerTree}</span>
-                      <span className="font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">${totalAmount}</span>
-                    </div>
+                  <div className="flex justify-center gap-2">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setCurrency("UGX")}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors font-[family-name:var(--font-body)]
+                        ${currency === "UGX" ? "bg-[#2d6a4f] text-white" : "bg-gray-100 text-gray-500 hover:text-[#1a2e1a]"}`}
+                    >
+                      UGX · MoMo
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setCurrency("USD")}
+                      className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors font-[family-name:var(--font-body)]
+                        ${currency === "USD" ? "bg-[#2d6a4f] text-white" : "bg-gray-100 text-gray-500 hover:text-[#1a2e1a]"}`}
+                    >
+                      USD · Card
+                    </button>
                   </div>
 
                   <div className="bg-[#f0fdf4] rounded-xl p-4 border border-[#bbf7d0]">
                     <p className="text-2xl sm:text-3xl font-bold text-[#2d6a4f] text-center font-[family-name:var(--font-display)]">
-                      ${totalAmount} USD
+                      {displayAmount}
                     </p>
                     <p className="text-xs text-[#5d6f5d] text-center mt-1 font-[family-name:var(--font-body)]">
-                      Powered by Pesapal — secure payment
+                      ≈ {altAmount} · {currency === "UGX" ? "MTN MoMo / Airtel Money" : "Visa / Mastercard"}
                     </p>
                   </div>
                 </div>
 
-                {paymentError && (
+                {(paymentStep === "error" || paymentError) && paymentStep !== "success" && (
                   <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3">
                     <p className="text-xs text-red-600 font-semibold font-[family-name:var(--font-body)]">{paymentError}</p>
+                    {dgatewayRef && (
+                      <p className="text-[10px] text-red-400 mt-1 font-[family-name:var(--font-body)]">Ref: {dgatewayRef}</p>
+                    )}
                   </div>
                 )}
 
-                <button
-                  onClick={handlePayment}
-                  disabled={isProcessing}
-                  className={`w-full mt-6 flex items-center justify-center gap-3 py-4 rounded-full text-base sm:text-lg font-bold transition-all font-[family-name:var(--font-body)]
-                    ${isProcessing
-                      ? "bg-gray-200 text-gray-500 cursor-wait"
-                      : "bg-[#2d6a4f] hover:bg-[#1b4332] text-white shadow-lg shadow-[#2d6a4f]/25 hover:scale-[1.02]"
-                    }`}
-                >
-                  {isProcessing ? (
-                    <>
-                      <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                {paymentStep === "success" && (
+                  <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                    <p className="text-sm font-bold text-emerald-800 font-[family-name:var(--font-display)]">
+                      Payment confirmed — trees scheduled
+                    </p>
+                    <p className="text-xs text-emerald-700 mt-1 font-[family-name:var(--font-body)]">
+                      Certificate ref: {merchantRef || dgatewayRef}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={resetPayment}
+                      className="mt-3 text-xs font-semibold text-[#2d6a4f] underline font-[family-name:var(--font-body)]"
+                    >
+                      Plant more trees
+                    </button>
+                  </div>
+                )}
+
+                {paymentStep === "polling" && (
+                  <div className="mt-4 bg-sky-50 border border-sky-200 rounded-xl p-4 text-center">
+                    <div className="flex justify-center mb-2">
+                      <svg className="animate-spin w-6 h-6 text-sky-600" viewBox="0 0 24 24" fill="none">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
                         <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor" className="opacity-75" />
                       </svg>
-                      Connecting to Pesapal...
-                    </>
-                  ) : (
-                    <>🌳 Plant {treeCount} Tree{treeCount > 1 ? "s" : ""} — ${totalAmount}</>
-                  )}
-                </button>
+                    </div>
+                    <p className="text-sm font-bold text-sky-900 font-[family-name:var(--font-display)]">
+                      {currency === "UGX" ? "Approve the prompt on your phone" : "Confirming card payment…"}
+                    </p>
+                    <p className="text-xs text-sky-700 mt-1 font-[family-name:var(--font-body)]">
+                      Waiting {pollSeconds}s · Ref {dgatewayRef}
+                    </p>
+                  </div>
+                )}
+
+                {paymentStep === "card" && clientSecret && stripePromise && (
+                  <div className="mt-4 border border-[#dce9dc] rounded-xl p-4">
+                    <p className="text-xs font-semibold text-[#2d6a4f] mb-3 font-[family-name:var(--font-body)]">
+                      Enter card details
+                    </p>
+                    <Elements
+                      stripe={stripePromise}
+                      options={{
+                        clientSecret,
+                        appearance: {
+                          theme: "stripe",
+                          variables: { colorPrimary: "#2d6a4f", borderRadius: "12px" },
+                        },
+                      }}
+                    >
+                      <StripeCardForm
+                        submitLabel={`Pay ${formatUSD(totalUsd)}`}
+                        onSuccess={handleStripeSuccess}
+                        onError={(msg) => {
+                          setPaymentError(msg);
+                          setPaymentStep("error");
+                        }}
+                      />
+                    </Elements>
+                  </div>
+                )}
+
+                {(paymentStep === "idle" || paymentStep === "error" || paymentStep === "processing") && (
+                  <button
+                    type="button"
+                    onClick={handlePayment}
+                    disabled={paymentStep === "processing"}
+                    className={`w-full mt-6 flex items-center justify-center gap-3 py-4 rounded-full text-base sm:text-lg font-bold transition-all font-[family-name:var(--font-body)]
+                      ${paymentStep === "processing"
+                        ? "bg-gray-200 text-gray-500 cursor-wait"
+                        : "bg-[#2d6a4f] hover:bg-[#1b4332] text-white shadow-lg shadow-[#2d6a4f]/25 hover:scale-[1.02]"
+                      }`}
+                  >
+                    {paymentStep === "processing" ? (
+                      <>
+                        <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                          <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor" className="opacity-75" />
+                        </svg>
+                        Starting payment…
+                      </>
+                    ) : (
+                      <>🌳 Plant {treeCount} Tree{treeCount > 1 ? "s" : ""} — {displayAmount}</>
+                    )}
+                  </button>
+                )}
 
                 <p className="text-[10px] text-gray-400 text-center mt-3 font-[family-name:var(--font-body)]">
-                  Payments processed securely by Pesapal. Supports mobile money, Visa, Mastercard & bank transfer.
+                  Secured by DGateway · UGX via MTN/Airtel MoMo · USD via Visa/Mastercard
                 </p>
               </div>
 
-              {/* Impact stats */}
               <div className="bg-[#1a2e1a] rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-white">
                 <p className="text-xs uppercase tracking-[0.3em] text-[#a7f3d0] font-semibold mb-4 font-[family-name:var(--font-body)]">
                   Your Impact
@@ -395,7 +618,6 @@ export default function PlantATreePage() {
             </div>
           </div>
 
-          {/* Impact tiers */}
           <div className="mt-12 sm:mt-16">
             <h2 className="text-2xl sm:text-3xl font-bold text-[#1a2e1a] mb-6 text-center font-[family-name:var(--font-display)]">
               Impact Tiers
@@ -404,6 +626,8 @@ export default function PlantATreePage() {
               {IMPACT_TIERS.map((tier) => (
                 <button
                   key={tier.trees}
+                  type="button"
+                  disabled={busy}
                   onClick={() => setTreeCount(tier.trees)}
                   className={`text-center rounded-xl p-3 sm:p-4 border transition-all
                     ${treeCount >= tier.trees
@@ -420,13 +644,12 @@ export default function PlantATreePage() {
             </div>
           </div>
 
-          {/* Trust bar */}
           <div className="mt-12 bg-white rounded-2xl border border-[#dce9dc] p-5 sm:p-8">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 text-center">
               {[
                 { icon: "🌍", label: "GPS-Tagged", desc: "Every tree has coordinates" },
                 { icon: "📱", label: "Satellite Tracked", desc: "Growth monitored via AI" },
-                { icon: "🔒", label: "Pesapal Secure", desc: "Trusted payment gateway" },
+                { icon: "🔒", label: "DGateway Secure", desc: "UGX MoMo & USD cards" },
                 { icon: "📜", label: "Certificate", desc: "Digital proof of planting" },
               ].map((item, i) => (
                 <div key={i}>
