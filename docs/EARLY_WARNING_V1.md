@@ -16,6 +16,7 @@
 | Public APIs (Strapi / Express) | Early-warning REST endpoints (facilities, thresholds, predictions, stations, status) |
 | Children's Early Warning UI (Next.js frontend) | `/childrens-early-warning` |
 | Public status dashboard (Next.js frontend) | `/early-warning-status` |
+| Developer docs (APIs, thresholds, modules) | `/docs/early-warning` |
 
 ## Public API (Strapi / Express backend)
 

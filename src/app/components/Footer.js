@@ -24,6 +24,7 @@ export default function Footer() {
               <a href="/#problem" className="block hover:text-[#4ade80] transition-colors">The Problem</a>
               <a href="/solution" className="block hover:text-[#4ade80] transition-colors">Our Solution</a>
               <a href="/advisor" className="block hover:text-[#4ade80] transition-colors">Dr. Kibira AI</a>
+              <a href="/docs/early-warning" className="block hover:text-[#4ade80] transition-colors">Developer Docs (Early Warning)</a>
               <a href="/childrens-early-warning" className="block hover:text-[#4ade80] transition-colors">Children&apos;s Early Warning</a>
               <a href="/early-warning-status" className="block hover:text-[#4ade80] transition-colors">Public Status Dashboard</a>
               <a href="/urban-warning" className="block hover:text-[#4ade80] transition-colors">Urban Warning</a>

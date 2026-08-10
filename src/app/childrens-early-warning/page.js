@@ -149,6 +149,9 @@ export default function ChildrensEarlyWarningPage() {
             </span>
           </div>
           <div className="hidden md:flex items-center gap-5 text-sm font-medium text-white/70">
+            <Link href="/docs/early-warning" className="hover:text-white transition-colors">
+              Developer Docs
+            </Link>
             <Link href="/early-warning-status" className="hover:text-white transition-colors">
               Public Status
             </Link>
@@ -510,24 +513,12 @@ export default function ChildrensEarlyWarningPage() {
                     </div>
                   </details>
                 ))}
-                {thresholds?.thresholds && (
-                  <div className="mt-4 rounded-xl border border-[#ead9dc] p-4">
-                    <h4 className="text-sm font-bold text-[#4a1c2a] mb-2 font-[family-name:var(--font-display)]">
-                      Threshold snapshot ({selected?.type || "school"})
-                    </h4>
-                    <pre className="text-[11px] overflow-x-auto text-gray-600 font-mono">
-                      {JSON.stringify(
-                        Object.fromEntries(
-                          Object.entries(thresholds.thresholds)
-                            .filter(([k]) => !["version", "updatedAt"].includes(k))
-                            .map(([k, v]) => [k, v[selected?.type === "clinic" ? "clinic" : "school"] || v])
-                        ),
-                        null,
-                        2
-                      )}
-                    </pre>
-                  </div>
-                )}
+                <p className="text-xs text-gray-500 pt-2 font-[family-name:var(--font-body)]">
+                  Threshold tables and API reference for anyone accessing this data:{" "}
+                  <Link href="/docs/early-warning" className="text-rose-700 font-semibold hover:underline">
+                    Developer docs
+                  </Link>
+                </p>
               </div>
             )}
           </div>

@@ -57,14 +57,17 @@ export default function EarlyWarningStatusPage() {
             <span className="text-sky-300 text-sm font-semibold">Public Early Warning Status</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
+            <Link href="/docs/early-warning" className="text-white/70 hover:text-white">
+              Developer Docs
+            </Link>
             <Link href="/childrens-early-warning" className="text-white/70 hover:text-white">
               Children&apos;s UI
             </Link>
             <Link
-              href="/api/early-warning"
+              href="/docs/early-warning"
               className="bg-sky-500 text-white px-4 py-2 rounded-full font-semibold hover:bg-sky-600"
             >
-              API Index
+              API Docs
             </Link>
           </div>
         </div>
@@ -233,18 +236,19 @@ export default function EarlyWarningStatusPage() {
 
             <section className="bg-white rounded-2xl border border-sky-100 p-5 shadow-sm">
               <h2 className="font-bold text-[#0c2d48] mb-3 font-[family-name:var(--font-display)]">
-                Public API endpoints
+                Developer documentation
               </h2>
-              <ul className="space-y-2 text-sm font-[family-name:var(--font-body)]">
-                {(data.endpoints || []).map((ep) => (
-                  <li key={ep}>
-                    <a href={ep} className="text-sky-700 hover:underline font-mono text-xs sm:text-sm">
-                      {ep}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-xs text-gray-500 mt-4">
+              <p className="text-sm text-gray-600 mb-4 font-[family-name:var(--font-body)]">
+                Full API reference, threshold tables, and open-source modules for anyone building on
+                Children&apos;s Early Warning public data.
+              </p>
+              <Link
+                href="/docs/early-warning"
+                className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold px-4 py-2.5 rounded-full"
+              >
+                Open developer docs →
+              </Link>
+              <p className="text-xs text-gray-500 mt-4 font-[family-name:var(--font-body)]">
                 Modules: {(data.openSource?.modules || []).join(" · ")}
               </p>
             </section>
