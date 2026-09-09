@@ -112,7 +112,7 @@ export default function EarlyWarningDocsPage() {
         ]}
       />
 
-      <main className="page-width pt-24 pb-16">
+      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
         <p className="text-xs font-semibold tracking-widest uppercase text-sky-700 mb-2 font-[family-name:var(--font-body)]">
           Public developer documentation
         </p>

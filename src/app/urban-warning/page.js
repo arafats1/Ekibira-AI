@@ -227,7 +227,7 @@ export default function UrbanWarningPage() {
     <div className="min-h-screen bg-[#f0f4f8]">
       <header className="fixed top-0 left-0 right-0 z-50">
         <nav className="bg-[#0c2d48]/95 backdrop-blur-md border-b border-white/10">
-          <div className="page-width py-3 sm:py-4 flex items-center justify-between">
+          <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-2">
                 <span className="text-2xl">🌿</span>
@@ -253,7 +253,7 @@ export default function UrbanWarningPage() {
       <main className="pt-20 sm:pt-24 pb-20">
         {/* Hero */}
         <div className="bg-gradient-to-br from-[#0c2d48] to-[#1a1a2e] py-12 sm:py-16 mb-8">
-          <div className="page-width">
+          <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-[1.2fr,0.8fr] gap-8 items-center">
               <div>
                 <div className="flex items-center gap-2 mb-4">
@@ -346,7 +346,7 @@ export default function UrbanWarningPage() {
           </div>
         </div>
 
-        <div className="page-width">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* ─── AI Loading State ─── */}
           {analyzing && (

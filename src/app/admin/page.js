@@ -918,7 +918,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-[#f7faf6]">
       {/* Header */}
       <header className="bg-[#0f2618] text-white">
-        <div className="page-width py-4 flex items-center justify-between">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <span className="text-lg">🌿</span>
@@ -938,7 +938,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <div className="page-width py-8">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <StatsCards token={token} />
 
         {/* Tab Navigation */}

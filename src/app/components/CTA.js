@@ -44,7 +44,7 @@ export default function CTA() {
       <div className="absolute top-0 left-0 w-96 h-96 bg-[#4ade80]/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#d4a843]/10 rounded-full blur-3xl" />
 
-      <div className="page-width relative z-10">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
         <div className="text-center mb-16">
           <span className="inline-block text-[#4ade80] font-semibold text-sm tracking-widest uppercase mb-4 font-[family-name:var(--font-body)]">

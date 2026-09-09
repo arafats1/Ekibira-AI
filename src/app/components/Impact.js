@@ -48,10 +48,10 @@ export default function Impact() {
   ];
 
   return (
-    <section id="impact" className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 bg-gradient-to-b from-[#ecfdf5] via-[#d1fae5] to-[#ecfdf5] overflow-hidden">
+    <section id="impact" className="relative py-16 sm:py-24 md:py-32 bg-gradient-to-b from-[#ecfdf5] via-[#d1fae5] to-[#ecfdf5] overflow-hidden">
       <div className="absolute top-0 right-0 w-52 sm:w-96 h-52 sm:h-96 bg-[#4ade80]/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-52 sm:w-96 h-52 sm:h-96 bg-[#d4a843]/10 rounded-full blur-3xl" />
-      <div className="page-width">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-10 sm:mb-16">
           <span className="inline-block text-[#2d6a4f] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">

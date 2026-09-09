@@ -152,7 +152,7 @@ export default function InsuranceDashboard() {
     <div className="min-h-screen bg-[#f7faf6]">
       {/* ─── Header ─── */}
       <header className="bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
-        <div className="page-width py-3 flex items-center justify-between">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl">🛡️</span>
             <span className="font-[family-name:var(--font-display)] text-xl font-bold text-[#1b4332]">KibiraAI</span>
@@ -185,7 +185,7 @@ export default function InsuranceDashboard() {
         </div>
       </header>
 
-      <main className="page-width py-8">
+      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* ─── Title ─── */}
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">🛡️ Insurance Risk Intelligence</h1>

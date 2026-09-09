@@ -106,11 +106,11 @@ export default function Solution() {
   ];
 
   return (
-    <section id="solution" className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 overflow-hidden">
+    <section id="solution" className="relative py-16 sm:py-24 md:py-32 overflow-hidden">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1920&q=80')] bg-cover bg-center" />
       <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f13]/85 via-[#0a1f13]/75 to-[#0a1f13]/90" />
 
-      <div className="page-width relative z-10">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-10 sm:mb-16">
           <span className="inline-block text-[#4ade80] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">
             How It Works

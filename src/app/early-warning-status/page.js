@@ -56,7 +56,7 @@ export default function EarlyWarningStatusPage() {
         ]}
       />
 
-      <main className="page-width pt-24 pb-16">
+      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-[#0c2d48] font-[family-name:var(--font-display)] mb-2">
             Live early warning tracker

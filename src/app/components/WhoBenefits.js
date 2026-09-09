@@ -35,11 +35,11 @@ export default function WhoBenefits() {
   ];
 
   return (
-    <section id="who-benefits" className="relative py-16 sm:py-24 md:py-32 px-4 sm:px-6 bg-gradient-to-b from-white via-[#f7faf6] to-white overflow-hidden">
+    <section id="who-benefits" className="relative py-16 sm:py-24 md:py-32 bg-gradient-to-b from-white via-[#f7faf6] to-white overflow-hidden">
       <div className="absolute top-20 right-0 w-72 h-72 bg-[#4ade80]/5 rounded-full blur-3xl" />
       <div className="absolute bottom-20 left-0 w-72 h-72 bg-[#d4a843]/5 rounded-full blur-3xl" />
 
-      <div className="page-width relative z-10">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-10 sm:mb-16">
           <span className="inline-block text-[#2d6a4f] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">
             Who Benefits

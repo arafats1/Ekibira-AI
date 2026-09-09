@@ -72,8 +72,8 @@ export default function LiveSystems() {
   ];
 
   return (
-    <section className="relative py-16 sm:py-24 px-4 sm:px-6 bg-[#f7faf6]">
-      <div className="page-width">
+    <section className="relative py-16 sm:py-24 bg-[#f7faf6]">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-10 sm:mb-16">
           <span className="inline-flex items-center gap-2 text-[#2d6a4f] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">

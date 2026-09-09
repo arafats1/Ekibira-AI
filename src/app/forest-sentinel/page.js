@@ -412,7 +412,7 @@ export default function ForestSentinelPage() {
     <div className="min-h-screen bg-[#f4f7f2]">
       {/* Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#1a2e1a]/95 backdrop-blur-md border-b border-white/10">
-        <div className="page-width py-3 sm:py-4 flex items-center justify-between">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <span className="text-2xl">🌿</span>
@@ -442,7 +442,7 @@ export default function ForestSentinelPage() {
       <main className="pt-20 sm:pt-24 pb-20">
         {/* Hero */}
         <div className="bg-gradient-to-br from-[#1a2e1a] to-[#0a1f13] py-12 sm:py-16 mb-8">
-          <div className="page-width">
+          <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-[1.2fr,0.8fr] gap-8 items-center">
               <div>
                 <div className="flex items-center gap-2 mb-4">
@@ -478,7 +478,7 @@ export default function ForestSentinelPage() {
           </div>
         </div>
 
-        <div className="page-width">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Forest Selector */}
           <div className="mb-6">
             <p className="text-sm font-semibold text-gray-500 mb-3 font-[family-name:var(--font-body)]">SELECT FOREST</p>

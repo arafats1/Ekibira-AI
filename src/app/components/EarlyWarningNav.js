@@ -44,7 +44,7 @@ export default function EarlyWarningNav({ title, theme = "rose", links = [] }) {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b ${t.bar}`}>
-      <div className="page-width py-3 flex items-center justify-between gap-3">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link href="/" className="flex items-center gap-2 shrink-0" onClick={() => setOpen(false)}>
             <span className="text-xl sm:text-2xl">🌿</span>
@@ -112,7 +112,7 @@ export default function EarlyWarningNav({ title, theme = "rose", links = [] }) {
           <div
             className={`md:hidden absolute left-0 right-0 top-full border-b shadow-xl ${t.panel}`}
           >
-            <div className="page-width px-4 py-3 flex flex-col gap-1">
+            <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col gap-1">
               {links.map((link) => (
                 <Link
                   key={link.href + link.label}

@@ -147,7 +147,7 @@ export default function ChildrensEarlyWarningPage() {
       />
 
       <section className="pt-24 pb-8 px-4 sm:px-6 bg-gradient-to-br from-[#4a1c2a] via-[#6b2d3c] to-[#2d1a24]">
-        <div className="page-width">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-rose-300 text-xs font-semibold tracking-widest uppercase mb-2 font-[family-name:var(--font-body)]">
             Area 2 · Early warning, early action
           </p>
@@ -172,7 +172,7 @@ export default function ChildrensEarlyWarningPage() {
         </div>
       </section>
 
-      <div className="page-width py-8 grid lg:grid-cols-[320px_1fr] gap-6">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 grid lg:grid-cols-[320px_1fr] gap-6">
         {/* Facility list */}
         <aside className="bg-white rounded-2xl border border-[#ead9dc] shadow-sm overflow-hidden h-fit lg:sticky lg:top-24">
           <div className="p-4 border-b border-[#f0e4e6]">
