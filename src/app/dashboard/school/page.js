@@ -279,7 +279,7 @@ export default function SchoolDashboard() {
   return (
     <div className="min-h-screen bg-[#f7faf6]">
       <header className="bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="page-width py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-xl">🏫</span>
             <span className="font-[family-name:var(--font-display)] text-lg font-bold text-[#1a2e1a]">KibiraAI</span>
@@ -289,6 +289,14 @@ export default function SchoolDashboard() {
             <Link href="/childrens-early-warning" className="text-sm text-[#6b7c6b] hover:text-rose-700 font-[family-name:var(--font-body)] hidden sm:block">
               Public EW
             </Link>
+            {user.role === "admin" && (
+              <Link
+                href="/admin"
+                className="text-sm font-semibold text-[#d97706] hover:text-[#b45309] font-[family-name:var(--font-body)]"
+              >
+                Admin
+              </Link>
+            )}
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-rose-600 flex items-center justify-center text-white text-xs font-bold">
                 {user.fullName?.charAt(0)?.toUpperCase() || "S"}
@@ -309,7 +317,7 @@ export default function SchoolDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <main className="page-width py-8">
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
             {greeting}, {user.fullName?.split(" ")[0] || "there"}

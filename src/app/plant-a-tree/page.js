@@ -270,7 +270,7 @@ export default function PlantATreePage() {
   return (
     <div className="min-h-screen bg-[#f7faf6]">
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#2d6a4f]/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+        <div className="page-width py-3 sm:py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl sm:text-3xl">🌿</span>
             <span className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold text-[#1b4332] tracking-tight">
@@ -289,7 +289,7 @@ export default function PlantATreePage() {
         <div className="bg-gradient-to-br from-[#1a2e1a] to-[#14532d] py-12 sm:py-20 mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-72 h-72 bg-[#4ade80]/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#d4a843]/10 rounded-full blur-3xl" />
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center relative z-10">
+          <div className="page-width text-center relative z-10">
             <span className="inline-flex items-center gap-2 bg-[#4ade80]/20 border border-[#4ade80]/30 text-[#4ade80] text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full mb-6 font-[family-name:var(--font-body)]">
               🌱 Every Dollar Plants a Tree
             </span>
@@ -305,7 +305,7 @@ export default function PlantATreePage() {
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="page-width">
           <div className="grid lg:grid-cols-[1.1fr,0.9fr] gap-6 sm:gap-8">
             <div className="space-y-6">
               <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#dce9dc] shadow-sm p-5 sm:p-7">

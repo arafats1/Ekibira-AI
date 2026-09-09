@@ -20,7 +20,7 @@ export default function Hero() {
       <div className="absolute top-20 left-10 w-40 sm:w-72 h-40 sm:h-72 bg-[#2d6a4f]/20 rounded-full blur-3xl animate-float" />
       <div className="absolute bottom-20 right-10 w-52 sm:w-96 h-52 sm:h-96 bg-[#d4a843]/10 rounded-full blur-3xl animate-float delay-300" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-24 text-center">
+      <div className="relative z-10 page-width py-12 sm:py-24 text-center">
         <div className="animate-fade-in-up inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 sm:px-5 py-2 mb-6 sm:mb-8">
           <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse-soft" />
           <span className="text-white text-xs sm:text-sm font-medium tracking-wide">

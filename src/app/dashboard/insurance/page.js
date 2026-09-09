@@ -152,7 +152,7 @@ export default function InsuranceDashboard() {
     <div className="min-h-screen bg-[#f7faf6]">
       {/* ─── Header ─── */}
       <header className="bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="page-width py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl">🛡️</span>
             <span className="font-[family-name:var(--font-display)] text-xl font-bold text-[#1b4332]">KibiraAI</span>
@@ -160,6 +160,14 @@ export default function InsuranceDashboard() {
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/" className="text-sm text-[#6b7c6b] hover:text-[#2d6a4f] font-[family-name:var(--font-body)] hidden sm:block">Home</Link>
+            {user.role === "admin" && (
+              <Link
+                href="/admin"
+                className="text-sm font-semibold text-[#d97706] hover:text-[#b45309] font-[family-name:var(--font-body)]"
+              >
+                Admin
+              </Link>
+            )}
             <button onClick={() => setShowPricing(true)} className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg font-semibold font-[family-name:var(--font-body)] hover:bg-blue-100 transition-colors hidden sm:block">
               {tierLabel} Plan
             </button>
@@ -177,7 +185,7 @@ export default function InsuranceDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <main className="page-width py-8">
         {/* ─── Title ─── */}
         <div className="mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">🛡️ Insurance Risk Intelligence</h1>

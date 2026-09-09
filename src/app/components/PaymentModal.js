@@ -1,12 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-const PLANS = [
+const PLAN_META = [
   {
     id: "per-crop",
     name: "Per Crop",
-    price: "20,000",
-    priceNum: 20000,
     period: "per crop",
     description: "Extra crop + unlimited AI chat till harvest",
     features: [
@@ -23,8 +21,6 @@ const PLANS = [
   {
     id: "annual",
     name: "Annual Unlimited",
-    price: "80,000",
-    priceNum: 80000,
     period: "per year",
     description: "Unlimited crops, unlimited AI chat, unlimited Dr. Kibira",
     features: [
@@ -40,6 +36,26 @@ const PLANS = [
   },
 ];
 
+function formatUgx(amount) {
+  return Number(amount || 0).toLocaleString("en-UG");
+}
+
+function resolvePlanPrice(pricingRows, planId, cropName) {
+  const year = new Date().getFullYear();
+  const rows = (pricingRows || []).filter(
+    (r) => r.planType === planId && Number(r.year) === year && r.active !== false
+  );
+  if (planId === "per-crop") {
+    const cropKey = (cropName || "default").trim().toLowerCase();
+    const exact = rows.find((r) => String(r.cropName || "").trim().toLowerCase() === cropKey);
+    if (exact) return exact.amountUgx;
+    const fallback = rows.find((r) => String(r.cropName || "default").trim().toLowerCase() === "default");
+    if (fallback) return fallback.amountUgx;
+    return 20000;
+  }
+  return rows[0]?.amountUgx || 80000;
+}
+
 export default function PaymentModal({
   isOpen,
   onClose,
@@ -51,9 +67,48 @@ export default function PaymentModal({
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [step, setStep] = useState("plans"); // plans | payment | processing | success
   const [phone, setPhone] = useState("");
+  const [network, setNetwork] = useState("mtn");
   const [error, setError] = useState("");
+  const [pricing, setPricing] = useState([]);
+  const [pollSeconds, setPollSeconds] = useState(0);
+  const [paymentRef, setPaymentRef] = useState("");
+  const pollRef = useRef(null);
+
+  const plans = useMemo(
+    () =>
+      PLAN_META.map((plan) => {
+        const priceNum = resolvePlanPrice(pricing, plan.id, cropData?.cropName);
+        return {
+          ...plan,
+          priceNum,
+          price: formatUgx(priceNum),
+        };
+      }),
+    [pricing, cropData?.cropName]
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    fetch("/api/kibira-pricing")
+      .then((r) => r.json())
+      .then((d) => setPricing(d.data || []))
+      .catch(() => setPricing([]));
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
 
   if (!isOpen) return null;
+
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
 
   const handleSelectPlan = (planId) => {
     setSelectedPlan(planId);
@@ -61,47 +116,81 @@ export default function PaymentModal({
     setError("");
   };
 
+  const verifyOnce = async (reference) => {
+    const res = await fetch("/api/farm-subscribe/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reference }),
+    });
+    return res.json();
+  };
+
+  const startPolling = (reference) => {
+    stopPolling();
+    setPollSeconds(0);
+    let seconds = 0;
+    pollRef.current = setInterval(async () => {
+      seconds += 3;
+      setPollSeconds(seconds);
+      try {
+        const data = await verifyOnce(reference);
+        if (data.confirmed || data.status === "completed") {
+          stopPolling();
+          setStep("success");
+          setTimeout(() => {
+            onSuccess?.({
+              success: true,
+              subscription: data.subscription,
+              paymentRef: reference,
+            });
+            setStep("plans");
+            setSelectedPlan(null);
+            setPhone("");
+            setPaymentRef("");
+          }, 2500);
+        } else if (data.status === "failed") {
+          stopPolling();
+          setError(data.failureReason || data.message || "Payment failed. Please try again.");
+          setStep("payment");
+        } else if (seconds >= 120) {
+          stopPolling();
+          setError(
+            "Still waiting for confirmation. If you approved the payment, wait a moment and try again, or contact support with your reference."
+          );
+          setStep("payment");
+        }
+      } catch {
+        // keep polling through transient errors
+      }
+    }, 3000);
+  };
+
   const handlePayment = async () => {
     if (!phone.trim()) {
       setError("Please enter your mobile money number");
       return;
     }
-    // Basic Uganda phone validation
     const cleanPhone = phone.replace(/\s/g, "");
-    if (!/^(\+?256|0)?[37]\d{8}$/.test(cleanPhone)) {
+    // Uganda MoMo: 07XXXXXXXX, 2567XXXXXXXX, or +2567XXXXXXXX
+    if (!/^(\+?256|0)?7\d{8}$/.test(cleanPhone)) {
       setError("Enter a valid Uganda phone number (e.g. 0771234567)");
       return;
     }
 
     setStep("processing");
     setError("");
+    stopPolling();
 
     try {
-      const plan = PLANS.find((p) => p.id === selectedPlan);
-
-      // Step 1: Simulate payment
-      const payRes = await fetch("/api/simulate-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: plan.priceNum,
-          currency: "UGX",
-          phone: cleanPhone,
-          description: `KibiraAI ${plan.name} — ${plan.description}`,
-          type: plan.id,
-        }),
-      });
-
-      const payData = await payRes.json();
-      if (!payRes.ok || !payData.success) {
-        setError(payData.error || "Payment failed. Please try again.");
+      const plan = plans.find((p) => p.id === selectedPlan);
+      const token = getToken();
+      if (!token) {
+        setError("Please log in again to continue.");
         setStep("payment");
         return;
       }
 
-      // Step 2: Create subscription
-      const token = getToken();
-      const subRes = await fetch("/api/subscription", {
+      const payRes = await fetch("/api/farm-subscribe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -112,26 +201,43 @@ export default function PaymentModal({
           cropDocumentId: plan.id === "per-crop" ? cropData?.documentId : null,
           cropName: plan.id === "per-crop" ? cropData?.cropName : null,
           plantingDate: plan.id === "per-crop" ? cropData?.plantingDate : null,
-          paymentRef: payData.paymentRef,
-          paymentMethod: "mobile_money",
+          paymentPhone: cleanPhone,
+          year: new Date().getFullYear(),
         }),
       });
 
-      const subData = await subRes.json();
-      if (!subRes.ok || !subData.success) {
-        setError(subData.error || "Subscription activation failed.");
+      const payData = await payRes.json();
+      if (!payRes.ok || !payData.reference) {
+        setError(
+          typeof payData.error === "string"
+            ? payData.error
+            : "Payment could not be started right now. Please try again shortly."
+        );
         setStep("payment");
         return;
       }
 
-      setStep("success");
-      setTimeout(() => {
-        onSuccess?.(subData);
-        // Don't call onClose here — onSuccess handler already closes the modal
-        setStep("plans");
-        setSelectedPlan(null);
-        setPhone("");
-      }, 2500);
+      setPaymentRef(payData.reference);
+
+      // Immediate confirm if already completed
+      const first = await verifyOnce(payData.reference);
+      if (first.confirmed || first.status === "completed") {
+        setStep("success");
+        setTimeout(() => {
+          onSuccess?.({
+            success: true,
+            subscription: first.subscription,
+            paymentRef: payData.reference,
+          });
+          setStep("plans");
+          setSelectedPlan(null);
+          setPhone("");
+          setPaymentRef("");
+        }, 2500);
+        return;
+      }
+
+      startPolling(payData.reference);
     } catch {
       setError("Something went wrong. Please try again.");
       setStep("payment");
@@ -139,21 +245,23 @@ export default function PaymentModal({
   };
 
   const handleClose = () => {
+    stopPolling();
     onClose();
     setStep("plans");
     setSelectedPlan(null);
     setPhone("");
     setError("");
+    setPaymentRef("");
+    setPollSeconds(0);
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <div>
             <h2 className="text-lg font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
-              {step === "success" ? "🎉 Payment Successful!" : "Upgrade Your Farm Plan"}
+              {step === "success" ? "Payment Successful!" : "Upgrade Your Farm Plan"}
             </h2>
             {step === "plans" && (
               <p className="text-xs text-[#6b7c6b] mt-0.5 font-[family-name:var(--font-body)]">
@@ -174,10 +282,8 @@ export default function PaymentModal({
           )}
         </div>
 
-        {/* Plans Selection */}
         {step === "plans" && (
           <div className="p-5 space-y-4">
-            {/* Free tier info */}
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-lg">🆓</span>
@@ -191,8 +297,7 @@ export default function PaymentModal({
               </div>
             </div>
 
-            {/* Paid plans */}
-            {PLANS.filter((p) => context === "crop" || p.id === "annual").map((plan) => (
+            {plans.filter((p) => context === "crop" || p.id === "annual").map((plan) => (
               <button
                 key={plan.id}
                 onClick={() => handleSelectPlan(plan.id)}
@@ -230,7 +335,6 @@ export default function PaymentModal({
           </div>
         )}
 
-        {/* Payment Form */}
         {step === "payment" && (
           <div className="p-5 space-y-4">
             <button
@@ -240,9 +344,8 @@ export default function PaymentModal({
               ← Back to plans
             </button>
 
-            {/* Selected plan summary */}
             {(() => {
-              const plan = PLANS.find((p) => p.id === selectedPlan);
+              const plan = plans.find((p) => p.id === selectedPlan);
               if (!plan) return null;
               return (
                 <div className={`rounded-xl p-4 border ${plan.recommended ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
@@ -262,17 +365,32 @@ export default function PaymentModal({
               );
             })()}
 
-            {/* Mobile Money Payment */}
             <div>
               <h3 className="text-sm font-semibold text-[#1a2e1a] mb-3 font-[family-name:var(--font-body)]">
-                📱 Pay with Mobile Money
+                Pay with Mobile Money
               </h3>
               <div className="space-y-3">
                 <div className="flex gap-2">
-                  <button className="flex-1 py-2.5 rounded-lg border-2 border-amber-400 bg-amber-50 text-xs font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)]">
+                  <button
+                    type="button"
+                    onClick={() => setNetwork("mtn")}
+                    className={`flex-1 py-2.5 rounded-lg border-2 text-xs font-semibold font-[family-name:var(--font-body)] ${
+                      network === "mtn"
+                        ? "border-amber-400 bg-amber-50 text-[#1a2e1a]"
+                        : "border-gray-200 bg-gray-50 text-[#6b7c6b]"
+                    }`}
+                  >
                     MTN MoMo
                   </button>
-                  <button className="flex-1 py-2.5 rounded-lg border-2 border-gray-200 bg-gray-50 text-xs font-semibold text-[#6b7c6b] font-[family-name:var(--font-body)]">
+                  <button
+                    type="button"
+                    onClick={() => setNetwork("airtel")}
+                    className={`flex-1 py-2.5 rounded-lg border-2 text-xs font-semibold font-[family-name:var(--font-body)] ${
+                      network === "airtel"
+                        ? "border-red-400 bg-red-50 text-[#1a2e1a]"
+                        : "border-gray-200 bg-gray-50 text-[#6b7c6b]"
+                    }`}
+                  >
                     Airtel Money
                   </button>
                 </div>
@@ -294,6 +412,7 @@ export default function PaymentModal({
             {error && (
               <p className="text-xs text-red-600 font-[family-name:var(--font-body)] bg-red-50 rounded-lg px-3 py-2">
                 {error}
+                {paymentRef ? ` Ref: ${paymentRef}` : ""}
               </p>
             )}
 
@@ -301,25 +420,28 @@ export default function PaymentModal({
               onClick={handlePayment}
               className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-sm transition-colors font-[family-name:var(--font-body)]"
             >
-              Pay {PLANS.find((p) => p.id === selectedPlan)?.price} UGX
+              Pay {plans.find((p) => p.id === selectedPlan)?.price} UGX
             </button>
 
             <p className="text-[10px] text-[#9ca3af] text-center font-[family-name:var(--font-body)]">
-              Payment processed securely via PesaPal. You&apos;ll receive a confirmation SMS.
+              Payment processed securely via DGateway mobile money. Approve the prompt on your phone.
             </p>
           </div>
         )}
 
-        {/* Processing */}
         {step === "processing" && (
           <div className="p-10 flex flex-col items-center justify-center">
             <div className="w-12 h-12 border-3 border-amber-600 border-t-transparent rounded-full animate-spin mb-4" />
             <p className="text-sm font-semibold text-[#1a2e1a] font-[family-name:var(--font-body)]">Processing payment...</p>
             <p className="text-xs text-[#6b7c6b] mt-1 font-[family-name:var(--font-body)]">Please approve the request on your phone</p>
+            {paymentRef && (
+              <p className="text-[10px] text-[#9ca3af] mt-3 font-[family-name:var(--font-body)]">
+                Waiting {pollSeconds}s · Ref {paymentRef}
+              </p>
+            )}
           </div>
         )}
 
-        {/* Success */}
         {step === "success" && (
           <div className="p-10 flex flex-col items-center justify-center text-center">
             <span className="text-5xl mb-4">✅</span>

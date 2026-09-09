@@ -553,7 +553,7 @@ export default function MyFarmPage() {
     <div className="min-h-screen bg-[#f7faf6]">
       {/* Top Bar */}
       <header className="bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div className="page-width py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/dashboard/farmer" className="text-sm text-[#6b7c6b] hover:text-[#2d6a4f] font-[family-name:var(--font-body)]">← Dashboard</Link>
             <span className="text-[#d1d5db]">|</span>
@@ -569,7 +569,7 @@ export default function MyFarmPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <main className="page-width py-8">
         {/* Header + Stats */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>

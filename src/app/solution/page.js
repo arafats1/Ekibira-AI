@@ -170,7 +170,7 @@ export default function SolutionPage() {
 
       {/* Main Content */}
       <main className="pt-24 sm:pt-32 pb-24">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="page-width">
           {/* Hero Header */}
           <section className="relative overflow-hidden rounded-[2.5rem] border border-[#d6e7d6] bg-gradient-to-br from-[#f7fff5] via-[#f4fbf7] to-[#ecf7ef] px-6 sm:px-10 py-12 sm:py-16 mb-16 sm:mb-24">
             <div className="absolute -top-16 -right-10 w-64 h-64 bg-[#4ade80]/10 rounded-full blur-3xl" />

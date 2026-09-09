@@ -503,23 +503,357 @@ function KnowledgeTab({ token }) {
   );
 }
 
+/* ── Pricing Tab (crop + year cost adjustments) ── */
+function PricingTab({ token }) {
+  const currentYear = new Date().getFullYear();
+  const [rows, setRows] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    planType: "per-crop",
+    cropName: "default",
+    year: currentYear,
+    amountUgx: 20000,
+    notes: "",
+  });
+  const [error, setError] = useState("");
+
+  const fetchPricing = useCallback(async () => {
+    try {
+      const res = await fetch("/api/kibira-pricing", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setRows(data?.data || []);
+    } catch {
+      setRows([]);
+    } finally {
+      setLoadingData(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchPricing();
+  }, [fetchPricing]);
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/kibira-pricing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...form,
+          year: Number(form.year),
+          amountUgx: Number(form.amountUgx),
+          cropName: form.planType === "annual" ? "default" : form.cropName || "default",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to save pricing");
+        return;
+      }
+      setForm({
+        planType: "per-crop",
+        cropName: "default",
+        year: currentYear,
+        amountUgx: 20000,
+        notes: "",
+      });
+      fetchPricing();
+    } catch {
+      setError("Failed to save pricing");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this pricing row?")) return;
+    try {
+      await fetch(`/api/kibira-pricing?id=${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchPricing();
+    } catch {}
+  };
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="text-lg font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
+          Plan Costs by Crop & Year
+        </h2>
+        <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
+          Adjust KibiraAI farm plan prices. Use crop name &quot;default&quot; as the fallback for per-crop plans.
+        </p>
+      </div>
+
+      <form onSubmit={handleSave} className="mb-6 p-5 bg-[#f0fdf4] border border-[#d1e7d1] rounded-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-[#1a2e1a] mb-1">Plan</label>
+          <select
+            value={form.planType}
+            onChange={(e) => setForm({ ...form, planType: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-[#d1d5db] text-sm"
+          >
+            <option value="per-crop">Per Crop</option>
+            <option value="annual">Annual</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-[#1a2e1a] mb-1">Crop</label>
+          <input
+            type="text"
+            value={form.cropName}
+            disabled={form.planType === "annual"}
+            onChange={(e) => setForm({ ...form, cropName: e.target.value })}
+            placeholder="default / Beans / Maize"
+            className="w-full px-3 py-2 rounded-lg border border-[#d1d5db] text-sm disabled:bg-gray-100"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-[#1a2e1a] mb-1">Year</label>
+          <input
+            type="number"
+            value={form.year}
+            onChange={(e) => setForm({ ...form, year: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-[#d1d5db] text-sm"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-[#1a2e1a] mb-1">Amount (UGX)</label>
+          <input
+            type="number"
+            value={form.amountUgx}
+            onChange={(e) => setForm({ ...form, amountUgx: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-[#d1d5db] text-sm"
+            min="0"
+            required
+          />
+        </div>
+        <div className="flex items-end">
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full px-4 py-2 rounded-lg bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-sm font-semibold disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save Price"}
+          </button>
+        </div>
+        {error && <p className="sm:col-span-2 lg:col-span-5 text-xs text-red-600">{error}</p>}
+      </form>
+
+      {loadingData ? (
+        <div className="text-center py-12 text-[#6b7c6b]">Loading pricing...</div>
+      ) : rows.length === 0 ? (
+        <div className="text-center py-12 text-[#6b7c6b]">No pricing rows yet.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#e5e7eb]">
+                <th className="text-left py-3 px-4">Plan</th>
+                <th className="text-left py-3 px-4">Crop</th>
+                <th className="text-left py-3 px-4">Year</th>
+                <th className="text-left py-3 px-4">Amount (UGX)</th>
+                <th className="text-left py-3 px-4">Status</th>
+                <th className="text-left py-3 px-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="border-b border-[#f0f0f0]">
+                  <td className="py-3 px-4 capitalize">{row.planType}</td>
+                  <td className="py-3 px-4">{row.cropName || "default"}</td>
+                  <td className="py-3 px-4">{row.year}</td>
+                  <td className="py-3 px-4 font-semibold">{Number(row.amountUgx || 0).toLocaleString("en-UG")}</td>
+                  <td className="py-3 px-4">
+                    <span className={`text-[11px] px-2 py-1 rounded-lg ${row.active !== false ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                      {row.active !== false ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <button onClick={() => handleDelete(row.id)} className="text-xs text-red-600 hover:underline">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Revenue Tab (Kibira-only, separate from Tuogere) ── */
+function RevenueTab({ token }) {
+  const [data, setData] = useState(null);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/kibira-admin/dashboard", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!res.ok) {
+          setError(json.error || "Failed to load revenue");
+          return;
+        }
+        setData(json.data);
+      } catch {
+        setError("Failed to load revenue");
+      } finally {
+        setLoadingData(false);
+      }
+    }
+    load();
+  }, [token]);
+
+  if (loadingData) return <div className="text-center py-12 text-[#6b7c6b]">Loading revenue...</div>;
+  if (error) return <div className="text-center py-12 text-red-600">{error}</div>;
+
+  const revenue = data?.revenue || {};
+  const payments = revenue.recentPayments || [];
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="text-lg font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">
+          KibiraAI Revenue
+        </h2>
+        <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
+          Farm plan payments only — tracked separately from Tuogere bookings and donations.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="rounded-xl border border-[#d1e7d1] bg-[#f0fdf4] p-4">
+          <p className="text-2xl font-bold text-[#1a2e1a]">{Number(revenue.totalUgx || 0).toLocaleString("en-UG")} UGX</p>
+          <p className="text-xs text-[#6b7c6b]">Total Kibira revenue</p>
+        </div>
+        <div className="rounded-xl border border-[#bfdbfe] bg-[#eff6ff] p-4">
+          <p className="text-2xl font-bold text-[#1a2e1a]">{revenue.paidCount || 0}</p>
+          <p className="text-xs text-[#6b7c6b]">Paid subscriptions</p>
+        </div>
+        <div className="rounded-xl border border-[#fde68a] bg-[#fef3c7] p-4">
+          <p className="text-2xl font-bold text-[#1a2e1a]">{data?.userCount || 0}</p>
+          <p className="text-xs text-[#6b7c6b]">Registered Kibira users</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="border border-[#e5e7eb] rounded-xl p-4">
+          <h3 className="text-sm font-semibold mb-3">By plan type</h3>
+          {Object.keys(revenue.byType || {}).length === 0 ? (
+            <p className="text-xs text-[#6b7c6b]">No paid plans yet.</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {Object.entries(revenue.byType || {}).map(([type, amount]) => (
+                <li key={type} className="flex justify-between">
+                  <span className="capitalize">{type}</span>
+                  <span className="font-semibold">{Number(amount).toLocaleString("en-UG")} UGX</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="border border-[#e5e7eb] rounded-xl p-4">
+          <h3 className="text-sm font-semibold mb-3">By year</h3>
+          {Object.keys(revenue.byYear || {}).length === 0 ? (
+            <p className="text-xs text-[#6b7c6b]">No yearly totals yet.</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {Object.entries(revenue.byYear || {}).map(([year, amount]) => (
+                <li key={year} className="flex justify-between">
+                  <span>{year}</span>
+                  <span className="font-semibold">{Number(amount).toLocaleString("en-UG")} UGX</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <h3 className="text-sm font-semibold mb-3">Recent Kibira payments</h3>
+      {payments.length === 0 ? (
+        <div className="text-center py-8 text-[#6b7c6b]">No completed Kibira payments yet.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#e5e7eb]">
+                <th className="text-left py-3 px-4">User</th>
+                <th className="text-left py-3 px-4">Plan</th>
+                <th className="text-left py-3 px-4">Crop</th>
+                <th className="text-left py-3 px-4">Amount</th>
+                <th className="text-left py-3 px-4">Ref</th>
+                <th className="text-left py-3 px-4">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((p) => (
+                <tr key={p.id} className="border-b border-[#f0f0f0]">
+                  <td className="py-3 px-4">
+                    <div className="font-medium">{p.userName || "—"}</div>
+                    <div className="text-xs text-[#6b7c6b]">{p.userEmail || ""}</div>
+                  </td>
+                  <td className="py-3 px-4 capitalize">{p.type}</td>
+                  <td className="py-3 px-4">{p.cropName || "—"}</td>
+                  <td className="py-3 px-4 font-semibold">{Number(p.amount || 0).toLocaleString("en-UG")} {p.currency || "UGX"}</td>
+                  <td className="py-3 px-4 text-xs text-[#6b7c6b]">{p.dgatewayReference || p.paymentRef || "—"}</td>
+                  <td className="py-3 px-4 text-xs">
+                    {p.paidAt || p.createdAt
+                      ? new Date(p.paidAt || p.createdAt).toLocaleDateString("en-GB")
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Dashboard Stats ── */
 function StatsCards({ token }) {
-  const [stats, setStats] = useState({ users: 0, chats: 0, knowledge: 0 });
+  const [stats, setStats] = useState({ users: 0, chats: 0, knowledge: 0, revenueUgx: 0 });
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [usersRes, chatsRes, knowledgeRes] = await Promise.all([
+        const [usersRes, chatsRes, knowledgeRes, dashRes] = await Promise.all([
           fetch(`${STRAPI_URL}/api/kibira-users?pagination[pageSize]=1`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${STRAPI_URL}/api/kibira-chats?pagination[pageSize]=1`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${STRAPI_URL}/api/kibira-knowledges?pagination[pageSize]=1`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch("/api/kibira-admin/dashboard", { headers: { Authorization: `Bearer ${token}` } }),
         ]);
-        const [usersData, chatsData, knowledgeData] = await Promise.all([usersRes.json(), chatsRes.json(), knowledgeRes.json()]);
+        const [usersData, chatsData, knowledgeData, dashData] = await Promise.all([
+          usersRes.json(),
+          chatsRes.json(),
+          knowledgeRes.json(),
+          dashRes.json().catch(() => ({})),
+        ]);
         setStats({
           users: usersData?.meta?.pagination?.total || 0,
           chats: chatsData?.meta?.pagination?.total || 0,
           knowledge: knowledgeData?.meta?.pagination?.total || 0,
+          revenueUgx: dashData?.data?.revenue?.totalUgx || 0,
         });
       } catch {}
     }
@@ -530,10 +864,16 @@ function StatsCards({ token }) {
     { label: "Registered Users", value: stats.users, icon: "👥", color: "bg-[#f0fdf4] border-[#d1e7d1]" },
     { label: "AI Conversations", value: stats.chats, icon: "💬", color: "bg-[#eff6ff] border-[#bfdbfe]" },
     { label: "Knowledge Entries", value: stats.knowledge, icon: "📚", color: "bg-[#fef3c7] border-[#fde68a]" },
+    {
+      label: "Kibira Revenue (UGX)",
+      value: Number(stats.revenueUgx || 0).toLocaleString("en-UG"),
+      icon: "💰",
+      color: "bg-[#fff7ed] border-[#fed7aa]",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {cards.map((card) => (
         <div key={card.label} className={`rounded-xl border p-4 ${card.color}`}>
           <div className="flex items-center gap-3">
@@ -568,6 +908,8 @@ export default function AdminPage() {
 
   const tabs = [
     { id: "users", label: "Users", icon: "👥" },
+    { id: "revenue", label: "Revenue", icon: "💰" },
+    { id: "pricing", label: "Pricing", icon: "🏷️" },
     { id: "chats", label: "AI Chats", icon: "💬" },
     { id: "knowledge", label: "Knowledge Base", icon: "📚" },
   ];
@@ -576,7 +918,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-[#f7faf6]">
       {/* Header */}
       <header className="bg-[#0f2618] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+        <div className="page-width py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <span className="text-lg">🌿</span>
@@ -596,11 +938,11 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="page-width py-8">
         <StatsCards token={token} />
 
         {/* Tab Navigation */}
-        <div className="flex gap-1 p-1 bg-white rounded-xl border border-[#e5e7eb] mb-6 w-fit">
+        <div className="flex gap-1 p-1 bg-white rounded-xl border border-[#e5e7eb] mb-6 w-fit flex-wrap">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -618,6 +960,8 @@ export default function AdminPage() {
         {/* Tab Content */}
         <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
           {tab === "users" && <UsersTab token={token} currentUser={user} />}
+          {tab === "revenue" && <RevenueTab token={token} />}
+          {tab === "pricing" && <PricingTab token={token} />}
           {tab === "chats" && <ChatsTab token={token} />}
           {tab === "knowledge" && <KnowledgeTab token={token} />}
         </div>
@@ -625,3 +969,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
