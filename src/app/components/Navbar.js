@@ -175,7 +175,11 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const isAdmin = user && user.role === "admin";
-  const dashboardHref = user ? getDashboardRoute(user.accountType) : "/dashboard";
+  const dashboardHref = user
+    ? user.role === "admin"
+      ? "/dashboard/forestry"
+      : getDashboardRoute(user.accountType)
+    : "/dashboard";
 
   const handleSignOut = () => {
     logout();

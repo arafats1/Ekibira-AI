@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import PaymentModal from "../../../components/PaymentModal";
+import { getDashboardRoute } from "../../../../lib/dashboardRoutes";
 
 const COMMON_CROPS = [
   "Maize", "Beans", "Cassava", "Sweet Potatoes", "Rice", "Sorghum", "Millet",
@@ -487,6 +488,11 @@ export default function MyFarmPage() {
     );
   }
 
+  // Admins return to the forestry dashboard (where My Farm / Weather tools live).
+  // Everyone else returns to their role dashboard.
+  const dashboardHref =
+    user.role === "admin" ? "/dashboard/forestry" : getDashboardRoute(user.accountType);
+
   const growingCrops = crops.filter(c => c.status === "growing");
   const oldestGrowingCropId = growingCrops.length > 0 ? growingCrops[growingCrops.length - 1].id : null;
   const harvestedCrops = crops.filter(c => c.status === "harvested");
@@ -555,7 +561,7 @@ export default function MyFarmPage() {
       <header className="bg-white border-b border-[#e5e7eb] sticky top-0 z-50">
         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link href="/dashboard/farmer" className="text-sm text-[#6b7c6b] hover:text-[#2d6a4f] font-[family-name:var(--font-body)]">← Dashboard</Link>
+            <Link href={dashboardHref} className="text-sm text-[#6b7c6b] hover:text-[#2d6a4f] font-[family-name:var(--font-body)]">← Dashboard</Link>
             <span className="text-[#d1d5db]">|</span>
             <span className="text-2xl">🌱</span>
             <span className="font-[family-name:var(--font-display)] text-xl font-bold text-[#1b4332]">My Farm</span>

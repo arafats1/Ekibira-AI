@@ -49,12 +49,28 @@ export default function ForestryDashboard() {
       tagColor: "bg-emerald-100 text-emerald-700",
     },
     {
+      href: "/dashboard/farmer/my-farm",
+      icon: "🌱",
+      title: "My Farm",
+      desc: "Track crops, get AI-powered daily actions based on real weather, and log harvests — same farm tools farmers use.",
+      tag: "NEW",
+      tagColor: "bg-amber-100 text-amber-700",
+    },
+    {
       href: "/advisor",
       icon: "🌿",
       title: "Dr. Kibira AI",
       desc: "AI-powered climate risk analysis with deforestation data, carbon metrics, biodiversity insights, and projections.",
       tag: "Free for everyone",
       tagColor: "bg-blue-100 text-blue-700",
+    },
+    {
+      href: "/urban-warning",
+      icon: "🌧️",
+      title: "Weather Alerts",
+      desc: "Get 24-72 hour flood and heat warnings. Plan field work, harvesting, and planting around weather events.",
+      tag: "Live alerts",
+      tagColor: "bg-sky-100 text-sky-700",
     },
   ];
 
@@ -133,7 +149,7 @@ export default function ForestryDashboard() {
 
         {/* Tools Grid */}
         <h2 className="text-lg font-bold text-[#1a2e1a] mb-4 font-[family-name:var(--font-display)]">Your Tools</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {tools.map((tool) => (
             <Link key={tool.href} href={tool.href} className="bg-white rounded-xl p-5 border border-[#e5e7eb] hover:shadow-md hover:border-emerald-300 transition-all group">
               <div className="flex items-center justify-between mb-3">
