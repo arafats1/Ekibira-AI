@@ -75,21 +75,92 @@ export default function UrbanWarningPage() {
   const [analysisError, setAnalysisError] = useState("");
   const [analyzedLocations, setAnalyzedLocations] = useState([]);
   const [loaded, setLoaded] = useState(false);
+  const [refreshingSaved, setRefreshingSaved] = useState(false);
   const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const markersLayerRef = useRef(null);
 
-  // Load persisted locations from localStorage on mount
+  const buildLocationQuery = (place) =>
+    place?.searchQuery ||
+    [place?.name, place?.city || place?.division, place?.country].filter(Boolean).join(", ") ||
+    place?.name ||
+    "";
+
+  const riskMarkerColor = (floodRisk, heatRisk) => {
+    const risk = Math.max(Number(floodRisk) || 0, Number(heatRisk) || 0);
+    if (risk >= 80) return "#ef4444";
+    if (risk >= 60) return "#f97316";
+    return "#eab308";
+  };
+
+  // Load saved place identities, then re-fetch fresh analysis on every visit
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("kibira-urban-locations");
-      if (stored) {
-        const locations = JSON.parse(stored);
-        if (Array.isArray(locations) && locations.length > 0) {
-          setAnalyzedLocations(locations);
-          setSelectedArea(locations[0]);
+    let cancelled = false;
+
+    async function hydrateAndRefresh() {
+      let saved = [];
+      try {
+        const stored = localStorage.getItem("kibira-urban-locations");
+        if (stored) {
+          const locations = JSON.parse(stored);
+          if (Array.isArray(locations) && locations.length > 0) {
+            saved = locations.slice(0, 10);
+          }
+        }
+      } catch {}
+
+      if (cancelled) return;
+      setLoaded(true);
+      if (saved.length === 0) return;
+
+      setAnalyzedLocations(saved);
+      setSelectedArea(saved[0]);
+      setRefreshingSaved(true);
+
+      const refreshed = [];
+      for (const place of saved) {
+        if (cancelled) return;
+        const query = buildLocationQuery(place);
+        if (!query) {
+          refreshed.push(place);
+          continue;
+        }
+        try {
+          const res = await fetch("/api/urban-analysis", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ location: query }),
+          });
+          const data = await res.json();
+          if (res.ok && data.analysis) {
+            refreshed.push({
+              id:
+                place.id ||
+                String(data.analysis.name || query)
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-"),
+              searchQuery: query,
+              analyzedAt: new Date().toISOString(),
+              ...data.analysis,
+            });
+          } else {
+            refreshed.push(place);
+          }
+        } catch {
+          refreshed.push(place);
         }
       }
-    } catch {}
-    setLoaded(true);
+
+      if (cancelled) return;
+      setAnalyzedLocations(refreshed);
+      setSelectedArea((prev) => refreshed.find((r) => r.id === prev?.id) || refreshed[0] || null);
+      setRefreshingSaved(false);
+    }
+
+    hydrateAndRefresh();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Persist analyzed locations to localStorage
@@ -110,11 +181,146 @@ export default function UrbanWarningPage() {
     if (selectedArea.forecast && selectedArea.forecast.length > 0) {
       setForecast(selectedArea.forecast);
     }
+  }, [selectedArea]);
+
+  // Reset chrome only when switching to a different saved place
+  const selectedId = selectedArea?.id;
+  useEffect(() => {
+    if (!selectedId) return;
     setAlertSent(false);
     setShowActionPlan(false);
     setSimulationResult(null);
     setActiveTab("overview");
-  }, [selectedArea]);
+  }, [selectedId]);
+
+  // Leaflet map with risk alert markers
+  useEffect(() => {
+    if (activeTab !== "overview" || !selectedArea || !mapRef.current) return;
+    let cancelled = false;
+
+    const ensureLeaflet = () =>
+      new Promise((resolve) => {
+        if (typeof window === "undefined") return;
+        if (window.L) {
+          resolve(window.L);
+          return;
+        }
+        if (!document.querySelector('link[data-kibira-leaflet]')) {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+          link.setAttribute("data-kibira-leaflet", "1");
+          document.head.appendChild(link);
+        }
+        const existing = document.querySelector("script[data-kibira-leaflet]");
+        if (existing) {
+          const wait = setInterval(() => {
+            if (window.L) {
+              clearInterval(wait);
+              resolve(window.L);
+            }
+          }, 40);
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.setAttribute("data-kibira-leaflet", "1");
+        script.onload = () => resolve(window.L);
+        document.head.appendChild(script);
+      });
+
+    (async () => {
+      const L = await ensureLeaflet();
+      if (cancelled || !mapRef.current || !L) return;
+
+      // Recreate if React remounted the map container (tab switch)
+      if (
+        mapInstanceRef.current &&
+        mapInstanceRef.current.getContainer() !== mapRef.current
+      ) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markersLayerRef.current = null;
+      }
+
+      if (!mapInstanceRef.current) {
+        const map = L.map(mapRef.current, { zoomControl: true }).setView(
+          [selectedArea.lat || 0.3476, selectedArea.lng || 32.5825],
+          12
+        );
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+          maxZoom: 19,
+          subdomains: "abcd",
+        }).addTo(map);
+        mapInstanceRef.current = map;
+        markersLayerRef.current = L.layerGroup().addTo(map);
+      }
+
+      const map = mapInstanceRef.current;
+      const layer = markersLayerRef.current;
+      layer.clearLayers();
+
+      const places = analyzedLocations.length > 0 ? analyzedLocations : [selectedArea];
+      const bounds = [];
+
+      places.forEach((n) => {
+        const lat = Number(n.lat);
+        const lng = Number(n.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+        const color = riskMarkerColor(n.floodRisk, n.heatRisk);
+        const isSelected = n.id === selectedArea.id;
+        const size = isSelected ? 18 : 12;
+        const icon = L.divIcon({
+          className: "kibira-risk-marker",
+          html: `<div style="position:relative;width:${size}px;height:${size}px;">
+            ${
+              isSelected
+                ? `<div class="kibira-map-ping" style="position:absolute;inset:-10px;border-radius:9999px;background:${color}55;"></div>`
+                : ""
+            }
+            <div style="position:relative;width:${size}px;height:${size}px;border-radius:9999px;background:${color};border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div>
+          </div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+        });
+
+        const marker = L.marker([lat, lng], { icon, zIndexOffset: isSelected ? 1000 : 0 });
+        marker.bindPopup(
+          `<strong>${n.name || "Location"}</strong><br/>${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E<br/>Flood ${n.floodRisk ?? "—"}/100 · Heat ${n.heatRisk ?? "—"}/100`
+        );
+        marker.on("click", () => setSelectedArea(n));
+        layer.addLayer(marker);
+        bounds.push([lat, lng]);
+      });
+
+      if (bounds.length === 1) {
+        map.setView(bounds[0], 13);
+      } else if (bounds.length > 1) {
+        map.fitBounds(bounds, { padding: [36, 36], maxZoom: 13 });
+      }
+
+      setTimeout(() => {
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
+      }, 120);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, selectedArea, analyzedLocations]);
+
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markersLayerRef.current = null;
+      }
+    };
+  }, []);
 
   // Analyze a location using AI
   const analyzeLocation = async (locationQuery) => {
@@ -139,15 +345,16 @@ export default function UrbanWarningPage() {
       }
 
       const area = {
-        id: data.analysis.name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        id: data.analysis.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        searchQuery: locationQuery.trim(),
+        analyzedAt: new Date().toISOString(),
         ...data.analysis,
       };
 
-      // Add to analyzed locations if not already there
+      // Replace existing place with fresh analysis
       setAnalyzedLocations((prev) => {
-        const exists = prev.find((a) => a.id === area.id);
-        if (exists) return prev;
-        return [area, ...prev].slice(0, 10); // Keep last 10
+        const without = prev.filter((a) => a.id !== area.id);
+        return [area, ...without].slice(0, 10);
       });
 
       setSelectedArea(area);
@@ -394,6 +601,15 @@ export default function UrbanWarningPage() {
 
           {/* ─── Results UI ─── */}
           {!analyzing && selectedArea && (<>
+          {refreshingSaved && (
+            <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 flex items-center gap-3">
+              <div className="w-4 h-4 border-2 border-sky-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-sky-800 font-[family-name:var(--font-body)]">
+                Refreshing live weather and risk data for your saved places…
+              </p>
+            </div>
+          )}
+
 
           {/* Analyzed locations selector */}
           {analyzedLocations.length > 0 && (
@@ -499,85 +715,27 @@ export default function UrbanWarningPage() {
 
               {/* Location & Heat Drivers */}
               <div className="grid lg:grid-cols-2 gap-4">
-                {/* Map placeholder */}
+                {/* Leaflet location map with risk alerts */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="p-5 border-b border-gray-100">
+                  <div className="p-5 border-b border-gray-100 flex items-center justify-between gap-3">
                     <p className="text-sm font-bold text-gray-800 font-[family-name:var(--font-display)]">📍 Location — {selectedArea.name}, {selectedArea.city || selectedArea.division || ""}</p>
-                  </div>
-                  <div ref={mapRef} className="relative h-64 bg-gradient-to-br from-[#1a5276] to-[#154360]">
-                    {/* Stylized map visualization */}
-                    <div className="absolute inset-0 opacity-20" style={{
-                      backgroundImage: `radial-gradient(circle at 50% 50%, rgba(255,255,255,0.15) 1px, transparent 1px)`,
-                      backgroundSize: "20px 20px"
-                    }} />
-                    
-                    {/* Neighborhood dots */}
-                    {analyzedLocations.length > 1 ? (
-                      (() => {
-                        const lats = analyzedLocations.map((n) => n.lat || 0);
-                        const lngs = analyzedLocations.map((n) => n.lng || 0);
-                        const minLat = Math.min(...lats);
-                        const maxLat = Math.max(...lats);
-                        const minLng = Math.min(...lngs);
-                        const maxLng = Math.max(...lngs);
-                        const latRange = maxLat - minLat || 0.06;
-                        const lngRange = maxLng - minLng || 0.06;
-                        return analyzedLocations.map((n) => {
-                          const x = 15 + ((n.lng - minLng) / lngRange) * 70;
-                          const y = 85 - ((n.lat - minLat) / latRange) * 70;
-                          const isSelected = n.id === selectedArea.id;
-                          const risk = Math.max(n.floodRisk, n.heatRisk);
-                          const color = risk >= 80 ? "#ef4444" : risk >= 60 ? "#f97316" : "#eab308";
-                          return (
-                            <div
-                              key={n.id}
-                              className="absolute transition-all duration-500"
-                              style={{ left: `${Math.min(85, Math.max(10, x))}%`, top: `${Math.min(85, Math.max(10, y))}%` }}
-                            >
-                              {isSelected && (
-                                <div className="absolute -inset-4 rounded-full animate-ping" style={{ backgroundColor: `${color}30` }} />
-                              )}
-                              <div
-                                className={`relative rounded-full border-2 border-white cursor-pointer transition-all ${isSelected ? "w-5 h-5 shadow-lg" : "w-3 h-3 opacity-60 hover:opacity-100"}`}
-                                style={{ backgroundColor: color }}
-                                onClick={() => setSelectedArea(n)}
-                              />
-                              {isSelected && (
-                                <div className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/95 rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap">
-                                  <p className="text-xs font-bold text-gray-800">{n.name}</p>
-                                  <p className="text-[10px] text-gray-500">{(n.lat || 0).toFixed(4)}°N, {(n.lng || 0).toFixed(4)}°E</p>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        });
-                      })()
-                    ) : (
-                      /* Single location — show centered */
-                      <div className="absolute transition-all duration-500" style={{ left: "50%", top: "45%" }}>
-                        <div className="absolute -inset-4 rounded-full animate-ping" style={{ backgroundColor: `${Math.max(selectedArea.floodRisk, selectedArea.heatRisk) >= 80 ? "#ef4444" : "#f97316"}30` }} />
-                        <div
-                          className="relative w-5 h-5 rounded-full border-2 border-white shadow-lg"
-                          style={{ backgroundColor: Math.max(selectedArea.floodRisk, selectedArea.heatRisk) >= 80 ? "#ef4444" : "#f97316" }}
-                        />
-                        <div className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/95 rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap">
-                          <p className="text-xs font-bold text-gray-800">{selectedArea.name}</p>
-                          <p className="text-[10px] text-gray-500">{(selectedArea.lat || 0).toFixed(4)}°N, {(selectedArea.lng || 0).toFixed(4)}°E</p>
-                        </div>
-                      </div>
+                    {selectedArea.analyzedAt && (
+                      <p className="text-[10px] text-gray-400 font-[family-name:var(--font-body)] whitespace-nowrap">
+                        Updated {new Date(selectedArea.analyzedAt).toLocaleString()}
+                      </p>
                     )}
-
-                    {/* Legend */}
-                    <div className="absolute bottom-3 left-3 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
-                      <div className="flex items-center gap-3 text-[10px] text-white/70">
+                  </div>
+                  <div className="relative h-64">
+                    <div ref={mapRef} className="absolute inset-0 z-0" />
+                    <div className="absolute bottom-3 left-3 z-[1000] bg-black/45 backdrop-blur-sm rounded-lg px-3 py-2 pointer-events-none">
+                      <div className="flex items-center gap-3 text-[10px] text-white/85">
                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Critical</span>
                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /> High</span>
                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /> Moderate</span>
                       </div>
                     </div>
-
-                    <div className="absolute top-3 right-3 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5">
-                      <p className="text-[10px] text-white/60">{selectedArea.city ? `${selectedArea.city}, ${selectedArea.country || ""}` : selectedArea.name}</p>
+                    <div className="absolute top-3 right-3 z-[1000] bg-black/45 backdrop-blur-sm rounded-lg px-3 py-1.5 pointer-events-none">
+                      <p className="text-[10px] text-white/75">{selectedArea.city ? `${selectedArea.city}, ${selectedArea.country || ""}` : selectedArea.name}</p>
                     </div>
                   </div>
                 </div>
