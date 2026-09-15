@@ -7,7 +7,7 @@ export const DASHBOARD_ROUTES = {
   forestry: "/dashboard/forestry",
   school_health: "/dashboard/school",
   local_gov: "/dashboard/school", // legacy → schools & health dashboard
-  insurance: "/dashboard/insurance", // legacy
+  insurance: "/dashboard/forestry", // legacy — insurance product retired from the platform
   general: "/dashboard/forestry", // legacy
   eu_compliance: "/dashboard/forestry", // legacy
 };

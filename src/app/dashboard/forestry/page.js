@@ -21,8 +21,6 @@ export default function ForestryDashboard() {
       router.replace("/dashboard/school");
     } else if (type === "farmer") {
       router.replace("/dashboard/farmer");
-    } else if (type === "insurance") {
-      router.replace("/dashboard/insurance");
     }
   }, [user, loading, router]);
 

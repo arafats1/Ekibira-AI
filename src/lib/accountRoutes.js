@@ -6,7 +6,7 @@ export const DASHBOARD_ROUTES = {
   school_health: "/dashboard/school",
   local_gov: "/dashboard/school", // legacy → schools & health dashboard
   // Legacy types still route somewhere sensible
-  insurance: "/dashboard/insurance",
+  insurance: "/dashboard/forestry",
   general: "/dashboard/forestry",
   eu_compliance: "/dashboard/forestry",
 };

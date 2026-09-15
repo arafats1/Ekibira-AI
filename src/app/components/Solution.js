@@ -64,22 +64,6 @@ export default function Solution() {
       accent: "text-amber-400",
       border: "border-amber-500/30",
     },
-    {
-      icon: "🛡️",
-      role: "Insurance & Disaster Finance",
-      title: "Climate Risk Underwriting",
-      description:
-        "Insurers and disaster-finance partners access location-based climate risk scores — flood, heat, and drought analysis with anomaly-ready triggers for rapid response.",
-      features: [
-        "Flood and heat risk scoring per GPS location",
-        "AI-generated risk reports for underwriting",
-        "Anomaly thresholds for anticipatory finance",
-        "Portfolio and community exposure analytics",
-      ],
-      color: "from-purple-500/20 to-purple-600/10",
-      accent: "text-purple-400",
-      border: "border-purple-500/30",
-    },
   ];
 
   const steps = [
@@ -128,7 +112,9 @@ export default function Solution() {
           {useCases.map((uc, i) => (
             <div
               key={i}
-              className={`bg-gradient-to-br ${uc.color} backdrop-blur-md rounded-2xl p-5 sm:p-6 border ${uc.border} hover:bg-white/15 transition-all duration-300`}
+              className={`bg-gradient-to-br ${uc.color} backdrop-blur-md rounded-2xl p-5 sm:p-6 border ${uc.border} hover:bg-white/15 transition-all duration-300 ${
+                i === useCases.length - 1 && useCases.length % 3 === 1 ? "lg:col-start-2" : ""
+              }`}
             >
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-3xl">{uc.icon}</span>
