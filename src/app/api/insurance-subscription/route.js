@@ -53,26 +53,7 @@ export async function GET(request) {
     const user = await getUser(token);
     if (!user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-    // Auto-expire old subscriptions
-    const today = new Date().toISOString().split("T")[0];
-    try {
-      const expiredRes = await fetch(
-        `${STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${user.id}&filters[subStatus][$eq]=active&filters[type][$startsWith]=insurance&filters[endDate][$lt]=${today}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (expiredRes.ok) {
-        const expData = await expiredRes.json();
-        for (const sub of expData.data || []) {
-          await fetch(`${STRAPI_URL}/api/kibira-subscriptions/${sub.documentId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ data: { subStatus: "expired" } }),
-          });
-        }
-      }
-    } catch {}
-
-    // Fetch active insurance subscription
+    // Fetch active insurance subscription (Strapi expires lapsed ones on read)
     const subsRes = await fetch(
       `${STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${user.id}&filters[subStatus][$eq]=active&filters[type][$startsWith]=insurance&sort=createdAt:desc&pagination[limit]=1`,
       { headers: { Authorization: `Bearer ${token}` } }
@@ -119,67 +100,11 @@ export async function GET(request) {
   }
 }
 
-// POST — Create insurance subscription
-export async function POST(request) {
-  try {
-    const token = getToken(request);
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const user = await getUser(token);
-    if (!user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-
-    const body = await request.json();
-    const { type, paymentRef, paymentMethod } = body;
-
-    if (!type || !INSURANCE_PLANS[type]) {
-      return NextResponse.json({ error: "Invalid insurance plan type" }, { status: 400 });
-    }
-
-    const plan = INSURANCE_PLANS[type];
-    const today = new Date();
-    const startDate = today.toISOString().split("T")[0];
-    const endDate = new Date(today);
-    endDate.setMonth(endDate.getMonth() + 1); // Monthly billing
-    const endDateStr = endDate.toISOString().split("T")[0];
-
-    const subRes = await fetch(`${STRAPI_URL}/api/kibira-subscriptions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        data: {
-          userId: user.id,
-          type,
-          subStatus: "active",
-          amount: plan.price,
-          currency: plan.currency,
-          paymentRef: paymentRef || `INS-SIM-${Date.now()}`,
-          paymentMethod: paymentMethod || "card",
-          startDate,
-          endDate: endDateStr,
-          userEmail: user.email,
-          userName: user.username || user.fullName || "",
-          maxAreas: plan.maxAreas,
-          companyName: user.company || "",
-        },
-      }),
-    });
-
-    if (!subRes.ok) {
-      const err = await subRes.json().catch(() => ({}));
-      // Create insurance sub error silently handled
-      return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 });
-    }
-
-    const subData = await subRes.json();
-
-    return NextResponse.json({
-      success: true,
-      subscription: subData.data,
-      plan: plan,
-      message: `${plan.name} plan activated — monitor up to ${plan.maxAreas} areas with AI risk intelligence`,
-    });
-  } catch (error) {
-    // Insurance sub create error silently handled
-    return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 });
-  }
+// POST — There is no paid checkout for insurance plans, and subscriptions are
+// only activated by the backend payment flow, so plans can't be self-activated.
+export async function POST() {
+  return NextResponse.json(
+    { error: "Insurance plans are not available for purchase" },
+    { status: 410 }
+  );
 }

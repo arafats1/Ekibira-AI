@@ -2,37 +2,19 @@ import { NextResponse } from "next/server";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
-// Increment daily usage counter for a user
+// Increment today's usage counter for the caller. Strapi works out the user
+// and date from the token, so the count can't be set from here.
 // Called by farmer-chat and advisor APIs
 export async function incrementUsage(userId, field, token) {
-  const today = new Date().toISOString().split("T")[0];
   try {
-    // Check if usage record exists for today
-    const res = await fetch(
-      `${STRAPI_URL}/api/kibira-usages?filters[userId][$eq]=${userId}&filters[date][$eq]=${today}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const data = res.ok ? await res.json() : { data: [] };
-    const existing = data.data?.[0];
-
-    if (existing) {
-      const newCount = (existing[field] || 0) + 1;
-      await fetch(`${STRAPI_URL}/api/kibira-usages/${existing.documentId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ data: { [field]: newCount } }),
-      });
-      return newCount;
-    } else {
-      const createData = { userId, date: today, farmerChatCount: 0, advisorChatCount: 0 };
-      createData[field] = 1;
-      await fetch(`${STRAPI_URL}/api/kibira-usages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ data: createData }),
-      });
-      return 1;
-    }
+    const res = await fetch(`${STRAPI_URL}/api/kibira/usage/increment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ field }),
+    });
+    if (!res.ok) return -1;
+    const data = await res.json();
+    return data.data?.[field] ?? -1;
   } catch {
     return -1; // on error, don't block the user
   }

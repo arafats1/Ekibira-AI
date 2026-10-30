@@ -16,26 +16,6 @@ async function getUser(token) {
   return res.json();
 }
 
-// Check and auto-expire subscriptions past their endDate
-async function autoExpireSubscriptions(userId, token) {
-  try {
-    const today = new Date().toISOString().split("T")[0];
-    const res = await fetch(
-      `${STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${userId}&filters[subStatus][$eq]=active&filters[endDate][$lt]=${today}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (!res.ok) return;
-    const data = await res.json();
-    for (const sub of data.data || []) {
-      await fetch(`${STRAPI_URL}/api/kibira-subscriptions/${sub.documentId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ data: { subStatus: "expired" } }),
-      });
-    }
-  } catch {}
-}
-
 // GET — Check subscription status and usage limits
 export async function GET(request) {
   try {
@@ -45,10 +25,7 @@ export async function GET(request) {
     const user = await getUser(token);
     if (!user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
-    // Auto-expire old subscriptions
-    await autoExpireSubscriptions(user.id, token);
-
-    // Fetch active subscriptions
+    // Fetch active subscriptions (Strapi expires lapsed ones on read)
     const subsRes = await fetch(
       `${STRAPI_URL}/api/kibira-subscriptions?filters[userId][$eq]=${user.id}&filters[subStatus][$eq]=active&sort=createdAt:desc&pagination[limit]=50`,
       { headers: { Authorization: `Bearer ${token}` } }
@@ -119,135 +96,17 @@ export async function GET(request) {
   }
 }
 
-// POST — Create a new subscription (after payment)
-export async function POST(request) {
-  try {
-    const token = getToken(request);
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const user = await getUser(token);
-    if (!user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-
-    const body = await request.json();
-    const { type, cropDocumentId, cropName, plantingDate, paymentRef, paymentMethod } = body;
-
-    if (!type || !["per-crop", "annual"].includes(type)) {
-      return NextResponse.json({ error: "Invalid subscription type" }, { status: 400 });
-    }
-
-    // cropDocumentId is optional — will be linked after crop creation if not provided
-
-    const today = new Date();
-    const startDate = today.toISOString().split("T")[0];
-    let endDate;
-
-    if (type === "annual") {
-      const end = new Date(today);
-      end.setFullYear(end.getFullYear() + 1);
-      endDate = end.toISOString().split("T")[0];
-    } else {
-      // Per-crop: estimate harvest timing from crop data or cropName
-      let monthsToHarvest = 6;
-      // Try to estimate from cropName passed in the request body
-      const nameForEstimate = (cropName || "").toLowerCase();
-      if (nameForEstimate.includes("maize") || nameForEstimate.includes("corn")) monthsToHarvest = 4;
-      else if (nameForEstimate.includes("bean")) monthsToHarvest = 3;
-      else if (nameForEstimate.includes("rice")) monthsToHarvest = 5;
-      else if (nameForEstimate.includes("cassava")) monthsToHarvest = 12;
-      else if (nameForEstimate.includes("sweet potato")) monthsToHarvest = 4;
-      else if (nameForEstimate.includes("coffee")) monthsToHarvest = 12;
-      else if (nameForEstimate.includes("banana") || nameForEstimate.includes("matooke")) monthsToHarvest = 12;
-      else if (nameForEstimate.includes("sorghum") || nameForEstimate.includes("millet")) monthsToHarvest = 4;
-      else if (nameForEstimate.includes("groundnut") || nameForEstimate.includes("peanut")) monthsToHarvest = 4;
-      else if (nameForEstimate.includes("tomato") || nameForEstimate.includes("cabbage") || nameForEstimate.includes("onion")) monthsToHarvest = 3;
-
-      if (cropDocumentId) {
-        try {
-          const cropRes = await fetch(
-            `${STRAPI_URL}/api/farm-crops/${cropDocumentId}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (cropRes.ok) {
-            const cropData = await cropRes.json();
-            const crop = cropData.data;
-            if (crop?.plantingDate) {
-              const name = (crop.cropName || "").toLowerCase();
-              if (name.includes("maize") || name.includes("corn")) monthsToHarvest = 4;
-              else if (name.includes("bean")) monthsToHarvest = 3;
-              else if (name.includes("rice")) monthsToHarvest = 5;
-              else if (name.includes("cassava")) monthsToHarvest = 12;
-              else if (name.includes("sweet potato")) monthsToHarvest = 4;
-              else if (name.includes("coffee")) monthsToHarvest = 12;
-              else if (name.includes("banana") || name.includes("matooke")) monthsToHarvest = 12;
-              else if (name.includes("sorghum") || name.includes("millet")) monthsToHarvest = 4;
-              else if (name.includes("groundnut") || name.includes("peanut")) monthsToHarvest = 4;
-              else if (name.includes("tomato") || name.includes("cabbage") || name.includes("onion")) monthsToHarvest = 3;
-
-              const planted = new Date(crop.plantingDate);
-              const harvestDate = new Date(planted);
-              harvestDate.setMonth(harvestDate.getMonth() + monthsToHarvest);
-              harvestDate.setDate(harvestDate.getDate() + 14);
-              endDate = harvestDate.toISOString().split("T")[0];
-            }
-          }
-        } catch {}
-      }
-      if (!endDate) {
-        // Use plantingDate from frontend if available, otherwise today
-        const baseDate = plantingDate ? new Date(plantingDate) : new Date(today);
-        const harvestDate = new Date(baseDate);
-        harvestDate.setMonth(harvestDate.getMonth() + monthsToHarvest);
-        harvestDate.setDate(harvestDate.getDate() + 14);
-        endDate = harvestDate.toISOString().split("T")[0];
-      }
-    }
-
-    const amount = type === "annual" ? 80000 : 20000;
-
-    const subRes = await fetch(`${STRAPI_URL}/api/kibira-subscriptions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        data: {
-          userId: user.id,
-          type,
-          subStatus: "active",
-          cropDocumentId: cropDocumentId || null,
-          cropName: cropName || null,
-          amount,
-          currency: "UGX",
-          paymentRef: paymentRef || `SIM-${Date.now()}`,
-          paymentMethod: paymentMethod || "mobile_money",
-          startDate,
-          endDate,
-          userEmail: user.email,
-          userName: user.username || user.fullName || "",
-        },
-      }),
-    });
-
-    if (!subRes.ok) {
-      const err = await subRes.json().catch(() => ({}));
-      // Strapi subscription create error silently handled
-      return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 });
-    }
-
-    const subData = await subRes.json();
-
-    return NextResponse.json({
-      success: true,
-      subscription: subData.data,
-      message: type === "annual"
-        ? "Annual subscription activated — unlimited crops and chat!"
-        : `Crop tracking activated for ${cropName || "your crop"} until ${endDate}`,
-    });
-  } catch (error) {
-    // Subscription create error silently handled
-    return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 });
-  }
+// POST — Subscriptions are created and activated by the backend payment flow
+// (/api/farm-subscribe → /api/farm-subscribe/verify), never directly.
+export async function POST() {
+  return NextResponse.json(
+    { error: "Use /api/farm-subscribe to start a paid plan" },
+    { status: 410 }
+  );
 }
 
-// PUT — Update subscription (link cropDocumentId, sync endDate from AI harvest estimate)
+// PUT — Link a paid per-crop subscription to the crop it was bought for.
+// Plan dates and status are owned by the backend; endDate can't be changed here.
 export async function PUT(request) {
   try {
     const token = getToken(request);
@@ -257,10 +116,13 @@ export async function PUT(request) {
     if (!user) return NextResponse.json({ error: "Invalid token" }, { status: 401 });
 
     const body = await request.json();
-    const { subscriptionDocumentId, cropDocumentId, cropName, endDate } = body;
+    const { subscriptionDocumentId, cropDocumentId, cropName } = body;
 
     if (!subscriptionDocumentId) {
       return NextResponse.json({ error: "subscriptionDocumentId required" }, { status: 400 });
+    }
+    if (!cropDocumentId) {
+      return NextResponse.json({ error: "cropDocumentId required" }, { status: 400 });
     }
 
     // Verify the subscription belongs to this user
@@ -274,11 +136,8 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Not your subscription" }, { status: 403 });
     }
 
-    // Build update payload — only include provided fields
-    const updateData = {};
-    if (cropDocumentId) updateData.cropDocumentId = cropDocumentId;
+    const updateData = { cropDocumentId };
     if (cropName) updateData.cropName = cropName;
-    if (endDate) updateData.endDate = endDate;
 
     const updateRes = await fetch(
       `${STRAPI_URL}/api/kibira-subscriptions/${subscriptionDocumentId}`,
@@ -290,7 +149,11 @@ export async function PUT(request) {
     );
 
     if (!updateRes.ok) {
-      return NextResponse.json({ error: "Failed to update subscription" }, { status: 500 });
+      const err = await updateRes.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: err?.error?.message || "Failed to update subscription" },
+        { status: updateRes.status }
+      );
     }
 
     const updated = await updateRes.json();

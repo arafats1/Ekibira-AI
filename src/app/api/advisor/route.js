@@ -1,7 +1,7 @@
 import OpenAI from "openai";
+import { incrementUsage } from "../lib/usage";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const ADVISOR_STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
 // ─── Weather API helpers (same as farmer-analysis) ───
 async function geocode(location) {
@@ -312,19 +312,10 @@ export async function POST(request) {
       return Response.json({ error: "Message too long" }, { status: 400 });
     }
 
-    // Usage tracking for analytics only — Dr. Kibira is free for everyone (no daily caps)
-    let advisorUserId = null;
-    if (userEmail) {
-      try {
-        const userRes = await fetch(
-          `${ADVISOR_STRAPI_URL}/api/users?filters[email][$eq]=${encodeURIComponent(userEmail)}`,
-        );
-        if (userRes.ok) {
-          const users = await userRes.json();
-          if (users?.[0]?.id) advisorUserId = users[0].id;
-        }
-      } catch {}
-    }
+    // Usage tracking for analytics only — Dr. Kibira is free for everyone (no daily caps).
+    // Counted for signed-in callers only; anonymous chats aren't tracked.
+    const authHeader = request.headers.get("authorization") || "";
+    const advisorToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
     // Fetch knowledge base entries
     const knowledgeBase = await fetchKnowledgeBase();
@@ -373,28 +364,8 @@ export async function POST(request) {
     saveChatLog({ userMessage: message, aiResponse: reply, userEmail, userName, sessionId });
 
     // Increment usage counter
-    if (advisorUserId) {
-      try {
-        const today = new Date().toISOString().split("T")[0];
-        const usageRes = await fetch(
-          `${ADVISOR_STRAPI_URL}/api/kibira-usages?filters[userId][$eq]=${advisorUserId}&filters[date][$eq]=${today}`
-        );
-        const usageData = usageRes.ok ? await usageRes.json() : { data: [] };
-        const existing = usageData.data?.[0];
-        if (existing) {
-          await fetch(`${ADVISOR_STRAPI_URL}/api/kibira-usages/${existing.documentId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: { advisorChatCount: (existing.advisorChatCount || 0) + 1 } }),
-          });
-        } else {
-          await fetch(`${ADVISOR_STRAPI_URL}/api/kibira-usages`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: { userId: advisorUserId, date: today, farmerChatCount: 0, advisorChatCount: 1 } }),
-          });
-        }
-      } catch {}
+    if (advisorToken) {
+      await incrementUsage(null, "advisorChatCount", advisorToken);
     }
 
     return Response.json({ reply });
