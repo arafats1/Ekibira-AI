@@ -4,6 +4,7 @@ import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import StripeCardForm from "../components/StripeCardForm";
+import { openMarzCardCheckout } from "@/lib/marzCardCheckout";
 
 const TREE_SPECIES = [
   {
@@ -119,6 +120,13 @@ export default function PlantATreePage() {
     }
   }, []);
 
+  useEffect(() => {
+    const reference = new URLSearchParams(window.location.search).get("reference");
+    if (!reference) return;
+    setDgatewayRef(reference);
+    setPaymentStep("polling");
+  }, []);
+
   const markSuccess = useCallback((ref) => {
     if (successHandled.current) return;
     successHandled.current = true;
@@ -228,6 +236,13 @@ export default function PlantATreePage() {
 
       setDgatewayRef(data.reference || "");
       setMerchantRef(data.merchant_reference || "");
+
+      if (data.redirect_url) {
+        const { blocked } = openMarzCardCheckout(data.redirect_url);
+        if (blocked) window.location.href = data.redirect_url;
+        setPaymentStep("polling");
+        return;
+      }
 
       if (data.client_secret && data.stripe_publishable_key) {
         setClientSecret(data.client_secret);
@@ -585,7 +600,7 @@ export default function PlantATreePage() {
                 )}
 
                 <p className="text-[10px] text-gray-400 text-center mt-3 font-[family-name:var(--font-body)]">
-                  Secured by DGateway · UGX via MTN/Airtel MoMo · USD via Visa/Mastercard
+                  Secured by Marz Pay · UGX via MTN/Airtel MoMo · USD via card
                 </p>
               </div>
 
@@ -649,7 +664,7 @@ export default function PlantATreePage() {
               {[
                 { icon: "🌍", label: "GPS-Tagged", desc: "Every tree has coordinates" },
                 { icon: "📱", label: "Satellite Tracked", desc: "Growth monitored via AI" },
-                { icon: "🔒", label: "DGateway Secure", desc: "UGX MoMo & USD cards" },
+                { icon: "🔒", label: "Marz Pay", desc: "UGX MoMo & USD cards" },
                 { icon: "📜", label: "Certificate", desc: "Digital proof of planting" },
               ].map((item, i) => (
                 <div key={i}>

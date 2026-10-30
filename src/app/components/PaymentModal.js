@@ -424,7 +424,7 @@ export default function PaymentModal({
             </button>
 
             <p className="text-[10px] text-[#9ca3af] text-center font-[family-name:var(--font-body)]">
-              Payment processed securely via DGateway mobile money. Approve the prompt on your phone.
+              Payment processed securely via Marz Pay mobile money. Approve the prompt on your phone.
             </p>
           </div>
         )}

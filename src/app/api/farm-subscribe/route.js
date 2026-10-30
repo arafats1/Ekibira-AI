@@ -53,7 +53,7 @@ export async function POST(request) {
     const payload = data.data || data;
     return NextResponse.json({
       success: true,
-      gateway: payload.gateway || "dgateway",
+      gateway: payload.gateway || "marz",
       provider: payload.provider || "iotec",
       productSource: "kibira",
       reference: payload.reference,

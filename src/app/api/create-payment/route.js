@@ -54,13 +54,14 @@ export async function POST(request) {
     const payload = data.data || data;
 
     return NextResponse.json({
-      gateway: payload.gateway || "dgateway",
+      gateway: payload.gateway || "marz",
       provider: payload.provider,
       reference: payload.reference,
       merchant_reference: payload.merchantReference || payload.merchant_reference,
       amount: payload.amount,
       currency: payload.currency,
       status: payload.status,
+      redirect_url: payload.redirect_url || null,
       client_secret: payload.client_secret || null,
       stripe_publishable_key: payload.stripe_publishable_key || null,
     });
