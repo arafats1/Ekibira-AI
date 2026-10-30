@@ -20,6 +20,14 @@ const THEMES = {
     cta: "bg-sky-500 hover:bg-sky-600 text-white",
     burger: "text-white border-white/20 hover:bg-white/10",
   },
+  forest: {
+    bar: "bg-[#1b4332]/95 border-white/10",
+    title: "text-emerald-300",
+    panel: "bg-[#1b4332] border-white/10",
+    link: "text-white/80 hover:text-white hover:bg-white/10",
+    cta: "bg-emerald-500 hover:bg-emerald-600 text-white",
+    burger: "text-white border-white/20 hover:bg-white/10",
+  },
 };
 
 export default function EarlyWarningNav({ title, theme = "rose", links = [] }) {
