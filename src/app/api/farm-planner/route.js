@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { DISTRICTS, findDistrict } from "@/lib/ews/regions";
+import { getDistrictForecast } from "@/lib/ews/forecast";
+import { assessHazards, HAZARD_LABELS } from "@/lib/ews/hazards";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -61,6 +64,44 @@ function buildForecastSummary(weather) {
     (soilMoisture != null ? `, soil moisture ${(soilMoisture * 100).toFixed(1)}%` : "") +
     (soilTemp != null ? `, soil temp ${soilTemp.toFixed(1)}°C` : "") +
     `\n7-DAY FORECAST:\n${lines.join("\n")}`;
+}
+
+// ─── Probabilistic rain outlook (51-member ensemble) for a known district ───
+async function fetchRainOutlook(districtName) {
+  // Accept "Kabale" as well as free text such as "Kitumba, Kabale".
+  const text = String(districtName || "").toLowerCase();
+  const district = findDistrict(districtName) || DISTRICTS.find((d) => text.includes(d.name.toLowerCase()));
+  if (!district) return null;
+  try {
+    const forecast = await getDistrictForecast(district);
+    const days = (forecast.rainfall.days || []).slice(0, 7).map((d) => ({
+      date: d.date,
+      median: d.median,
+      chance10: d.exceedance?.[10] ?? null,
+      chance20: d.exceedance?.[20] ?? null,
+    }));
+    const hazards = assessHazards(district, forecast).map((h) => ({
+      hazard: h.hazard,
+      label: HAZARD_LABELS[h.hazard],
+      severity: h.severity,
+      reason: h.reason,
+    }));
+    return { district: district.name, source: forecast.rainfall.label, days, hazards, lat: district.lat, lng: district.lng };
+  } catch {
+    return null;
+  }
+}
+
+function buildOutlookSummary(outlook) {
+  if (!outlook) return "";
+  const pct = (p) => (p == null ? "?" : `${Math.round(p * 100)}%`);
+  const days = outlook.days
+    .map((d) => `${d.date}: median ${d.median}mm, chance of 10mm+ ${pct(d.chance10)}, 20mm+ ${pct(d.chance20)}`)
+    .join("\n");
+  const hazards = outlook.hazards.length
+    ? outlook.hazards.map((h) => `- ${h.severity.toUpperCase()} ${h.label}: ${h.reason}`).join("\n")
+    : "- None";
+  return `\nRAIN PROBABILITIES FOR ${outlook.district.toUpperCase()} DISTRICT (${outlook.source}):\n${days}\nKIBIRAAI HAZARD SIGNALS:\n${hazards}`;
 }
 
 // ─── AI System Prompt ───
@@ -135,6 +176,7 @@ RULES:
 - Use actual crop growth timelines (e.g., maize: 90-120 days, beans: 60-90 days, cassava: 9-18 months)
 - Be specific about quantities: "apply 50kg/acre DAP", not just "fertilize"
 - Reference specific forecast days: "Rain expected Wednesday (15mm) — spray before Tuesday evening"
+- RAIN PROBABILITIES: When rain probabilities are given, base planting, spraying, fertiliser and harvest timing on them (e.g. "70% chance of 20mm+ on Thursday — harvest dry beans by Wednesday"). Every hazard signal listed MUST appear in riskAlerts with matching severity (WARNING → critical, WATCH → warning, ADVISORY → info). Do not invent hazard signals that are not listed.
 - ALL dates in the response MUST use DD-MM-YYYY format (e.g., "06-04-2026"), never YYYY-MM-DD
 - IRRIGATION: When soil moisture is low (<30%) or high temperatures (>30°C) are forecast, recommend specific irrigation — liters per plant or mm per acre, best time (early morning or late evening). If rain is coming within 24-48h, advise skipping irrigation to save water.
 - PEST & DISEASE SPRAYING: Only recommend when crops have foliage (past germination). When humidity >80% with warm temps (>25°C), warn about fungal risk (late blight, rust, powdery mildew). Recommend specific sprays (e.g., "spray copper fungicide", "apply neem oil for aphids"). Always recommend spraying BEFORE rain, not after.
@@ -143,7 +185,7 @@ RULES:
 
 export async function POST(request) {
   try {
-    const { crops, location } = await request.json();
+    const { crops, location, district } = await request.json();
 
     if (!crops || !Array.isArray(crops) || crops.length === 0) {
       return NextResponse.json({ error: "No crops provided" }, { status: 400 });
@@ -153,13 +195,15 @@ export async function POST(request) {
       return NextResponse.json({ error: "Location is required" }, { status: 400 });
     }
 
-    // Geocode and fetch weather
-    const geo = await geocode(location.trim().slice(0, 200));
-    const lat = geo?.lat || 0.35;
-    const lng = geo?.lng || 32.6;
+    // A known district gives exact coordinates and the probabilistic outlook;
+    // otherwise geocode the free-text location.
+    const outlook = await fetchRainOutlook(district || location);
+    const geo = outlook
+      ? { lat: outlook.lat, lng: outlook.lng, name: outlook.district }
+      : await geocode(location.trim().slice(0, 200));
 
-    const weather = geo ? await fetchWeather(lat, lng) : null;
-    const weatherContext = buildForecastSummary(weather);
+    const weather = geo ? await fetchWeather(geo.lat, geo.lng) : null;
+    const weatherContext = buildForecastSummary(weather) + buildOutlookSummary(outlook);
 
     // Build crop details for AI
     const today = new Date();
@@ -206,6 +250,9 @@ export async function POST(request) {
         ...plan,
         forecast,
         location: geo?.name || location.trim(),
+        rainOutlook: outlook
+          ? { district: outlook.district, source: outlook.source, days: outlook.days, hazards: outlook.hazards }
+          : null,
         generatedAt: new Date().toISOString(),
         currentWeather: weather?.current ? {
           temp: weather.current.temperature_2m,

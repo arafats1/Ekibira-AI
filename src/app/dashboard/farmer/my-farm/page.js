@@ -843,6 +843,37 @@ export default function MyFarmPage() {
               </div>
             ) : plan ? (
               <div className="space-y-6">
+                {/* Rain chances + hazard signals for the farmer's district */}
+                {plan.rainOutlook && (
+                  <div className="bg-white rounded-2xl border border-[#e5e7eb] p-5">
+                    <h3 className="font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-1">🌧️ Chance of rain — {plan.rainOutlook.district}</h3>
+                    <p className="text-[11px] text-[#6b7c6b] font-[family-name:var(--font-body)] mb-3">Share of 51 forecast runs with 20mm or more that day · {plan.rainOutlook.source}</p>
+                    {plan.rainOutlook.hazards.length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {plan.rainOutlook.hazards.map((h, i) => (
+                          <div key={i} className={`rounded-xl px-3 py-2 text-xs border font-[family-name:var(--font-body)] ${h.severity === "warning" ? "bg-red-50 border-red-200 text-red-800" : h.severity === "watch" ? "bg-orange-50 border-orange-200 text-orange-800" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
+                            <span className="font-bold uppercase">{h.severity}</span> · {h.label}: {h.reason}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-7 gap-1.5">
+                      {plan.rainOutlook.days.map((d) => {
+                        const pct = d.chance20 == null ? null : Math.round(d.chance20 * 100);
+                        return (
+                          <div key={d.date} className="text-center">
+                            <div className="h-16 bg-[#f3f4f6] rounded-lg flex items-end overflow-hidden">
+                              <div className="w-full bg-sky-500/80" style={{ height: `${pct || 0}%` }} />
+                            </div>
+                            <p className="text-[11px] font-bold text-[#1a2e1a] mt-1">{pct == null ? "—" : `${pct}%`}</p>
+                            <p className="text-[10px] text-[#6b7c6b]">{new Date(`${d.date}T12:00:00`).toLocaleDateString("en-GB", { weekday: "short" })}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Week Outlook */}
                 {plan.weekOutlook && (
                   <div className="bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] rounded-2xl p-6 text-white">
@@ -1259,7 +1290,8 @@ export default function MyFarmPage() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Current Price */}
                             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
-                              <h4 className="text-xs font-bold text-green-800 font-[family-name:var(--font-body)] mb-2 flex items-center gap-1.5">💰 Current Market Price</h4>
+                              <h4 className="text-xs font-bold text-green-800 font-[family-name:var(--font-body)] mb-1 flex items-center gap-1.5">💰 Typical Market Price</h4>
+                              <p className="text-[10px] text-amber-700 font-[family-name:var(--font-body)] mb-2">AI estimate from seasonal patterns, not live prices. Confirm with buyers before selling.</p>
                               <div className="flex items-baseline gap-2 mb-1">
                                 <span className="text-2xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{md.prices.currentPrice?.mid?.toLocaleString()}</span>
                                 <span className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">{md.prices.currentPrice?.unit}</span>

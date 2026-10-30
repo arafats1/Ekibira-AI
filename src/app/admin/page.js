@@ -39,13 +39,14 @@ function UsersTab({ token, currentUser }) {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleToggleRole = async (userEntry) => {
-    const newRole = userEntry.role === "admin" ? "user" : "admin";
-    const action = newRole === "admin" ? "promote to Admin" : "demote to User";
-    if (!confirm(`Are you sure you want to ${action}: ${userEntry.fullName || userEntry.email}?`)) return;
+  const ROLE_LABELS = { user: "User", volunteer: "Volunteer", admin: "Admin" };
+
+  const handleRoleChange = async (userEntry, newRole) => {
+    if (newRole === (userEntry.role || "user")) return;
+    if (!confirm(`Change ${userEntry.fullName || userEntry.email} to ${ROLE_LABELS[newRole]}?`)) return;
     setTogglingId(userEntry.id);
     try {
-      const res = await fetch(`${STRAPI_URL}/api/kibira-users/${userEntry.id}`, {
+      const res = await fetch(`${STRAPI_URL}/api/kibira-users/${userEntry.documentId || userEntry.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ data: { role: newRole } }),
@@ -95,18 +96,19 @@ function UsersTab({ token, currentUser }) {
                     </td>
                     <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)]">{u.email}</td>
                     <td className="py-3 px-4 font-[family-name:var(--font-body)]">
-                      <button
-                        onClick={() => handleToggleRole(u)}
+                      <select
+                        value={u.role || "user"}
+                        onChange={(e) => handleRoleChange(u, e.target.value)}
                         disabled={isSelf || togglingId === u.id}
-                        title={isSelf ? "You cannot change your own role" : `Click to ${isAdmin ? "demote to user" : "promote to admin"}`}
-                        className={`text-[11px] px-2.5 py-1 rounded-lg font-semibold transition-colors ${
-                          isAdmin
-                            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        title={isSelf ? "You cannot change your own role" : "Volunteers can register community members for alerts in the mobile app"}
+                        className={`text-[11px] px-2 py-1 rounded-lg font-semibold border-0 ${
+                          isAdmin ? "bg-amber-100 text-amber-700" : u.role === "volunteer" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"
                         } ${isSelf ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${togglingId === u.id ? "opacity-50" : ""}`}
                       >
-                        {togglingId === u.id ? "..." : isAdmin ? "Admin" : "User"}
-                      </button>
+                        {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
                     </td>
                     <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden md:table-cell">{u.company || "—"}</td>
                     <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)] hidden md:table-cell">{u.position || "—"}</td>

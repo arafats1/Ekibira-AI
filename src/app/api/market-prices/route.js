@@ -35,7 +35,7 @@ HARVEST DATE: ${harvestDate || "today"}
 TODAY: ${today}
 ${hasYield ? `EXPECTED YIELD: ${yieldLow} — ${yieldHigh} kg` : ""}
 
-Provide REAL, practical market intelligence for this specific crop in Uganda. Use your knowledge of actual current Ugandan market prices, trading hubs, and seasonal patterns.
+Give practical market guidance for this crop in Uganda based on typical prices, trading hubs and seasonal patterns you know of. You do NOT have live price data: give realistic typical ranges, never claim they are today's prices, and tell the farmer to confirm with buyers or the local market before selling.
 
 Respond with ONLY valid JSON:
 {
@@ -74,7 +74,7 @@ Respond with ONLY valid JSON:
 }
 
 RULES:
-- Prices must be in Ugandan Shillings (UGX) and realistic for the current season.
+- Prices must be in Ugandan Shillings (UGX): typical ranges for this time of year, not live quotes.
 - bestMarkets: 3-4 markets, closest first. Include major regional markets and Kampala if relevant.
 - Do NOT include estimatedRevenue in sellStrategy — it will be calculated separately.
 - valueAddition: 2-3 practical options appropriate for a smallholder with limited equipment.
@@ -110,6 +110,9 @@ RULES:
       };
     }
 
+    // These are model estimates, not market data; clients must say so.
+    parsed.isEstimate = true;
+    parsed.disclaimer = "AI estimate from typical seasonal prices, not live market data. Confirm with buyers before selling.";
     return NextResponse.json({ prices: parsed });
   } catch (error) {
     // Market prices error silently handled
