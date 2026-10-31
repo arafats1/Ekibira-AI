@@ -44,6 +44,30 @@ const TEMPLATES = {
     fisher: "Dry week likely in {district} ({chance}).",
     other: "Dry week likely in {district} ({chance}). Store water and avoid planting until rain returns.",
   },
+  crop_disease: {
+    farmer: "Wet, mild days {when} in {district} favour blight and leaf disease. Check potato, tomato and bean leaves daily, spray before rain, uproot sick plants.",
+    vendor: "Wet days {when} in {district}: produce rots faster. Buy dry, healthy produce, sort stock daily, keep it aired.",
+    flood_zone_resident: "Wet, mild days {when} in {district} favour crop disease. Check garden leaves daily and remove sick plants.",
+    pastoralist: "Wet days {when} in {district}. Keep hay and stored feed dry to stop mould.",
+    fisher: "Wet days {when} in {district}. Dry fish well and store it off the ground.",
+    other: "Wet, mild days {when} in {district} favour crop disease. Check garden leaves daily and remove sick plants.",
+  },
+  livestock_disease: {
+    farmer: "After heavy rain in {district}, ticks, worms and foot rot increase. Spray or dip animals, deworm, keep pens dry. Call the vet for sick animals.",
+    vendor: "After heavy rain in {district}, animal disease rises. Buy meat and milk only from inspected sources.",
+    flood_zone_resident: "After heavy rain in {district}, ticks and worms increase. Spray animals and keep them on dry ground.",
+    pastoralist: "After heavy rain in {district}, ticks, worms and foot rot increase. Spray or dip, deworm, keep hooves dry. Report sick animals to the vet.",
+    fisher: "After heavy rain in {district}, animal disease rises. Keep animals on dry ground and call the vet if they fall sick.",
+    other: "After heavy rain in {district}, ticks and worms increase in animals. Spray, deworm and call the vet for sick animals.",
+  },
+  human_disease: {
+    farmer: "After the rains in {district}, malaria and diarrhoea rise. Sleep under a treated net, boil drinking water, go to the health centre early with fever.",
+    vendor: "After the rains in {district}, malaria and diarrhoea rise. Keep food covered, wash hands, sleep under a net, treat fever early.",
+    flood_zone_resident: "After rains and floods in {district}, malaria and cholera risk rises. Boil drinking water, use latrines, sleep under a net, treat fever early.",
+    pastoralist: "After the rains in {district}, malaria rises. Sleep under a treated net and go to the health centre early with fever.",
+    fisher: "After the rains in {district}, malaria and cholera risk rises. Boil drinking water, sleep under a net, treat fever early.",
+    other: "After the rains in {district}, malaria and diarrhoea rise. Sleep under a treated net, boil drinking water, treat fever early.",
+  },
 };
 
 const GSM7 =

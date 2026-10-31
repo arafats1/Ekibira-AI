@@ -13,7 +13,9 @@ const contentSecurityPolicy = [
   // Next.js + Stripe; 'unsafe-inline' needed for App Router inline scripts/styles
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' data: blob: https://images.unsplash.com https://*.stripe.com",
+  // Field-report photos/videos and voice clips live on the backend or B2.
+  ["img-src 'self' data: blob: https: ", strapiOrigin].join(" ").trim(),
+  ["media-src 'self' blob: https:", strapiOrigin].join(" ").trim(),
   "font-src 'self' data: https://fonts.gstatic.com",
   [
     "connect-src 'self'",

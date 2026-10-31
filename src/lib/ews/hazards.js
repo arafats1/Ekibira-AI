@@ -15,7 +15,12 @@ export const HAZARD_LABELS = {
   dry_spell: "Dry spell",
   hailstorm: "Hailstorm",
   strong_wind: "Strong wind",
+  crop_disease: "Crop disease risk",
+  livestock_disease: "Livestock disease risk",
+  human_disease: "Malaria & waterborne disease risk",
 };
+
+export const DISEASE_HAZARDS = ["crop_disease", "livestock_disease", "human_disease"];
 
 const RULES = {
   heavyRain: [
@@ -38,6 +43,24 @@ const RULES = {
     { severity: "advisory", minProbability: 0.6 },
   ],
   lookaheadDays: 7,
+  // Weather that favours disease. Starting points to agree with district
+  // agriculture, veterinary and health officers; they flag risk, not cases.
+  // Rain rules compare with the normal for the same dates (getClimateNormals)
+  // and fall back to fixed totals only when no normal is available.
+  blight: { minHumidity: 88, minTMin: 10, maxTMax: 28, watchDays: 4, advisoryDays: 3 },
+  livestock: {
+    advisory: { ratio: 1.4, minRain14: 60 },
+    watch: { ratio: 1.8, minRain14: 100 },
+    fallback: { advisory: 120, watch: 180 },
+    minMeanTemp: 16,
+  },
+  malaria: {
+    advisory: { ratio: 1.3, minRain30: 100 },
+    watch: { ratio: 1.7, minRain30: 150 },
+    fallback: { advisory: 220, watch: 320 },
+    minMeanTemp: 17,
+    maxMeanTemp: 32,
+  },
 };
 
 function stronger(a, b) {
@@ -132,6 +155,120 @@ function drySpellSignal(dryWeek) {
     endDate: null,
     reason: `${Math.round(dryWeek.probability * 100)}% chance of less than ${dryWeek.thresholdMm}mm in the next 7 days`,
   };
+}
+
+function longestRun(days, test) {
+  let best = { length: 0 };
+  let run = [];
+  for (const d of days) {
+    if (test(d)) run.push(d);
+    else run = [];
+    if (run.length > best.length) best = { length: run.length, start: run[0].date, end: run[run.length - 1].date };
+  }
+  return best;
+}
+
+/** Late blight and other fungal disease: runs of humid, mild days. */
+function cropDiseaseSignal(days) {
+  const r = RULES.blight;
+  const run = longestRun(days, (d) => d.humidity >= r.minHumidity && d.tMin >= r.minTMin && d.tMax <= r.maxTMax);
+  if (run.length < r.advisoryDays) return null;
+  return {
+    hazard: "crop_disease",
+    severity: run.length >= r.watchDays ? "watch" : "advisory",
+    probability: null,
+    thresholdMm: null,
+    date: run.start,
+    endDate: run.end,
+    reason: `${run.length} humid, mild days in a row forecast (${run.start} to ${run.end}): good conditions for late blight and fungal leaf disease`,
+  };
+}
+
+function vsNormal(rain, normalRain) {
+  if (!normalRain) return "";
+  const pct = Math.round((rain / normalRain - 1) * 100);
+  return pct >= 0 ? `, ${pct}% above the usual ${normalRain}mm` : `, ${-pct}% below the usual ${normalRain}mm`;
+}
+
+/** Ticks, worms and foot rot follow unusually long wet spells. */
+function livestockDiseaseSignal(summary, normal) {
+  const r = RULES.livestock;
+  if (!summary || summary.meanTemp14 == null || summary.meanTemp14 < r.minMeanTemp) return null;
+  const usual = normal?.past14?.meanRain;
+  let severity = null;
+  if (usual) {
+    const ratio = summary.rain14 / Math.max(usual, 1);
+    if (ratio >= r.watch.ratio && summary.rain14 >= r.watch.minRain14) severity = "watch";
+    else if (ratio >= r.advisory.ratio && summary.rain14 >= r.advisory.minRain14) severity = "advisory";
+  } else if (summary.rain14 >= r.fallback.watch) severity = "watch";
+  else if (summary.rain14 >= r.fallback.advisory) severity = "advisory";
+  if (!severity) return null;
+  return {
+    hazard: "livestock_disease",
+    severity,
+    probability: null,
+    thresholdMm: null,
+    date: null,
+    endDate: null,
+    reason: `${summary.rain14}mm of rain in the last 14 days${vsNormal(summary.rain14, usual)}, ${summary.meanTemp14}°C average: tick, worm and foot rot risk rises`,
+  };
+}
+
+/** Malaria rises 2–4 weeks after unusually heavy rains; floods spread waterborne disease. */
+function humanDiseaseSignal(summary, flood, normal) {
+  const r = RULES.malaria;
+  let signal = null;
+  const warmEnough = summary?.meanTemp != null && summary.meanTemp >= r.minMeanTemp && summary.meanTemp <= r.maxMeanTemp;
+  if (warmEnough) {
+    // Rain only: recent temperatures come from a forecast model and the
+    // normal from ERA5, which differ by a degree or more in the highlands.
+    const usual = normal?.past30?.meanRain;
+    let severity = null;
+    if (usual) {
+      const ratio = summary.rainTotal / Math.max(usual, 1);
+      if (ratio >= r.watch.ratio && summary.rainTotal >= r.watch.minRain30) severity = "watch";
+      else if (ratio >= r.advisory.ratio && summary.rainTotal >= r.advisory.minRain30) severity = "advisory";
+    } else if (summary.rainTotal >= r.fallback.watch) severity = "watch";
+    else if (summary.rainTotal >= r.fallback.advisory) severity = "advisory";
+    if (severity) {
+      signal = {
+        hazard: "human_disease",
+        severity,
+        probability: null,
+        thresholdMm: null,
+        date: null,
+        endDate: null,
+        reason: `${summary.rainTotal}mm of rain in the last 30 days${vsNormal(summary.rainTotal, usual)}: mosquito breeding and malaria usually rise 2–4 weeks later`,
+      };
+    }
+  }
+  if (flood && SEVERITY_ORDER[flood.severity] >= SEVERITY_ORDER.watch) {
+    signal = stronger(signal, {
+      hazard: "human_disease",
+      severity: "advisory",
+      probability: null,
+      thresholdMm: null,
+      date: flood.date,
+      endDate: flood.endDate,
+      reason: "Flooding expected: risk of diarrhoea and cholera from contaminated water",
+    });
+  }
+  return signal;
+}
+
+/**
+ * Disease-risk signals from everyday weather (getDailyWeather) and the normal
+ * for these dates (getClimateNormals). Separate from assessHazards because
+ * they use observed past rain, not the ensemble.
+ */
+export function assessDiseaseRisks(weather, otherSignals = [], normal = null) {
+  if (!weather) return [];
+  const flood = otherSignals.find((s) => s.hazard === "flood");
+  return [
+    cropDiseaseSignal(weather.days || []),
+    livestockDiseaseSignal(weather.pastSummary, normal),
+    humanDiseaseSignal(weather.pastSummary, flood, normal),
+  ].filter(Boolean);
 }
 
 /** Hazard signals for a district, most severe first. */
