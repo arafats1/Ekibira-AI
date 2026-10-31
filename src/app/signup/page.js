@@ -275,7 +275,9 @@ function SignupForm() {
         </div>
 
         <p className="text-center text-xs text-white/40 mt-4 font-[family-name:var(--font-body)]">
-          By creating an account, you agree to KibiraAI&apos;s Terms of Service and Privacy Policy.
+          By creating an account, you agree to KibiraAI&apos;s{" "}
+          <Link href="/terms" className="underline hover:text-white/70">Terms of Use</Link> and{" "}
+          <Link href="/privacy" className="underline hover:text-white/70">Privacy Policy</Link>.
         </p>
       </div>
     </div>

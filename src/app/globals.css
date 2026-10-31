@@ -40,11 +40,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
   overflow-x: hidden;
+  overflow-x: clip; /* same look, but keeps position: sticky working */
 }
 
 /* Prevent horizontal overflow on mobile */
 html {
   overflow-x: hidden;
+  overflow-x: clip; /* same look, but keeps position: sticky working */
 }
 
 /* Touch-friendly tap targets */
@@ -175,3 +177,10 @@ h1, h2, h3, h4, h5, h6 {
   background: transparent !important;
   border: none !important;
 }
+
+/* Privacy policy and terms of use */
+.legal-body ul { list-style: disc; padding-left: 1.25rem; }
+.legal-body li + li { margin-top: 0.35rem; }
+.legal-body strong { color: #1a2e1a; }
+.legal-body a { color: #2d6a4f; font-weight: 600; }
+.legal-body a:hover { text-decoration: underline; }
