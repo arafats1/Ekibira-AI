@@ -5,7 +5,7 @@ persona-specific SMS and voice calls for communities in south-western Uganda
 (plus Rwenzori and Elgon), and collects what actually happened from the
 people who received them and from KibiraAI community agents.
 
-Console: `/last-mile` (KibiraAI admins only).
+Console: the admin dashboard `/admin` (KibiraAI admins only; old `/last-mile` links redirect there).
 
 ## How it fits together
 
@@ -51,7 +51,7 @@ Both feed the console and the next AI analysis
 |---|---|---|
 | Community member | Mobile app signup, USSD, `JOIN <district>` by SMS, registered by an agent, or imported from a contact list | Gets warnings in the app, by SMS and by phone call; reports what happened |
 | KibiraAI agent | Mobile app signup as "KibiraAI Agent" (name, phone, district) | Admin approves them on the console. They can then register members (consent script read aloud) and send field reports with photos and videos, even offline. Pending agents can already send reports |
-| Admin | kibira-user role `admin` | Uses `/last-mile`: forecasts, AI insights, sending, CSV import, approving agents, verifying reports |
+| Admin | kibira-user role `admin` | Uses `/admin`: forecasts, AI insights, sending, CSV import, approving agents, verifying reports |
 
 ## Ways people join and report (no smartphone needed)
 

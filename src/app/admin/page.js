@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
+import { AgentsTab, OutlookTab, ReachTab, RegisterTab } from "./LastMileTabs";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
@@ -834,28 +835,35 @@ function RevenueTab({ token }) {
 
 /* ── Dashboard Stats ── */
 function StatsCards({ token }) {
-  const [stats, setStats] = useState({ users: 0, chats: 0, knowledge: 0, revenueUgx: 0 });
+  const [stats, setStats] = useState({ users: 0, chats: 0, knowledge: 0, revenueUgx: 0, reachable: 0, pendingAgents: 0 });
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [usersRes, chatsRes, knowledgeRes, dashRes] = await Promise.all([
+        const auth = { headers: { Authorization: `Bearer ${token}` } };
+        const [usersRes, chatsRes, knowledgeRes, dashRes, ewsRes, agentsRes] = await Promise.all([
           fetch(`${STRAPI_URL}/api/kibira-users?pagination[pageSize]=1`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${STRAPI_URL}/api/kibira-chats?pagination[pageSize]=1`, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(`${STRAPI_URL}/api/kibira-knowledges?pagination[pageSize]=1`, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch("/api/kibira-admin/dashboard", { headers: { Authorization: `Bearer ${token}` } }),
+          fetch("/api/kibira-admin/dashboard", auth),
+          fetch(`${STRAPI_URL}/api/ews/stats`, auth).catch(() => null),
+          fetch(`${STRAPI_URL}/api/ews/agents`, auth).catch(() => null),
         ]);
-        const [usersData, chatsData, knowledgeData, dashData] = await Promise.all([
+        const [usersData, chatsData, knowledgeData, dashData, ewsData, agentsData] = await Promise.all([
           usersRes.json(),
           chatsRes.json(),
           knowledgeRes.json(),
           dashRes.json().catch(() => ({})),
+          ewsRes?.json().catch(() => ({})) ?? {},
+          agentsRes?.json().catch(() => ({})) ?? {},
         ]);
         setStats({
           users: usersData?.meta?.pagination?.total || 0,
           chats: chatsData?.meta?.pagination?.total || 0,
           knowledge: knowledgeData?.meta?.pagination?.total || 0,
           revenueUgx: dashData?.data?.revenue?.totalUgx || 0,
+          reachable: ewsData?.subscribers?.active || 0,
+          pendingAgents: (agentsData?.data || []).filter((a) => a.status === "pending").length,
         });
       } catch {}
     }
@@ -863,6 +871,8 @@ function StatsCards({ token }) {
   }, [token]);
 
   const cards = [
+    { label: "People getting warnings", value: stats.reachable, icon: "📡", color: "bg-[#ecfdf5] border-[#a7f3d0]" },
+    { label: "Agents waiting approval", value: stats.pendingAgents, icon: "📣", color: "bg-[#fef2f2] border-[#fecaca]" },
     { label: "Registered Users", value: stats.users, icon: "👥", color: "bg-[#f0fdf4] border-[#d1e7d1]" },
     { label: "AI Conversations", value: stats.chats, icon: "💬", color: "bg-[#eff6ff] border-[#bfdbfe]" },
     { label: "Knowledge Entries", value: stats.knowledge, icon: "📚", color: "bg-[#fef3c7] border-[#fde68a]" },
@@ -875,7 +885,7 @@ function StatsCards({ token }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4 mb-8">
       {cards.map((card) => (
         <div key={card.label} className={`rounded-xl border p-4 ${card.color}`}>
           <div className="flex items-center gap-3">
@@ -892,11 +902,64 @@ function StatsCards({ token }) {
 }
 
 /* ── Main Admin Page ── */
+
+// Early warning first: it is what admins act on daily.
+const TAB_GROUPS = [
+  {
+    label: "Early warning",
+    tabs: [
+      { id: "outlook", label: "Forecast & alerts", icon: "🌦️" },
+      { id: "register", label: "Register people", icon: "📝" },
+      { id: "agents", label: "Agents & field reports", icon: "📣" },
+      { id: "reach", label: "Reach & feedback", icon: "📡" },
+    ],
+  },
+  {
+    label: "Platform",
+    tabs: [
+      { id: "users", label: "Users", icon: "👥" },
+      { id: "revenue", label: "Revenue", icon: "💰" },
+      { id: "pricing", label: "Pricing", icon: "🏷️" },
+      { id: "chats", label: "AI Chats", icon: "💬" },
+      { id: "knowledge", label: "Knowledge Base", icon: "📚" },
+    ],
+  },
+];
+const TAB_IDS = TAB_GROUPS.flatMap((g) => g.tabs.map((t) => t.id));
+const EWS_TABS = new Set(TAB_GROUPS[0].tabs.map((t) => t.id));
+
 export default function AdminPage() {
   const { isAdmin, user, loading } = useAdminGuard();
-  const [tab, setTab] = useState("users");
-  const { getToken } = useAuth();
+  const [tab, setTab] = useState("outlook");
+  const [meta, setMeta] = useState(null);
+  const { getToken, logout } = useAuth();
+  const router = useRouter();
   const token = typeof window !== "undefined" ? getToken() : "";
+
+  // ?tab= keeps the open tab across reloads and old /last-mile links.
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get("tab");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (TAB_IDS.includes(fromUrl)) setTab(fromUrl);
+  }, []);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetch(`${STRAPI_URL}/api/ews/meta`)
+      .then((r) => r.json())
+      .then(setMeta)
+      .catch(() => {});
+  }, [isAdmin]);
+
+  function openTab(id) {
+    setTab(id);
+    window.history.replaceState(null, "", `/admin?tab=${id}`);
+  }
+
+  function signOut() {
+    logout();
+    router.replace("/login?redirect=/admin");
+  }
 
   if (loading) {
     return (
@@ -908,32 +971,33 @@ export default function AdminPage() {
 
   if (!isAdmin) return null;
 
-  const tabs = [
-    { id: "users", label: "Users", icon: "👥" },
-    { id: "revenue", label: "Revenue", icon: "💰" },
-    { id: "pricing", label: "Pricing", icon: "🏷️" },
-    { id: "chats", label: "AI Chats", icon: "💬" },
-    { id: "knowledge", label: "Knowledge Base", icon: "📚" },
-  ];
-
   return (
     <div className="min-h-screen bg-[#f7faf6]">
       {/* Header */}
       <header className="bg-[#0f2618] text-white">
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href="/" className="flex items-center gap-2 shrink-0">
               <span className="text-lg">🌿</span>
               <span className="font-[family-name:var(--font-display)] text-base font-bold">KibiraAI</span>
             </Link>
-            <span className="text-white/30 mx-2">/</span>
-            <span className="text-sm text-white/70 font-[family-name:var(--font-body)]">Admin Dashboard</span>
+            <span className="text-white/30 mx-1 sm:mx-2">/</span>
+            <span className="text-sm text-white/70 font-[family-name:var(--font-body)] truncate">Admin Dashboard</span>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-sm text-white/60 hover:text-white/90 transition-colors font-[family-name:var(--font-body)]">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/dashboard" className="hidden sm:inline text-sm text-white/60 hover:text-white/90 transition-colors font-[family-name:var(--font-body)]">
               ← Back to App
             </Link>
-            <div className="w-8 h-8 rounded-full bg-[#2d6a4f] flex items-center justify-center text-white text-xs font-bold">
+            <button
+              onClick={signOut}
+              className="text-sm font-semibold text-white border border-white/30 hover:bg-white/10 px-3 py-1.5 rounded-full font-[family-name:var(--font-body)]"
+            >
+              Sign out
+            </button>
+            <div
+              title={user?.email}
+              className="w-8 h-8 rounded-full bg-[#2d6a4f] flex items-center justify-center text-white text-xs font-bold"
+            >
               {(user?.fullName || "A")[0].toUpperCase()}
             </div>
           </div>
@@ -944,31 +1008,48 @@ export default function AdminPage() {
         <StatsCards token={token} />
 
         {/* Tab Navigation */}
-        <div className="flex gap-1 p-1 bg-white rounded-xl border border-[#e5e7eb] mb-6 w-fit flex-wrap">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors font-[family-name:var(--font-body)] ${
-                tab === t.id ? "bg-[#2d6a4f] text-white shadow-sm" : "text-[#6b7c6b] hover:text-[#1a2e1a] hover:bg-[#f0fdf4]"
-              }`}
-            >
-              <span>{t.icon}</span>
-              {t.label}
-            </button>
+        <div className="flex flex-col 2xl:flex-row gap-3 mb-6">
+          {TAB_GROUPS.map((group) => (
+            <div key={group.label} className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6b7c6b] mb-1.5 ml-1 font-[family-name:var(--font-body)]">
+                {group.label}
+              </p>
+              <div className="flex gap-1 p-1 bg-white rounded-xl border border-[#e5e7eb] w-fit max-w-full flex-wrap">
+                {group.tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => openTab(t.id)}
+                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors font-[family-name:var(--font-body)] ${
+                      tab === t.id ? "bg-[#2d6a4f] text-white shadow-sm" : "text-[#6b7c6b] hover:text-[#1a2e1a] hover:bg-[#f0fdf4]"
+                    }`}
+                  >
+                    <span>{t.icon}</span>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Tab Content */}
-        <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
-          {tab === "users" && <UsersTab token={token} currentUser={user} />}
-          {tab === "revenue" && <RevenueTab token={token} />}
-          {tab === "pricing" && <PricingTab token={token} />}
-          {tab === "chats" && <ChatsTab token={token} />}
-          {tab === "knowledge" && <KnowledgeTab token={token} />}
-        </div>
+        {/* Tab Content: early warning tabs draw their own cards */}
+        {EWS_TABS.has(tab) ? (
+          <div>
+            {tab === "outlook" && <OutlookTab token={token} isAdmin meta={meta} />}
+            {tab === "register" && <RegisterTab token={token} ussdCode={meta?.ussdCode} />}
+            {tab === "agents" && <AgentsTab token={token} />}
+            {tab === "reach" && <ReachTab token={token} />}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">
+            {tab === "users" && <UsersTab token={token} currentUser={user} />}
+            {tab === "revenue" && <RevenueTab token={token} />}
+            {tab === "pricing" && <PricingTab token={token} />}
+            {tab === "chats" && <ChatsTab token={token} />}
+            {tab === "knowledge" && <KnowledgeTab token={token} />}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

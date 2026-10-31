@@ -34,7 +34,7 @@ function LoginForm() {
       const userData = await login({ identifier: form.identifier, password: form.password });
       const dest =
         redirect ||
-        (userData.role === "admin" ? "/dashboard/forestry" : getDashboardRoute(userData.accountType));
+        (userData.role === "admin" ? "/admin" : getDashboardRoute(userData.accountType));
       router.push(dest);
     } catch (err) {
       setError(err.message || "Login failed. Please check your credentials.");
