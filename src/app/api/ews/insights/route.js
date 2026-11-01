@@ -33,7 +33,8 @@ function compactReports(rows = []) {
     category: r.category,
     impact: r.impact,
     village: r.village,
-    status: r.status,
+    // new = not yet checked; verified = reviewed by the team; responded = reviewed and acted on.
+    status: r.status === "new" ? "unverified" : r.status === "verified" ? "reviewed" : r.status,
     peopleAffected: r.peopleAffected,
     text: String(r.description || "").slice(0, 300),
     aiPhotoNote: r.aiSummary ? String(r.aiSummary).slice(0, 300) : undefined,

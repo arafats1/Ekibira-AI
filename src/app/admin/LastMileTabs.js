@@ -5,7 +5,7 @@
  * registering people, agents and field reports, reach and feedback.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   ComposedChart,
   Bar,
@@ -1192,11 +1192,320 @@ const AGENT_STATUS_STYLES = {
   suspended: "bg-gray-200 text-gray-700",
   new: "bg-sky-100 text-sky-800",
   verified: "bg-emerald-100 text-emerald-800",
+  responded: "bg-violet-100 text-violet-800",
   dismissed: "bg-gray-200 text-gray-700",
 };
 
+// "verified" is stored for Reviewed so older reports and AI insights keep their meaning.
+const REPORT_STATUSES = [
+  { key: "new", label: "Pending review" },
+  { key: "verified", label: "Reviewed" },
+  { key: "responded", label: "Responded" },
+];
+const STATUS_LABEL = { ...Object.fromEntries(REPORT_STATUSES.map((s) => [s.key, s.label])), dismissed: "Dismissed" };
+const NOTE_PROMPT = {
+  verified: "Note (optional): how was it confirmed?",
+  responded: "Note (optional): what was done?",
+};
+
 function StatusPill({ status }) {
-  return <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${AGENT_STATUS_STYLES[status] || ""}`}>{status}</span>;
+  return (
+    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${AGENT_STATUS_STYLES[status] || ""}`}>
+      {STATUS_LABEL[status] || status}
+    </span>
+  );
+}
+
+function Modal({ onClose, children, wide }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+    };
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
+        className={`relative w-full ${wide ? "max-w-5xl" : "max-w-3xl"} max-h-full overflow-y-auto rounded-2xl bg-white shadow-xl`}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="sticky top-3 float-right mr-3 z-10 h-9 w-9 rounded-full bg-white/90 border border-gray-200 text-gray-600 hover:bg-gray-100 text-lg leading-none"
+        >
+          ×
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** Photos and videos of one report, opened on the page instead of a new tab. */
+function MediaViewer({ media, start, onClose }) {
+  const [i, setI] = useState(start);
+  const count = media.length;
+  const step = useCallback((d) => setI((n) => (n + d + count) % count), [count]);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "ArrowRight") step(1);
+      if (e.key === "ArrowLeft") step(-1);
+      if (e.key === "Escape") {
+        // Close only the viewer, not an agent window open underneath.
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [step, onClose]);
+  const m = media[i];
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 p-3 sm:p-8" onClick={onClose}>
+      <button onClick={onClose} aria-label="Close" className="absolute top-3 right-3 h-10 w-10 rounded-full bg-white/15 text-white text-2xl hover:bg-white/25">
+        ×
+      </button>
+      {count > 1 && (
+        <>
+          <button
+            onClick={(e) => { e.stopPropagation(); step(-1); }}
+            aria-label="Previous"
+            className="absolute left-2 sm:left-6 h-11 w-11 rounded-full bg-white/15 text-white text-2xl hover:bg-white/25"
+          >
+            ‹
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); step(1); }}
+            aria-label="Next"
+            className="absolute right-2 sm:right-6 h-11 w-11 rounded-full bg-white/15 text-white text-2xl hover:bg-white/25"
+          >
+            ›
+          </button>
+        </>
+      )}
+      <div onClick={(e) => e.stopPropagation()} className="flex flex-col items-center gap-3 max-w-full max-h-full">
+        {m.mime?.startsWith("video/") ? (
+          <video key={m.url} src={mediaUrl(m.url)} controls autoPlay className="max-h-[80vh] max-w-full rounded-lg bg-black" />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={mediaUrl(m.url)} alt="Field report" className="max-h-[80vh] max-w-full rounded-lg object-contain" />
+        )}
+        {count > 1 && <p className="text-xs text-white/70">{i + 1} of {count}</p>}
+      </div>
+    </div>
+  );
+}
+
+function ReportCard({ r, onStatus, onOpenMedia, showAgent = true }) {
+  return (
+    <div className="rounded-xl border border-gray-100 p-4 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-semibold text-gray-900">{REPORT_LABEL[r.category] || r.category}</span>
+        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${r.impact === "severe" ? "bg-red-100 text-red-800" : r.impact === "moderate" ? "bg-orange-100 text-orange-800" : "bg-gray-100 text-gray-700"}`}>
+          {r.impact}
+        </span>
+        <StatusPill status={r.status} />
+      </div>
+      <p className="text-xs text-gray-500">
+        {r.district}{r.village ? ` · ${r.village}` : ""} · {r.occurredOn}{showAgent ? ` · by ${r.reporterName}` : ""}
+        {r.peopleAffected != null ? ` · ${r.peopleAffected} people affected` : ""}
+      </p>
+      <p className="text-sm text-gray-800 whitespace-pre-line">{r.description}</p>
+      {r.media?.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {r.media.map((m, i) => (
+            <button key={i} onClick={() => onOpenMedia(r.media, i)} className="relative rounded-lg overflow-hidden hover:opacity-90" aria-label="Open photo">
+              {m.mime?.startsWith("video/") ? (
+                <>
+                  <video src={mediaUrl(m.url)} muted preload="metadata" className="h-32 w-24 object-cover bg-black" />
+                  <span className="absolute inset-0 flex items-center justify-center text-white text-2xl bg-black/30">▶</span>
+                </>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={mediaUrl(m.url)} alt="Field report" className="h-32 object-cover" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+      {r.aiSummary && (
+        <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-2">
+          <span className="font-semibold">AI note:</span> {r.aiSummary}
+        </p>
+      )}
+      {r.latitude != null && (
+        <a
+          href={`https://www.openstreetmap.org/?mlat=${r.latitude}&mlon=${r.longitude}#map=14/${r.latitude}/${r.longitude}`}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs text-emerald-700 hover:underline"
+        >
+          View location
+        </a>
+      )}
+      {r.reviewNote && <p className="text-xs text-gray-500">Note: {r.reviewNote}{r.reviewedBy ? ` (${r.reviewedBy})` : ""}</p>}
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+          {REPORT_STATUSES.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => r.status !== s.key && onStatus(r, s.key)}
+              aria-pressed={r.status === s.key}
+              className={`px-3 py-1.5 font-semibold border-r last:border-r-0 border-gray-200 ${r.status === s.key ? "bg-[#1b4332] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        {r.status !== "dismissed" && (
+          <button onClick={() => onStatus(r, "dismissed")} className="text-xs text-gray-500 hover:underline">
+            Dismiss
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** One agent: their details, every report they sent and everyone they registered. */
+function AgentDetail({ id, token, onClose, onStatus, onOpenMedia, reloadKey }) {
+  const [detail, setDetail] = useState(null);
+  const [error, setError] = useState(null);
+  const [tab, setTab] = useState("reports");
+
+  useEffect(() => {
+    let live = true;
+    fetch(`${STRAPI_URL}/api/ews/agents/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((x) => x.json())
+      .then((d) => {
+        if (!live) return;
+        if (d.error) throw new Error(d.error.message);
+        setDetail(d.data);
+      })
+      .catch((err) => live && setError(err.message || "Could not load agent"));
+    return () => {
+      live = false;
+    };
+  }, [id, token, reloadKey]);
+
+  const a = detail?.agent;
+  const place = a ? [a.village, a.parish, a.subCounty, a.district].filter(Boolean).join(", ") : "";
+  return (
+    <Modal onClose={onClose} wide>
+      <div className="p-5 sm:p-7">
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {!detail && !error && <p className="text-sm text-gray-500">Loading…</p>}
+        {a && (
+          <>
+            <div className="flex flex-wrap items-center gap-2 pr-12">
+              <h3 className="text-xl font-bold text-[#1b4332] font-[family-name:var(--font-display)]">{a.fullName}</h3>
+              <StatusPill status={a.status} />
+            </div>
+            <dl className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm mt-4">
+              {[
+                ["Phone", a.phone],
+                ["Email", a.email],
+                ["Area", place],
+                ["Applied", a.createdAt && new Date(a.createdAt).toLocaleDateString("en-GB")],
+                ["Reviewed", a.reviewedAt && `${new Date(a.reviewedAt).toLocaleDateString("en-GB")}${a.reviewedBy ? ` by ${a.reviewedBy}` : ""}`],
+              ]
+                .filter(([, v]) => v)
+                .map(([k, v]) => (
+                  <div key={k} className="min-w-0">
+                    <dt className="text-xs text-gray-500">{k}</dt>
+                    <dd className="text-gray-800 break-words">{v}</dd>
+                  </div>
+                ))}
+            </dl>
+            {a.notes && <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 mt-4">{a.notes}</p>}
+
+            <div className="flex gap-2 mt-6 border-b border-gray-100">
+              {[
+                ["reports", `Reports (${detail.reports.length})`],
+                ["people", `People registered (${detail.registrations.length})`],
+              ].map(([k, label]) => (
+                <button
+                  key={k}
+                  onClick={() => setTab(k)}
+                  className={`px-3 py-2 text-sm font-semibold border-b-2 -mb-px ${tab === k ? "border-[#1b4332] text-[#1b4332]" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {tab === "reports" && (
+              <div className="grid md:grid-cols-2 gap-4 mt-4">
+                {detail.reports.map((r) => (
+                  <ReportCard key={r.id} r={r} onStatus={onStatus} onOpenMedia={onOpenMedia} showAgent={false} />
+                ))}
+                {!detail.reports.length && <p className="text-sm text-gray-400">No reports yet.</p>}
+              </div>
+            )}
+
+            {tab === "people" && (
+              <div className="overflow-x-auto mt-4">
+                <table className="w-full text-xs text-left">
+                  <thead className="text-gray-500 border-b border-gray-100">
+                    <tr>
+                      <th className="py-2 pr-3">Name</th>
+                      <th className="py-2 pr-3">Phone</th>
+                      <th className="py-2 pr-3">Place</th>
+                      <th className="py-2 pr-3">Group</th>
+                      <th className="py-2 pr-3">Language</th>
+                      <th className="py-2 pr-3">Registered</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.registrations.map((p) => (
+                      <Fragment key={p.id}>
+                      <tr className={p.notes?.length ? "" : "border-b border-gray-50"}>
+                        <td className="py-2 pr-3 text-gray-800">
+                          {p.name || "—"}
+                          {p.active === false && <span className="ml-1 text-gray-400">(stopped)</span>}
+                        </td>
+                        <td className="py-2 pr-3 font-mono">{p.phone}</td>
+                        <td className="py-2 pr-3">{[p.village, p.district].filter(Boolean).join(", ")}</td>
+                        <td className="py-2 pr-3">{PERSONA_LABEL[p.persona] || p.persona || "—"}</td>
+                        <td className="py-2 pr-3">{LANGUAGE_LABEL[p.language] || p.language || "—"}</td>
+                        <td className="py-2 pr-3 whitespace-nowrap">{new Date(p.createdAt).toLocaleDateString("en-GB")}</td>
+                      </tr>
+                      {p.notes?.length > 0 && (
+                        <tr className="border-b border-gray-50">
+                          <td colSpan={6} className="pb-3 pr-3">
+                            <div className="space-y-1.5 rounded-lg bg-gray-50 p-2.5">
+                              {p.notes.map((n) => (
+                                <p key={n.id} className="text-gray-700">
+                                  <span className="font-semibold text-gray-500">
+                                    {n.observedOn ? n.observedOn.split("-").reverse().join("-") : ""}
+                                    {n.category ? ` · ${REPORT_LABEL[n.category] || n.category}` : ""}:
+                                  </span>{" "}
+                                  {n.note}
+                                </p>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
+                {!detail.registrations.length && <p className="text-sm text-gray-400 py-4">Nobody registered yet.</p>}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Modal>
+  );
 }
 
 export function AgentsTab({ token }) {
@@ -1204,6 +1513,9 @@ export function AgentsTab({ token }) {
   const [reports, setReports] = useState(null);
   const [district, setDistrict] = useState("");
   const [error, setError] = useState(null);
+  const [agentId, setAgentId] = useState(null);
+  const [viewer, setViewer] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const load = useCallback(async () => {
     setError(null);
@@ -1237,7 +1549,17 @@ export function AgentsTab({ token }) {
       return;
     }
     load();
+    setReloadKey((k) => k + 1);
   }
+
+  function setReportStatus(r, status) {
+    const note = NOTE_PROMPT[status] ? window.prompt(NOTE_PROMPT[status]) : null;
+    update("reports", r.id, { status, reviewNote: note || undefined });
+  }
+
+  const openMedia = useCallback((media, start) => setViewer({ media, start }), []);
+  const closeAgent = useCallback(() => setAgentId(null), []);
+  const closeViewer = useCallback(() => setViewer(null), []);
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;
   if (!agents || !reports) return <p className="text-sm text-gray-500">Loading…</p>;
@@ -1248,7 +1570,7 @@ export function AgentsTab({ token }) {
     { label: "Agents approved", value: agents.filter((a) => a.status === "approved").length },
     { label: "Waiting for approval", value: pending },
     { label: "People registered by agents", value: agents.reduce((n, a) => n + a.registrations, 0) },
-    { label: "Field reports (90 days)", value: reports.length },
+    { label: "Reports pending review", value: reports.filter((r) => r.status === "new").length },
   ];
 
   return (
@@ -1269,7 +1591,7 @@ export function AgentsTab({ token }) {
         <button onClick={load} className="text-sm text-emerald-700 hover:underline">Refresh</button>
       </div>
 
-      <Card title="KibiraAI agents" subtitle="Agents sign up in the mobile app. Approve them before they can register people; anyone pending can still send reports.">
+      <Card title="KibiraAI agents" subtitle="Agents sign up in the mobile app. Approve them before they can register people; anyone pending can still send reports. Click a name to see their reports and the people they registered.">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="text-gray-500 border-b border-gray-100">
@@ -1288,7 +1610,9 @@ export function AgentsTab({ token }) {
               {shownAgents.map((a) => (
                 <tr key={a.id} className="border-b border-gray-50 align-top">
                   <td className="py-2 pr-3">
-                    <p className="font-semibold text-gray-800">{a.fullName}</p>
+                    <button onClick={() => setAgentId(a.id)} className="font-semibold text-[#1b4332] hover:underline text-left">
+                      {a.fullName}
+                    </button>
                     <p className="text-gray-400">{a.email}</p>
                     {a.notes && <p className="text-gray-500 mt-0.5 max-w-xs">{a.notes}</p>}
                   </td>
@@ -1321,72 +1645,19 @@ export function AgentsTab({ token }) {
         </div>
       </Card>
 
-      <Card title="Field reports" subtitle="Incidents agents saw on the ground, including ones no alert flagged. Verified reports carry more weight in AI insights.">
+      <Card title="Field reports" subtitle="Incidents agents saw on the ground, including ones no alert flagged. Reviewed and responded reports carry more weight in AI insights.">
         {!reports.length && <p className="text-sm text-gray-400">No reports yet.</p>}
         <div className="grid md:grid-cols-2 gap-4">
           {reports.map((r) => (
-            <div key={r.id} className="rounded-xl border border-gray-100 p-4 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-gray-900">{REPORT_LABEL[r.category] || r.category}</span>
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${r.impact === "severe" ? "bg-red-100 text-red-800" : r.impact === "moderate" ? "bg-orange-100 text-orange-800" : "bg-gray-100 text-gray-700"}`}>
-                  {r.impact}
-                </span>
-                <StatusPill status={r.status} />
-              </div>
-              <p className="text-xs text-gray-500">
-                {r.district}{r.village ? ` · ${r.village}` : ""} · {r.occurredOn} · by {r.reporterName}
-                {r.peopleAffected != null ? ` · ${r.peopleAffected} people affected` : ""}
-              </p>
-              <p className="text-sm text-gray-800 whitespace-pre-line">{r.description}</p>
-              {r.media?.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {r.media.map((m, i) =>
-                    m.mime?.startsWith("video/") ? (
-                      <video key={i} src={mediaUrl(m.url)} controls className="h-32 rounded-lg bg-black" />
-                    ) : (
-                      <a key={i} href={mediaUrl(m.url)} target="_blank" rel="noreferrer">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={mediaUrl(m.url)} alt="Field report" className="h-32 rounded-lg object-cover" />
-                      </a>
-                    )
-                  )}
-                </div>
-              )}
-              {r.aiSummary && (
-                <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-2">
-                  <span className="font-semibold">AI note:</span> {r.aiSummary}
-                </p>
-              )}
-              {r.latitude != null && (
-                <a
-                  href={`https://www.openstreetmap.org/?mlat=${r.latitude}&mlon=${r.longitude}#map=14/${r.latitude}/${r.longitude}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-emerald-700 hover:underline"
-                >
-                  View location
-                </a>
-              )}
-              {r.reviewNote && <p className="text-xs text-gray-500">Review: {r.reviewNote}</p>}
-              <div className="flex gap-3 text-xs pt-1">
-                {r.status !== "verified" && (
-                  <button
-                    onClick={() => update("reports", r.id, { status: "verified", reviewNote: window.prompt("Note (optional): how was it confirmed?") || undefined })}
-                    className="text-emerald-700 font-semibold hover:underline"
-                  >
-                    Verify
-                  </button>
-                )}
-                {r.status !== "dismissed" && (
-                  <button onClick={() => update("reports", r.id, { status: "dismissed" })} className="text-gray-500 hover:underline">
-                    Dismiss
-                  </button>
-                )}
-              </div>
-            </div>
+            <ReportCard key={r.id} r={r} onStatus={setReportStatus} onOpenMedia={openMedia} />
           ))}
         </div>
       </Card>
+
+      {agentId && (
+        <AgentDetail id={agentId} token={token} onClose={closeAgent} onStatus={setReportStatus} onOpenMedia={openMedia} reloadKey={reloadKey} />
+      )}
+      {viewer && <MediaViewer media={viewer.media} start={viewer.start} onClose={closeViewer} />}
     </div>
   );
 }
@@ -1418,14 +1689,21 @@ function Tally({ title, data, labels }) {
 
 export function ReachTab({ token }) {
   const [stats, setStats] = useState(null);
+  const [feedback, setFeedback] = useState([]);
   const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`${STRAPI_URL}/api/ews/stats`, { headers: { Authorization: `Bearer ${token}` } });
+      const headers = { Authorization: `Bearer ${token}` };
+      const [res, fb] = await Promise.all([
+        fetch(`${STRAPI_URL}/api/ews/stats`, { headers }),
+        fetch(`${STRAPI_URL}/api/ews/feedback?limit=200`, { headers }),
+      ]);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error?.message || "Could not load stats");
       setStats(data);
+      const fbData = await fb.json().catch(() => ({}));
+      setFeedback(fbData.data || []);
     } catch (err) {
       setError(err.message);
     }
@@ -1506,6 +1784,43 @@ export function ReachTab({ token }) {
             </tbody>
           </table>
           {!stats.alerts.length && <p className="text-sm text-gray-400 py-4">No alerts sent yet.</p>}
+        </div>
+      </Card>
+      <Card title="Reports from the community" subtitle="What people say actually happened, sent from the app's Alerts tab, by SMS or by USSD. Newest first.">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left">
+            <thead className="text-gray-500 border-b border-gray-100">
+              <tr>
+                <th className="py-2 pr-3">Date</th>
+                <th className="py-2 pr-3">What happened</th>
+                <th className="py-2 pr-3">Rain gauge</th>
+                <th className="py-2 pr-3">Where</th>
+                <th className="py-2 pr-3">From</th>
+                <th className="py-2 pr-3">Via</th>
+                <th className="py-2 pr-3">About alert</th>
+              </tr>
+            </thead>
+            <tbody>
+              {feedback.map((f) => (
+                <tr key={f.id} className="border-b border-gray-50 align-top">
+                  <td className="py-2 pr-3 whitespace-nowrap">{new Date(f.reportedAt || f.createdAt).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}</td>
+                  <td className="py-2 pr-3 font-semibold text-gray-800">
+                    {OBSERVATION_LABEL[f.observation] || f.observation}
+                    {f.rawText && <span className="block font-normal text-gray-500">&ldquo;{f.rawText}&rdquo;</span>}
+                  </td>
+                  <td className="py-2 pr-3">{f.rainfallMm != null ? `${f.rainfallMm} mm` : "—"}</td>
+                  <td className="py-2 pr-3">{[f.village, f.district].filter(Boolean).join(", ") || "—"}</td>
+                  <td className="py-2 pr-3">
+                    {f.reporterName || "—"}
+                    {f.phone && <span className="block font-mono text-gray-400">{f.phone}</span>}
+                  </td>
+                  <td className="py-2 pr-3 uppercase text-gray-500">{f.source}</td>
+                  <td className="py-2 pr-3 font-mono">{f.alertCode ? `#${f.alertCode}` : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!feedback.length && <p className="text-sm text-gray-400 py-4">No reports from the community yet.</p>}
         </div>
       </Card>
     </div>
