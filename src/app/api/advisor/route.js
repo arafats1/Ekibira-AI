@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 import { incrementUsage } from "../lib/usage";
+import { districtFor } from "@/lib/ews/regions";
+import { getSatellite, satelliteBrief } from "@/lib/ews/satellite";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -124,7 +126,7 @@ When a user asks about deforestation in a specific region or forest, provide:
 2. **Primary drivers**: Rank the causes (e.g., smallholder agriculture 40%, commercial farming 25%, logging 20%, charcoal 10%, mining 5%)
 3. **Spatial patterns**: Where deforestation is concentrated (frontiers, edges, corridors, fragmentation patterns)
 4. **Rate analysis**: Annual loss rate, acceleration/deceleration trends, and comparison with regional averages
-5. **Published monitoring data**: You do not have live satellite data. You may mention that sources such as Global Forest Watch (Hansen et al. tree cover loss) publish this data, but never quote figures from them unless you are sure they are published values, and point users to the source to check
+5. **Published monitoring data**: You have no satellite tree-cover data. For districts KibiraAI serves, a satellite rainfall and vegetation record may be given below; that is the only satellite data you have. You may mention that sources such as Global Forest Watch (Hansen et al. tree cover loss) publish this data, but never quote figures from them unless you are sure they are published values, and point users to the source to check
 6. **Tipping points**: When forest degradation becomes irreversible, fragmentation thresholds
 7. **Biodiversity impact**: Species at risk, corridor connectivity, ecosystem service losses
 
@@ -328,6 +330,11 @@ export async function POST(request) {
     const detectedLocation = detectLocationQuery(message, history);
     if (detectedLocation) {
       const geo = await geocode(detectedLocation);
+      const district = districtFor(`${detectedLocation} ${geo?.name || ""}`, geo?.lat, geo?.lng);
+      const brief = district ? satelliteBrief(district, await getSatellite(district)) : "";
+      if (brief) {
+        systemContent += `\n\n## ${brief}\n\nUse this record to say how the season has gone so far (wetter or drier than usual, and how green plants and pasture are) and let it shape advice: after months of low rain favour drought-tolerant crops and varieties, water saving, mulching and keeping seed and food in store; when the ground is already wet, take heavy rain and landslide risk more seriously. Quote these figures exactly, cite "CHIRPS satellite rainfall" and "Copernicus Sentinel-2", and do not invent other satellite figures.`;
+      }
       if (geo) {
         const weather = await fetchWeatherData(geo.lat, geo.lng);
         const weatherCtx = formatWeatherContext(weather, geo.name || detectedLocation);

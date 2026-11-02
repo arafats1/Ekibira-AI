@@ -44,6 +44,15 @@ const TEMPLATES = {
     fisher: "Dry week likely in {district} ({chance}).",
     other: "Dry week likely in {district} ({chance}). Store water and avoid planting until rain returns.",
   },
+  // Months of low rain (CHIRPS), not just a dry week.
+  season_dry: {
+    farmer: "Rain in {district} has been low for months. Choose drought-tolerant crops like cassava, sorghum, millet or sweet potato, mulch, and keep seed and food in store.",
+    vendor: "Rain in {district} has been low for months. Food prices may rise. Store dry goods well and keep fresh produce shaded.",
+    flood_zone_resident: "Rain in {district} has been low for months. Store clean water, protect springs and wells, and keep some food in reserve.",
+    pastoralist: "Rain in {district} has been low for months and {pasture}. Plan water and grazing now, keep hay, avoid crowding at dams.",
+    fisher: "Rain in {district} has been low for months. Water levels may drop. Dry and store fish well and save drinking water.",
+    other: "Rain in {district} has been low for months. Store clean water, plant drought-tolerant crops and keep some food in reserve.",
+  },
   crop_disease: {
     farmer: "Wet, mild days {when} in {district} favour blight and leaf disease. Check potato, tomato and bean leaves daily, spray before rain, uproot sick plants.",
     vendor: "Wet days {when} in {district}: produce rots faster. Buy dry, healthy produce, sort stock daily, keep it aired.",
@@ -111,18 +120,19 @@ function chancePhrase(probability) {
 
 /** Draft one English message per persona for a hazard signal. */
 export function draftMessages(signal, districtName, personas) {
-  const templates = TEMPLATES[signal.hazard];
+  const templates = TEMPLATES[signal.variant] || TEMPLATES[signal.hazard];
   if (!templates) return [];
   return personas.map((persona) => {
     const body = (templates[persona] || templates.other)
       .replace("{when}", whenPhrase(signal.date, signal.endDate))
       .replace("{district}", districtName)
-      .replace("{chance}", chancePhrase(signal.probability));
+      .replace("{chance}", chancePhrase(signal.probability))
+      .replace("{pasture}", signal.pasture ? "pasture is thinner than usual" : "pasture may run short");
     const message = `${LEAD[signal.severity]}: ${body}`;
     return {
       persona,
       hazard: signal.hazard,
-      hazardLabel: HAZARD_LABELS[signal.hazard],
+      hazardLabel: signal.label || HAZARD_LABELS[signal.hazard],
       severity: signal.severity,
       message,
       sms: smsSegments(message + FOOTER_SAMPLE),

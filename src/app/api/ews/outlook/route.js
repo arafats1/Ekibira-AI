@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { DISTRICTS, PERSONAS, findDistrict } from "@/lib/ews/regions";
+import { AREAS, DISTRICTS, PERSONAS, areasOf, findDistrict } from "@/lib/ews/regions";
 import { getDistrictForecast, getDistrictForecasts } from "@/lib/ews/forecast";
-import { assessHazards, assessDiseaseRisks, SEVERITY_ORDER } from "@/lib/ews/hazards";
+import { assessHazards, assessDiseaseRisks, applySeason, seasonState, SEVERITY_ORDER } from "@/lib/ews/hazards";
 import { getDailyWeather, getClimateNormals } from "@/lib/ews/weather";
 import { draftMessages } from "@/lib/ews/messages";
 import { getSatellite } from "@/lib/ews/satellite";
@@ -15,9 +15,49 @@ function bySeverity(a, b) {
   return SEVERITY_ORDER[b.severity] - SEVERITY_ORDER[a.severity];
 }
 
+const sum = (days, key) => Math.round(days.slice(0, 7).reduce((n, d) => n + (d[key] || 0), 0));
+
 /**
- * GET /api/ews/outlook?district=Kisoro  → weather, rainfall forecast, satellite rainfall and NDVI, hazard signals and draft SMS per persona
- * GET /api/ews/outlook                  → current temperature and hazard signals for every district (overview)
+ * Signals for an extra forecast point inside a district. It shares the
+ * district's hazard list, recent weather and satellite season; only the
+ * ensemble forecast and river flow are its own.
+ */
+function areaOutlook(area, district, forecast, satellite, weather, normal, withDrafts) {
+  const base = { name: area.name, note: area.note, lat: area.lat, lng: area.lng };
+  if (!forecast || forecast.error) return { ...base, error: forecast?.error || "No forecast", hazards: [] };
+  const point = { ...district, lat: area.lat, lng: area.lng };
+  const place = `${area.name}, ${district.name}`;
+  const hazards = applySeason(district, assessHazards(point, forecast), satellite, weather, normal)
+    // The dry season is district-wide (district satellite data); keep it on the district.
+    .filter((h) => h.variant !== "season_dry")
+    .sort(bySeverity)
+    .map((signal) => (withDrafts ? { ...signal, drafts: draftMessages(signal, place, PERSONA_KEYS) } : signal));
+  const days = forecast.rainfall.days || [];
+  return { ...base, next7: { median: sum(days, "median"), p90: sum(days, "p90") }, hazards };
+}
+
+/**
+ * The district's signals plus any area signal that is new or stronger than the
+ * district's own for that hazard, tagged with the area so it reads "In Bwera: …".
+ */
+function withAreaSignals(hazards, areas) {
+  const out = [...hazards];
+  for (const area of areas) {
+    for (const h of area.hazards) {
+      const own = out.find((o) => o.hazard === h.hazard && !o.area);
+      if (own && SEVERITY_ORDER[own.severity] >= SEVERITY_ORDER[h.severity]) continue;
+      const other = out.find((o) => o.hazard === h.hazard && o.area);
+      if (other && SEVERITY_ORDER[other.severity] >= SEVERITY_ORDER[h.severity]) continue;
+      if (other) out.splice(out.indexOf(other), 1);
+      out.push({ ...h, area: area.name, reason: `In ${area.name} (${area.note}): ${h.reason}` });
+    }
+  }
+  return out.sort(bySeverity);
+}
+
+/**
+ * GET /api/ews/outlook?district=Kisoro  → weather, rainfall forecast, satellite rainfall and NDVI, hazard signals and draft SMS per persona, and the same for extra forecast points in the district
+ * GET /api/ews/outlook                  → current temperature, hazard signals and the season so far for every district (overview)
  */
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -27,35 +67,50 @@ export async function GET(request) {
     const district = findDistrict(name);
     if (!district) return NextResponse.json({ error: "Unknown district" }, { status: 404, headers: CORS });
     try {
-      const [forecast, [weather], [normal], satellite] = await Promise.all([
+      const extra = areasOf(district.name);
+      const [forecast, [weather], [normal], satellite, areaForecasts] = await Promise.all([
         getDistrictForecast(district),
         getDailyWeather([district]),
         getClimateNormals([district]),
         getSatellite(district),
+        extra.length ? getDistrictForecasts(extra) : [],
       ]);
       const signals = assessHazards(district, forecast);
-      const hazards = [...signals, ...assessDiseaseRisks(weather, signals, normal)].sort(bySeverity).map((signal) => ({
+      const all = [...signals, ...assessDiseaseRisks(weather, signals, normal)];
+      const season = seasonState(satellite, weather, normal);
+      const hazards = applySeason(district, all, satellite, weather, normal).sort(bySeverity).map((signal) => ({
         ...signal,
         drafts: draftMessages(signal, district.name, PERSONA_KEYS),
       }));
-      return NextResponse.json({ district, forecast, weather, normal, satellite, hazards }, { headers: CORS });
+      const areas = extra.map((a, i) => areaOutlook(a, district, areaForecasts[i], satellite, weather, normal, true));
+      return NextResponse.json(
+        { district, forecast, weather, normal, satellite, season, hazards: withAreaSignals(hazards, areas), areas },
+        { headers: CORS }
+      );
     } catch (err) {
       return NextResponse.json({ error: `Forecast unavailable: ${err.message}` }, { status: 502, headers: CORS });
     }
   }
 
-  const [forecasts, weather, normals] = await Promise.all([
+  const [forecasts, weather, normals, satellites, areaForecasts] = await Promise.all([
     getDistrictForecasts(DISTRICTS),
     getDailyWeather(DISTRICTS),
     getClimateNormals(DISTRICTS),
+    Promise.all(DISTRICTS.map((d) => getSatellite(d))),
+    getDistrictForecasts(AREAS),
   ]);
   const results = DISTRICTS.map((district, i) => {
     const forecast = forecasts[i];
     const current = weather[i]?.current || null;
     const today = weather[i]?.days?.[0] || null;
-    const base = { district: district.name, region: district.region, current, today };
+    const season = seasonState(satellites[i], weather[i], normals[i]);
+    const areas = AREAS.map((a, j) => [a, areaForecasts[j]])
+      .filter(([a]) => a.district === district.name)
+      .map(([a, f]) => areaOutlook(a, district, f, satellites[i], weather[i], normals[i], false));
+    const base = { district: district.name, region: district.region, lat: district.lat, lng: district.lng, current, today, season, areas };
     const signals = forecast.error ? [] : assessHazards(district, forecast);
-    const hazards = [...signals, ...assessDiseaseRisks(weather[i], signals, normals[i])].sort(bySeverity);
+    const all = [...signals, ...assessDiseaseRisks(weather[i], signals, normals[i])];
+    const hazards = withAreaSignals(applySeason(district, all, satellites[i], weather[i], normals[i]), areas);
     if (forecast.error) return { ...base, error: forecast.error, hazards };
     return { ...base, provider: forecast.rainfall.provider, hazards };
   });

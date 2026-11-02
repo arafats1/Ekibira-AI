@@ -153,7 +153,7 @@ const sections = [
       <p>
         The KibiraAI name, logo, software and design belong to us. Weather data comes from Open-Meteo and the
         forecast and reanalysis models it serves (including ECMWF, ERA5 and GloFAS). Monthly satellite rainfall is
-        CHIRPS from the UCSB Climate Hazards Center (Funk et al., 2015), served by NASA SERVIR ClimateSERV, and
+        CHIRPS v3.0 from the UCSB Climate Hazards Center (<a href="https://chc.ucsb.edu/data/chirps3">chc.ucsb.edu/data/chirps3</a>), and
         vegetation greenness contains modified Copernicus Sentinel-2 data. Map data comes from OpenStreetMap
         contributors. All are used under their own licences. You may share warnings and public pages for non-commercial,
         safety purposes as long as you do not change their meaning.
@@ -227,7 +227,7 @@ export default function TermsPage() {
     <LegalPage
       eyebrow="Legal"
       title="Terms of Use"
-      updated="31 October 2026"
+      updated="2 November 2026"
       intro={
         <p>
           Please read these terms before using KibiraAI. They explain what you can expect from us, what we expect from

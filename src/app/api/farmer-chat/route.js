@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { checkUsageLimit, incrementUsage } from "../lib/usage";
+import { districtFor } from "@/lib/ews/regions";
+import { getSatellite, satelliteBrief } from "@/lib/ews/satellite";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -296,9 +298,15 @@ export async function POST(request) {
 
     // Fetch real weather data for the farmer's location
     let weatherContext = "";
+    let satelliteContext = "";
     const primaryLocation = locations[0] || null;
     if (primaryLocation) {
       const geo = await geocode(primaryLocation);
+      const district = districtFor(`${primaryLocation} ${geo?.name || ""}`, geo?.lat, geo?.lng);
+      const brief = district ? satelliteBrief(district, await getSatellite(district)) : "";
+      if (brief) {
+        satelliteContext = `\n\n${brief}\nUse this to judge how the season has gone for the farmer's crops and animals (e.g. a dry season means water stress, choose drought-tolerant varieties, mulch, keep seed and food in store; a wet season means waterlogging, disease and landslide risk on slopes). Quote these figures exactly and cite CHIRPS / Sentinel-2; do not invent other satellite figures.`;
+      }
       if (geo) {
         const weather = await fetchWeather(geo.lat, geo.lng);
         const summary = buildWeatherSummary(weather, geo.name || primaryLocation);
@@ -342,7 +350,7 @@ TODAY: ${todayStr}
 FARMER'S CROPS:
 ${cropSummary}
 
-FARMER'S LOCATIONS: ${locations.join(", ") || "Unknown"}${weatherContext}${marketContext}
+FARMER'S LOCATIONS: ${locations.join(", ") || "Unknown"}${weatherContext}${satelliteContext}${marketContext}
 
 YOUR ROLE:
 - Answer questions about their specific crops, yields, timing, and practices

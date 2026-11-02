@@ -61,6 +61,20 @@ const RULES = {
     minMeanTemp: 17,
     maxMeanTemp: 32,
   },
+  // Season scale, from CHIRPS satellite rainfall for the last 3 published
+  // months against the 2006–2025 average, and Sentinel-2 greenness.
+  season: {
+    minUsualMm: 120, // a 3-month usual below this is the normal dry season; skip
+    maxAgeMonths: 3, // ignore CHIRPS older than this
+    dry: [
+      { severity: "watch", maxPct: 50 },
+      { severity: "advisory", maxPct: 75 },
+    ],
+    wetPct: 130, // slopes and soils wetter than usual
+    veryWetPct: 150,
+    rainsBackRatio: 1.1, // last 30 days at 110% of usual or more: the dry season is easing
+    lessGreen: -0.05, // NDVI below the usual for the month by this much
+  },
 };
 
 function stronger(a, b) {
@@ -269,6 +283,133 @@ export function assessDiseaseRisks(weather, otherSignals = [], normal = null) {
     livestockDiseaseSignal(weather.pastSummary, normal),
     humanDiseaseSignal(weather.pastSummary, flood, normal),
   ].filter(Boolean);
+}
+
+const STEP_UP = { advisory: "watch", watch: "warning", warning: "warning" };
+const STEP_DOWN = { warning: "watch", watch: "advisory", advisory: null };
+
+function monthsBetween(a, b) {
+  const [ay, am] = a.split("-").map(Number);
+  const [by, bm] = b.split("-").map(Number);
+  return (by - ay) * 12 + (bm - am);
+}
+
+function monthSpan(months) {
+  const name = (m) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" });
+  return months.length > 1 ? `${name(months[0])}–${name(months[months.length - 1])}` : name(months[0]);
+}
+
+/**
+ * The season so far for a district: CHIRPS rainfall for the last 3 published
+ * months, the last 30 days against the normal, and Sentinel-2 greenness.
+ * Null when there is no recent CHIRPS data.
+ */
+export function seasonState(satellite, weather, normal, now = new Date()) {
+  const r = RULES.season;
+  const season = satellite?.chirps?.season;
+  const latest = satellite?.chirps?.latest;
+  if (!season?.normal || !latest) return null;
+  const thisMonth = now.toISOString().slice(0, 7);
+  if (monthsBetween(latest.month, thisMonth) > r.maxAgeMonths) return null;
+  const recent = weather?.pastSummary?.rainTotal;
+  const recentUsual = normal?.past30?.meanRain;
+  const ndvi = satellite?.ndvi?.latest;
+  return {
+    months: [season.from, season.to],
+    span: monthSpan(season.from === season.to ? [season.from] : [season.from, season.to]),
+    total: season.total,
+    usual: season.normal,
+    pct: season.pct,
+    category: season.category,
+    recentPct: recent != null && recentUsual ? Math.round((recent / recentUsual) * 100) : null,
+    ndvi: ndvi?.change != null ? { month: ndvi.month, value: ndvi.ndvi, usual: ndvi.usual, change: ndvi.change, partial: ndvi.partial } : null,
+  };
+}
+
+/**
+ * Season-scale signals from satellite data, applied on top of the 7-day
+ * signals for a district:
+ * - a dry season (months of low rain) becomes a dry_spell signal, stronger
+ *   when plants and pasture are also less green than usual, weaker when the
+ *   last 30 days show the rains returning;
+ * - ground already wetter than usual raises landslide and flood signals one
+ *   step, and adds a landslide signal when heavy rain is forecast.
+ * Returns the full list, most severe first.
+ */
+export function applySeason(district, signals, satellite, weather, normal) {
+  const r = RULES.season;
+  const state = seasonState(satellite, weather, normal);
+  if (!state || state.usual < r.minUsualMm) return signals;
+  const enabled = new Set(district.hazards);
+  const source = `${state.span} rain ${state.pct}% of the ${Math.round(state.usual)}mm usual (CHIRPS satellite)`;
+  let out = [...signals];
+
+  // Dry season
+  const dryRule = r.dry.find((rule) => state.pct < rule.maxPct);
+  if (dryRule) {
+    let severity = dryRule.severity;
+    const notes = [source];
+    const lessGreen = state.ndvi && state.ndvi.change <= r.lessGreen;
+    if (lessGreen) {
+      severity = STEP_UP[severity] === "warning" ? "watch" : STEP_UP[severity];
+      notes.push(`plants and pasture less green than usual in ${monthSpan([state.ndvi.month])} (NDVI ${state.ndvi.value.toFixed(2)} vs ${state.ndvi.usual.toFixed(2)}, Sentinel-2)`);
+    }
+    if (state.recentPct != null && state.recentPct >= r.rainsBackRatio * 100) {
+      severity = STEP_DOWN[severity];
+      notes.push(`but the last 30 days had ${state.recentPct}% of usual rain, so the rains may be returning`);
+    } else if (state.recentPct != null) {
+      notes.push(`last 30 days ${state.recentPct}% of usual`);
+    }
+    if (severity) {
+      const seasonal = {
+        hazard: "dry_spell",
+        variant: "season_dry",
+        label: "Dry season",
+        severity,
+        probability: null,
+        thresholdMm: null,
+        date: null,
+        endDate: null,
+        basis: "satellite",
+        pasture: Boolean(lessGreen),
+        reason: `Months of low rain: ${notes.join("; ")}`,
+      };
+      const week = out.find((s) => s.hazard === "dry_spell");
+      if (week) {
+        // One dry signal per district: keep the stronger, mention both.
+        const keep = SEVERITY_ORDER[week.severity] > SEVERITY_ORDER[seasonal.severity] ? week : seasonal;
+        const merged = { ...keep, reason: keep === week ? `${week.reason}; ${seasonal.reason}` : `${seasonal.reason}; ${week.reason}` };
+        out = out.map((s) => (s === week ? merged : s));
+      } else {
+        out.push(seasonal);
+      }
+    }
+  }
+
+  // Wet ground
+  if (state.pct >= r.wetPct) {
+    const veryWet = state.pct >= r.veryWetPct;
+    const wetNote = `ground already wetter than usual: ${source}`;
+    const raise = (s) => {
+      // Up to warning only when the season is very wet.
+      const up = STEP_UP[s.severity];
+      const severity = up === "warning" && !veryWet ? s.severity : up;
+      return { ...s, severity, basis: "satellite", reason: `${s.reason}; ${wetNote}` };
+    };
+    out = out.map((s) => (s.hazard === "landslide" || s.hazard === "flood" ? raise(s) : s));
+    const rain = out.find((s) => s.hazard === "heavy_rain");
+    if (enabled.has("landslide") && rain && !out.some((s) => s.hazard === "landslide")) {
+      out.push({
+        ...rain,
+        hazard: "landslide",
+        severity: "advisory",
+        basis: "satellite",
+        reason: `${rain.reason}, falling on ${wetNote}`,
+      });
+    }
+  }
+
+  return out.sort((a, b) => SEVERITY_ORDER[b.severity] - SEVERITY_ORDER[a.severity]);
 }
 
 /** Hazard signals for a district, most severe first. */

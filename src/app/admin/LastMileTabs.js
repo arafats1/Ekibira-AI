@@ -5,7 +5,7 @@
  * registering people, agents and field reports, reach and feedback.
  */
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ComposedChart,
   Bar,
@@ -16,12 +16,14 @@ import {
   Legend,
   ResponsiveContainer,
   CartesianGrid,
+  ReferenceLine,
 } from "recharts";
 import { DISTRICTS, PERSONAS, LANGUAGES, REGIONS } from "@/lib/ews/regions";
 import { RAIN_CATEGORY } from "@/lib/ews/satellite";
 import { HAZARD_LABELS } from "@/lib/ews/hazards";
 import { smsSegments, FOOTER_SAMPLE } from "@/lib/ews/messages";
 import { parseContactsCsv } from "@/lib/ews/csv";
+import "leaflet/dist/leaflet.css";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
@@ -129,7 +131,7 @@ function DistrictOverview({ overview, loading, selected, onSelect }) {
                   <span className="flex items-center gap-2">
                     {top && (
                       <span title={top.reason} className="flex items-center gap-1">
-                        <span className="text-[11px] text-gray-500 hidden 2xl:inline">{HAZARD_LABELS[top.hazard]}</span>
+                        <span className="text-[11px] text-gray-500 hidden 2xl:inline">{top.label || HAZARD_LABELS[top.hazard]}</span>
                         <SeverityBadge severity={top.severity} />
                       </span>
                     )}
@@ -196,6 +198,184 @@ const LIKELIHOOD_STYLES = {
   low: "bg-gray-100 text-gray-700",
 };
 
+/* ── Visuals for AI insights ── */
+
+const RAIN_OBSERVED = "#2f855a";
+const RAIN_FORECAST = "#0284c7";
+const LIKELIHOOD_BAR = { high: "#c2410c", medium: "#f59e0b", low: "#cbd5e1" };
+
+// Share of usual: amber below, green near, blue above (the CHIRPS dry/normal/wet
+// bands). Always shown with its number.
+function pctTone(pct) {
+  if (pct == null) return "#cbd5e1";
+  if (pct < 80) return "#d97706";
+  if (pct <= 120) return "#2f855a";
+  return "#0284c7";
+}
+
+/** A number with a bar against the usual (100% marker), on a 0–200% track. */
+function VsUsual({ pct }) {
+  if (pct == null) return null;
+  return (
+    <div className="relative h-1.5 rounded-full bg-gray-100 mt-2" title={`${pct}% of usual`}>
+      <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.min(100, pct / 2)}%`, background: pctTone(pct) }} />
+      <div className="absolute -top-1 -bottom-1 w-0.5 bg-gray-500" style={{ left: "50%" }} />
+    </div>
+  );
+}
+
+function StatTile({ label, value, sub, pct, children }) {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-white p-3 min-w-0">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="text-xl font-bold text-gray-900 mt-0.5">{value}</p>
+      {sub && <p className="text-xs text-gray-500">{sub}</p>}
+      <VsUsual pct={pct} />
+      {children}
+    </div>
+  );
+}
+
+function KeyNumbers({ v }) {
+  const recentPct = v.recent?.usual ? Math.round((v.recent.total / v.recent.usual) * 100) : null;
+  const nextPct = v.next7?.usual ? Math.round((v.next7.median / v.next7.usual) * 100) : null;
+  const ndvi = v.season?.ndvi;
+  return (
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+      {v.recent && (
+        <StatTile
+          label="Last 30 days"
+          value={`${Math.round(v.recent.total)}mm`}
+          sub={recentPct != null ? `${recentPct}% of the usual ${Math.round(v.recent.usual)}mm` : "no normal available"}
+          pct={recentPct}
+        />
+      )}
+      {v.next7 && (
+        <StatTile
+          label="Next 7 days"
+          value={`${v.next7.median}mm`}
+          sub={`wet case ${v.next7.p90}mm${nextPct != null ? ` · ${nextPct}% of usual` : ""}`}
+          pct={nextPct}
+        />
+      )}
+      {v.season && (
+        <StatTile label={`Season, ${v.season.span}`} value={`${v.season.pct}%`} sub={`of usual rain · ${Math.round(v.season.total)}mm (CHIRPS)`} pct={v.season.pct} />
+      )}
+      {ndvi && (
+        <StatTile
+          label="Greenness"
+          value={ndvi.value.toFixed(2)}
+          sub={`usual ${ndvi.usual.toFixed(2)} · ${ndvi.change <= -0.05 ? "less green" : ndvi.change >= 0.05 ? "greener" : "about usual"}${ndvi.partial ? " (early)" : ""}`}
+        >
+          <div className="relative h-1.5 rounded-full bg-gray-100 mt-2" title="NDVI vs usual, 0 to 1">
+            <div className="absolute inset-y-0 left-0 rounded-full bg-[#2f855a]" style={{ width: `${Math.max(0, Math.min(1, ndvi.value)) * 100}%` }} />
+            <div className="absolute -top-1 -bottom-1 w-0.5 bg-gray-500" style={{ left: `${Math.max(0, Math.min(1, ndvi.usual)) * 100}%` }} />
+          </div>
+        </StatTile>
+      )}
+    </div>
+  );
+}
+
+function RainTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-sm">
+      <p className="font-semibold text-gray-800">{d.label}</p>
+      {d.observed != null && <p className="text-gray-700">Rain: {d.observed}mm</p>}
+      {d.median != null && <p className="text-gray-700">Forecast: {d.median}mm (wet case {d.p90}mm)</p>}
+      {d.usual != null && <p className="text-gray-500">Usual: about {d.usual}mm a day</p>}
+    </div>
+  );
+}
+
+/** Daily rain for the last 30 days and the 7-day forecast, against the usual daily amount. */
+function RainPastAndAhead({ v }) {
+  const todayKey = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Kampala" });
+  const data = v.daily.map((d) => ({
+    ...d,
+    usual: v.usualDaily,
+    label: new Date(`${d.date}T12:00:00`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }),
+    tick: new Date(`${d.date}T12:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+  }));
+  if (!data.length) return null;
+  const today = data.find((d) => d.date === todayKey)?.tick;
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 mb-2">
+        <span className="font-semibold text-gray-700">Rain each day: last 30 days and next 7</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: RAIN_OBSERVED }} />Rain so far</span>
+        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: RAIN_FORECAST }} />Forecast (median)</span>
+        {v.usualDaily != null && <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-gray-400" />Usual per day</span>}
+      </div>
+      <div className="h-48">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }} barCategoryGap={2}>
+            <CartesianGrid vertical={false} stroke="#f1f3ee" />
+            <XAxis dataKey="tick" tick={{ fontSize: 10, fill: "#6b7280" }} interval={6} tickLine={false} axisLine={{ stroke: "#e5e7eb" }} />
+            <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} unit="mm" tickLine={false} axisLine={false} />
+            <Tooltip content={<RainTooltip />} cursor={{ fill: "#f3f4f6" }} />
+            {today && <ReferenceLine x={today} stroke="#9ca3af" label={{ value: "Today", position: "insideTopLeft", fontSize: 10, fill: "#6b7280" }} />}
+            {v.usualDaily != null && <ReferenceLine y={v.usualDaily} stroke="#9ca3af" strokeDasharray="4 3" />}
+            <Bar dataKey="observed" fill={RAIN_OBSERVED} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="median" fill={RAIN_FORECAST} radius={[4, 4, 0, 0]} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+/** When each likely outcome could happen, from today out to the furthest one. */
+function OutcomeTimeline({ predictions }) {
+  const rows = predictions.filter((p) => p.toDay > p.fromDay);
+  if (!rows.length) return null;
+  const span = Math.max(14, ...rows.map((p) => p.toDay));
+  const ticks = [0, 7, 14, 28, 56, 84].filter((t) => t <= span);
+  const pos = (day) => `${(day / span) * 100}%`;
+  const tickLabel = (t) => (t === 0 ? "Today" : `${t / 7} wk`);
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 mb-2">
+        <span className="font-semibold text-gray-700">When</span>
+        {["high", "medium", "low"].map((l) => (
+          <span key={l} className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: LIKELIHOOD_BAR[l] }} />{l} likelihood</span>
+        ))}
+      </div>
+      <div className="space-y-2">
+        {rows.map((p, i) => (
+          <div key={i} className="grid grid-cols-[minmax(0,180px)_1fr] items-center gap-3">
+            <p className="text-xs text-gray-700 truncate" title={p.outcome}>{p.outcome}</p>
+            <div className="relative h-5 rounded bg-gray-50">
+              {ticks.map((t) => <div key={t} className="absolute inset-y-0 w-px bg-gray-200" style={{ left: pos(t) }} />)}
+              <div
+                className="absolute inset-y-1 rounded"
+                title={`${p.outcome}: ${p.timeframe} (${p.likelihood} likelihood)`}
+                style={{ left: pos(p.fromDay), width: `max(6px, ${((p.toDay - p.fromDay) / span) * 100}%)`, background: LIKELIHOOD_BAR[p.likelihood] }}
+              />
+            </div>
+          </div>
+        ))}
+        <div className="grid grid-cols-[minmax(0,180px)_1fr] gap-3">
+          <span />
+          <div className="relative h-4 text-[10px] text-gray-500">
+            {ticks.map((t) => (
+              <span
+                key={t}
+                className="absolute whitespace-nowrap"
+                style={{ left: pos(t), transform: t === 0 ? "none" : t === span ? "translateX(-100%)" : "translateX(-50%)" }}
+              >
+                {tickLabel(t)}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function InsightsCard({ district, token, onUseDraft }) {
   const [state, setState] = useState({ loading: false, data: null, error: null });
 
@@ -223,7 +403,7 @@ function InsightsCard({ district, token, onUseDraft }) {
   return (
     <Card
       title="AI weather insights"
-      subtitle="Reads the last 30 days against the normal for these dates, the ensemble outlook, river flow, CHIRPS satellite rainfall, agent field reports and community feedback. Suggestions only."
+      subtitle="Reads the last 30 days against the normal for these dates, the ensemble outlook, river flow, CHIRPS satellite rainfall, Sentinel-2 greenness, agent field reports and community feedback. Suggestions only."
       right={
         <button
           onClick={analyse}
@@ -246,9 +426,30 @@ function InsightsCard({ district, token, onUseDraft }) {
             <p className="text-gray-700 mt-1 leading-relaxed">{ins.summary}</p>
             <p className="text-[11px] text-gray-400 mt-1">
               Confidence: {ins.confidence} · {state.data.inputs.reports} field reports · {state.data.inputs.feedback} feedback replies ·
-              {state.data.inputs.normal ? " seasonal normal" : " no normal available"} · {new Date(state.data.generatedAt).toLocaleString("en-GB")}
+              {state.data.inputs.normal ? " seasonal normal" : " no normal available"}
+              {state.data.inputs.satellite ? (state.data.inputs.ndvi ? " · CHIRPS + Sentinel-2" : " · CHIRPS") : " · no satellite data"} · {new Date(state.data.generatedAt).toLocaleString("en-GB")}
             </p>
           </div>
+          {state.data.visuals && (
+            <div className="space-y-4 rounded-2xl bg-gray-50/70 p-3">
+              <KeyNumbers v={state.data.visuals} />
+              <div className="rounded-xl border border-gray-100 bg-white p-3">
+                <RainPastAndAhead v={state.data.visuals} />
+              </div>
+              {state.data.visuals.signals.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="font-semibold text-gray-600">Rule-based signals:</span>
+                  {state.data.visuals.signals.map((s, i) => (
+                    <span key={i} className="flex items-center gap-1 rounded-full border border-gray-200 bg-white pl-1 pr-2 py-0.5">
+                      <SeverityBadge severity={s.severity} />
+                      <span className="text-gray-700">{s.label}</span>
+                      {s.basis === "satellite" && <span title="Uses satellite data">🛰️</span>}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {ins.patterns.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Patterns</h4>
@@ -264,6 +465,9 @@ function InsightsCard({ district, token, onUseDraft }) {
           {ins.predictions.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Likely outcomes</h4>
+              <div className="rounded-xl border border-gray-100 p-3 mb-3">
+                <OutcomeTimeline predictions={ins.predictions} />
+              </div>
               <div className="space-y-2">
                 {ins.predictions.map((p, i) => (
                   <div key={i} className="rounded-xl border border-gray-100 p-3">
@@ -299,6 +503,28 @@ function InsightsCard({ district, token, onUseDraft }) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+          {ins.policyBrief && (
+            <div className="rounded-xl border border-sky-100 bg-sky-50/50 p-3">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-sky-800">Brief for district officials</h4>
+                <button
+                  onClick={() => navigator.clipboard?.writeText(`${district} early warning brief (${new Date(state.data.generatedAt).toLocaleDateString("en-GB")})\n\n${ins.policyBrief}`)}
+                  className="text-xs font-semibold text-sky-800 hover:underline"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-gray-800 leading-relaxed">{ins.policyBrief}</p>
+            </div>
+          )}
+          {ins.agentChecks.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Ask agents to check this week</h4>
+              <ul className="list-disc pl-5 space-y-1 text-gray-700">
+                {ins.agentChecks.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
             </div>
           )}
           {ins.dataGaps.length > 0 && (
@@ -348,7 +574,7 @@ function chirpsSentence(m, season) {
     const n = m.years - m.rank + 1;
     parts.push(`The ${n === 1 ? "wettest" : `${ordinal(n)} wettest`} of ${m.years} years on record.`);
   }
-  parts.push(`${m.rainyDays} rainy days, longest dry run ${m.longestDry} days.`);
+  if (m.prelim) parts.push("Preliminary.");
   if (season?.pct != null) {
     parts.push(`Last 3 months (${monthName(season.from, { month: "short" })}–${monthName(season.to, { month: "short" })}): ${season.total}mm, ${season.pct}% of usual.`);
   }
@@ -360,7 +586,7 @@ function SatelliteCard({ satellite, district }) {
   const chirps = satellite?.chirps;
   const ndvi = satellite?.ndvi;
   const latest = chirps?.latest;
-  const data = (chirps?.months || []).map((m) => ({ month: monthName(m.month), total: m.total, normal: m.normal }));
+  const data = (chirps?.months || []).map((m) => ({ month: `${monthName(m.month)}${m.prelim ? " *" : ""}`, total: m.total, normal: m.normal }));
   return (
     <Card
       title="Satellite record"
@@ -375,6 +601,12 @@ function SatelliteCard({ satellite, district }) {
           <p className="text-sm text-gray-700 mb-3">
             <b>{monthName(latest.month, { month: "long", year: "numeric" })}:</b> {chirpsSentence(latest, chirps.season)}
           </p>
+          {chirps.current && (
+            <p className="text-sm text-gray-700 mb-3">
+              <b>{monthName(chirps.current.month, { month: "long" })} so far</b> (to {chirps.current.throughLabel}, preliminary): {chirps.current.total}mm
+              {chirps.current.pct != null ? `, ${chirps.current.pct}% of the usual ${chirps.current.usualSoFar}mm for these days (${RAIN_CATEGORY[chirps.current.category]}).` : "."}
+            </p>
+          )}
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
@@ -389,8 +621,8 @@ function SatelliteCard({ satellite, district }) {
             </ResponsiveContainer>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Averaged over about 22km around the district headquarters. CHIRPS final data is published a few weeks after each month ends, so the latest
-            month here lags; the 7-day outlook above covers recent days.
+            Averaged over about 22km around the district headquarters. Final CHIRPS comes out in the third week of the next month; until then
+            months are built from preliminary 5-day totals, published 2 days after each 5 days (* = preliminary).
           </p>
         </>
       )}
@@ -541,7 +773,8 @@ function buildDrafts(hazards) {
   const state = {};
   hazards.forEach((h, i) => {
     for (const d of h.drafts) {
-      state[`${i}:${d.persona}`] = { persona: d.persona, message: d.message, include: d.persona !== "other", translations: {} };
+      // Area signals start unticked: they go to the whole district, so choose them on purpose.
+      state[`${i}:${d.persona}`] = { persona: d.persona, message: d.message, include: d.persona !== "other" && !h.area, translations: {} };
     }
   });
   return state;
@@ -725,6 +958,257 @@ function VoicePanel({ languages, meta, token, voice, setVoice }) {
   );
 }
 
+/* ── Areas inside a district, and the risk map ── */
+
+function AreaTable({ district, areas }) {
+  if (!areas?.length) return null;
+  return (
+    <div className="mt-5">
+      <h3 className="text-sm font-semibold text-gray-700">Inside {district}</h3>
+      <p className="text-xs text-gray-500 mb-2">Extra forecast points where the district headquarters may not tell the whole story.</p>
+      <div className="overflow-x-auto -mx-2">
+        <table className="w-full text-sm min-w-[520px]">
+          <thead>
+            <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400">
+              <th className="px-2 py-1.5 font-semibold">Place</th>
+              <th className="px-2 py-1.5 font-semibold">Next 7 days</th>
+              <th className="px-2 py-1.5 font-semibold">Signal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {areas.map((a) => {
+              const top = a.hazards?.[0];
+              return (
+                <tr key={a.name} className="border-t border-gray-100 align-top">
+                  <td className="px-2 py-1.5">
+                    <span className="font-medium text-gray-800">{a.name}</span>
+                    <span className="block text-[11px] text-gray-400">{a.note}</span>
+                  </td>
+                  <td className="px-2 py-1.5 text-gray-700">{a.next7 ? `${a.next7.median}mm (wet case ${a.next7.p90}mm)` : "no forecast"}</td>
+                  <td className="px-2 py-1.5">
+                    {top ? (
+                      <span className="flex items-start gap-1.5" title={top.reason}>
+                        <SeverityBadge severity={top.severity} />
+                        <span className="text-xs text-gray-600">{top.label || HAZARD_LABELS[top.hazard]}</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">none</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// Status colours, checked for colour-blind separation. Never colour alone: the
+// legend and popups name the severity, and dots grow with it (warnings get "!").
+const SEVERITY_COLOR = { warning: "#be123c", watch: "#f97316", advisory: "#a16207", none: "#16a34a" };
+const SEVERITY_GROW = { warning: 6, watch: 4, advisory: 2, none: 0 };
+
+const escapeHtml = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+function markerIcon(L, severity, base, selected) {
+  const level = severity || "none";
+  const color = SEVERITY_COLOR[level];
+  const size = base + SEVERITY_GROW[level];
+  const ring = selected ? `box-shadow:0 0 0 3px #fff,0 0 0 5px ${color};` : "box-shadow:0 1px 4px rgba(0,0,0,0.35);";
+  const mark = level === "warning" && size >= 16 ? "!" : "";
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${color};border:2px solid #fff;${ring}color:#fff;font:700 ${Math.round(size * 0.6)}px/1 sans-serif;display:flex;align-items:center;justify-content:center">${mark}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+function popupHtml(title, sub, hazards) {
+  const top = hazards?.[0];
+  const signal = top
+    ? `<div style="margin-top:4px"><b style="color:${SEVERITY_COLOR[top.severity]};text-transform:uppercase;font-size:11px">${escapeHtml(top.severity)}</b> ${escapeHtml(top.label || HAZARD_LABELS[top.hazard])}</div><div style="color:#4b5563;font-size:12px;margin-top:2px">${escapeHtml(top.reason)}</div>`
+    : `<div style="margin-top:4px;color:#15803d">No signal</div>`;
+  return `<div style="max-width:240px"><b>${escapeHtml(title)}</b><div style="color:#6b7280;font-size:12px">${escapeHtml(sub)}</div>${signal}</div>`;
+}
+
+/** Districts and extra forecast points, coloured by their highest signal. */
+function RiskMap({ overview, selected, onSelect }) {
+  const box = useRef(null);
+  const map = useRef(null);
+  const layer = useRef(null);
+
+  useEffect(() => {
+    if (!overview?.length) return;
+    let cancelled = false;
+    (async () => {
+      // Leaflet touches window on import, so load it in the browser only.
+      const L = (await import("leaflet")).default;
+      if (cancelled || !box.current) return;
+      if (!map.current) {
+        map.current = L.map(box.current, { scrollWheelZoom: false });
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          maxZoom: 13,
+        }).addTo(map.current);
+        layer.current = L.layerGroup().addTo(map.current);
+        map.current.fitBounds(overview.map((d) => [d.lat, d.lng]), { padding: [24, 24] });
+      }
+      layer.current.clearLayers();
+      for (const d of overview) {
+        for (const a of d.areas || []) {
+          const m = L.marker([a.lat, a.lng], { icon: markerIcon(L, a.hazards?.[0]?.severity, 10, false) });
+          m.bindPopup(popupHtml(`${a.name}, ${d.district}`, a.note, a.hazards));
+          m.on("click", () => onSelect(d.district));
+          layer.current.addLayer(m);
+        }
+        const own = (d.hazards || []).filter((h) => !h.area);
+        const m = L.marker([d.lat, d.lng], { icon: markerIcon(L, own[0]?.severity, 16, d.district === selected), zIndexOffset: 500 });
+        m.bindPopup(popupHtml(d.district, `${REGIONS[d.region]} · district headquarters`, own));
+        m.on("click", () => onSelect(d.district));
+        layer.current.addLayer(m);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [overview, selected, onSelect]);
+
+  useEffect(() => () => map.current?.remove(), []);
+
+  if (!overview?.length) return null;
+  const counts = overview.reduce((acc, d) => {
+    const s = d.hazards?.[0]?.severity || "none";
+    acc[s] = (acc[s] || 0) + 1;
+    return acc;
+  }, {});
+  return (
+    <Card
+      title="Risk map"
+      subtitle="District headquarters (large dots) and extra forecast points (small dots), coloured by the highest signal for the next 7 days or the season so far. Click one to open it."
+    >
+      <div ref={box} className="h-[380px] rounded-xl overflow-hidden border border-gray-100 relative z-0" />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-gray-600">
+        {["warning", "watch", "advisory", "none"].map((s) => (
+          <span key={s} className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full border-2 border-white shadow" style={{ background: SEVERITY_COLOR[s] }} />
+            {s === "none" ? "No signal" : s[0].toUpperCase() + s.slice(1)} ({counts[s] || 0} {counts[s] === 1 ? "district" : "districts"})
+          </span>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+const SEASON_STYLES = {
+  very_dry: "bg-amber-100 text-amber-900",
+  dry: "bg-amber-50 text-amber-800",
+  normal: "bg-emerald-50 text-emerald-800",
+  wet: "bg-sky-50 text-sky-800",
+  very_wet: "bg-sky-100 text-sky-900",
+};
+
+function greennessWords(ndvi) {
+  if (!ndvi) return "—";
+  const words = ndvi.change <= -0.05 ? "less green" : ndvi.change >= 0.05 ? "greener" : "about usual";
+  const v = Math.abs(ndvi.change) < 0.005 ? 0 : ndvi.change;
+  return `${words} (${v > 0 ? "+" : ""}${v.toFixed(2)})`;
+}
+
+function downloadSeasonCsv(rows) {
+  const head = ["district", "region", "months", "rain_mm", "usual_mm", "pct_of_usual", "category", "last_30_days_pct", "ndvi_month", "ndvi", "ndvi_usual", "ndvi_change", "top_signal", "signal_severity"];
+  const cell = (v) => (v == null ? "" : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v);
+  const lines = rows.map(({ d, s, top }) => [
+    d.district, REGIONS[d.region], s?.months?.join(" "), s?.total, s?.usual, s?.pct, s?.category, s?.recentPct,
+    s?.ndvi?.month, s?.ndvi?.value, s?.ndvi?.usual, s?.ndvi?.change, top ? top.label || HAZARD_LABELS[top.hazard] : "", top?.severity,
+  ].map(cell).join(","));
+  const blob = new Blob([[head.join(","), ...lines].join("\n")], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `kibiraai-season-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/** Every district's season so far, driest first: for district and national planners. */
+function SeasonOverview({ overview, onSelect }) {
+  const rows = (overview || [])
+    .map((d) => ({ d, s: d.season, top: d.hazards?.[0] }))
+    .sort((a, b) => (a.s?.pct ?? 999) - (b.s?.pct ?? 999));
+  const withData = rows.filter((r) => r.s);
+  if (!withData.length) return null;
+  const span = withData[0].s.span;
+  const dry = withData.filter((r) => r.s.pct < 75).length;
+  const wet = withData.filter((r) => r.s.pct >= 130).length;
+  const lessGreen = withData.filter((r) => r.s.ndvi?.change <= -0.05).length;
+  return (
+    <Card
+      title="Season overview, all districts"
+      subtitle={`Rain for ${span} as a share of the 2006–2025 usual (CHIRPS satellite), the last 30 days, and how green plants and pasture are (Sentinel-2). Driest first.`}
+      right={
+        <button onClick={() => downloadSeasonCsv(rows)} className="shrink-0 text-sm font-semibold text-emerald-800 border border-emerald-200 hover:bg-emerald-50 px-4 py-2 rounded-full">
+          Download CSV
+        </button>
+      }
+    >
+      <p className="text-sm text-gray-700 mb-3">
+        {dry ? `${dry} of ${withData.length} districts had under 75% of usual rain` : `No district had under 75% of usual rain`}
+        {wet ? `, ${wet} had 130% or more` : ""}
+        {lessGreen ? `, and ${lessGreen} ${lessGreen === 1 ? "is" : "are"} less green than usual` : ""}.
+      </p>
+      <div className="overflow-x-auto -mx-2">
+        <table className="w-full text-sm min-w-[640px]">
+          <thead>
+            <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400">
+              <th className="px-2 py-1.5 font-semibold">District</th>
+              <th className="px-2 py-1.5 font-semibold">Rain, {span}</th>
+              <th className="px-2 py-1.5 font-semibold">Last 30 days</th>
+              <th className="px-2 py-1.5 font-semibold">Greenness vs usual</th>
+              <th className="px-2 py-1.5 font-semibold">Top signal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ d, s, top }) => (
+              <tr key={d.district} onClick={() => onSelect(d.district)} className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer">
+                <td className="px-2 py-1.5">
+                  <span className="font-medium text-gray-800">{d.district}</span>
+                  <span className="block text-[11px] text-gray-400">{REGIONS[d.region]}</span>
+                </td>
+                <td className="px-2 py-1.5">
+                  {s ? (
+                    <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${SEASON_STYLES[s.category] || ""}`} title={`${s.total}mm vs ${s.usual}mm usual`}>
+                      {s.pct}% · {RAIN_CATEGORY[s.category]}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400">no data yet</span>
+                  )}
+                </td>
+                <td className="px-2 py-1.5 text-gray-700">{s?.recentPct != null ? `${s.recentPct}%` : "—"}</td>
+                <td className="px-2 py-1.5 text-gray-700">{greennessWords(s?.ndvi)}</td>
+                <td className="px-2 py-1.5">
+                  {top ? (
+                    <span className="flex items-center gap-1.5">
+                      <SeverityBadge severity={top.severity} />
+                      <span className="text-xs text-gray-600">{top.label || HAZARD_LABELS[top.hazard]}</span>
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400">none</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-gray-500 mt-3">
+        CHIRPS is published a few weeks after each month ends; the last 30 days come from weather model analysis. Lower greenness can also mean harvest or cleared land, so check with agents before acting on it alone.
+      </p>
+    </Card>
+  );
+}
+
 export function OutlookTab({ token, isAdmin, meta }) {
   const [overview, setOverview] = useState(null);
   const [loadingOverview, setLoadingOverview] = useState(true);
@@ -772,6 +1256,11 @@ export function OutlookTab({ token, isAdmin, meta }) {
 
   const languages = useMemo(() => (detail?.district.languages || []).filter((l) => l !== "en"), [detail]);
 
+  const openDistrict = useCallback((name) => {
+    setSelected(name);
+    document.getElementById("district-outlook")?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
   async function send(drafted) {
     if (!drafted.length) return;
     const channels = [voice.sms && "sms", voice.call && "voice"].filter(Boolean);
@@ -810,134 +1299,145 @@ export function OutlookTab({ token, isAdmin, meta }) {
   const ready = detail ? alertsFromDrafts(detail.hazards, drafts, selected, detail.forecast) : [];
 
   return (
-    <div className="grid lg:grid-cols-[300px_1fr] gap-6">
-      <Card title="Districts" subtitle="Temperature now, with the highest hazard or disease-risk signal for the next 7 days">
-        <DistrictOverview overview={overview} loading={loadingOverview} selected={selected} onSelect={setSelected} />
-      </Card>
-
-      <div className="space-y-6 min-w-0">
-        <Card
-          title={`${selected} weather outlook`}
-          subtitle={detail ? `${detail.forecast.rainfall.label} · updated ${new Date(detail.forecast.generatedAt).toLocaleString("en-GB")}` : null}
-        >
-          {loadingDetail && <p className="text-sm text-gray-500">Loading forecast…</p>}
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {detail && !loadingDetail && (
-            <>
-              <WeatherStrip weather={detail.weather} normal={detail.normal} />
-              <h3 className="text-sm font-semibold text-gray-700 mb-1">Rainfall probability (ensemble)</h3>
-              <ForecastChart rainfall={detail.forecast.rainfall} />
-              <p className="text-xs text-gray-500 mt-3">
-                Forecast points are district headquarters on an ensemble grid of about 25km, so neighbouring districts can share values.
-              </p>
-            </>
-          )}
+    <div className="space-y-6">
+      <RiskMap overview={overview} selected={selected} onSelect={openDistrict} />
+      <SeasonOverview overview={overview} onSelect={openDistrict} />
+      <div id="district-outlook" className="grid lg:grid-cols-[300px_1fr] gap-6">
+        <Card title="Districts" subtitle="Temperature now, with the highest signal for the next 7 days or the season so far">
+          <DistrictOverview overview={overview} loading={loadingOverview} selected={selected} onSelect={setSelected} />
         </Card>
 
-        {detail && !loadingDetail && <SatelliteCard satellite={detail.satellite} district={selected} />}
-
-        {isAdmin && <InsightsCard district={selected} token={token} onUseDraft={(a) => {
-          setPreset({ ...a, key: Date.now() });
-          setTimeout(() => document.getElementById("custom-alert")?.scrollIntoView({ behavior: "smooth" }), 50);
-        }} />}
-
-        {detail && !loadingDetail && (
+        <div className="space-y-6 min-w-0">
           <Card
-            title="Hazard signals and draft messages"
-            subtitle="Drafts only. Edit them, add reviewed translations, then send. Thresholds should be agreed with the met service and district disaster office."
+            title={`${selected} weather outlook`}
+            subtitle={detail ? `${detail.forecast.rainfall.label} · updated ${new Date(detail.forecast.generatedAt).toLocaleString("en-GB")}` : null}
           >
-            {!detail.hazards.length && (
-              <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
-                No hazard signal for {selected} in the next 7 days.
-              </p>
-            )}
-            <div className="space-y-6">
-              {detail.hazards.map((h, i) => (
-                <div key={`${h.hazard}-${i}`}>
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <SeverityBadge severity={h.severity} />
-                    <span className="font-semibold text-gray-800">{HAZARD_LABELS[h.hazard]}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mb-3">{h.reason}</p>
-                  <div className="grid md:grid-cols-2 gap-3">
-                    {h.drafts.map((d) => {
-                      const key = `${i}:${d.persona}`;
-                      return drafts[key] ? (
-                        <DraftEditor
-                          key={key}
-                          draft={drafts[key]}
-                          languages={languages}
-                          token={token}
-                          onChange={(next) => setDrafts((prev) => ({ ...prev, [key]: next }))}
-                        />
-                      ) : null;
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {detail.hazards.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-4 border-t border-gray-100">
-                <DeliveryChoice voice={voice} setVoice={setVoice} meta={meta} />
-                <p className="text-xs text-gray-500">
-                  {ready.length} message group(s) selected. People get their language only where a translation is ticked as checked; everyone else gets English.
+            {loadingDetail && <p className="text-sm text-gray-500">Loading forecast…</p>}
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            {detail && !loadingDetail && (
+              <>
+                <WeatherStrip weather={detail.weather} normal={detail.normal} />
+                <h3 className="text-sm font-semibold text-gray-700 mb-1">Rainfall probability (ensemble)</h3>
+                <ForecastChart rainfall={detail.forecast.rainfall} />
+                <p className="text-xs text-gray-500 mt-3">
+                  Forecast points are district headquarters on an ensemble grid of about 25km, so neighbouring districts can share values.
                 </p>
-                <button
-                  disabled={!isAdmin || sending || !ready.length}
-                  onClick={() => send(ready)}
-                  className="bg-[#1b4332] hover:bg-[#2d6a4f] disabled:bg-gray-300 text-white text-sm font-semibold px-5 py-2.5 rounded-full"
-                >
-                  {sending ? "Sending…" : "Send selected alerts"}
-                </button>
-              </div>
+                <AreaTable district={selected} areas={detail.areas} />
+              </>
             )}
-            {!isAdmin && <p className="text-xs text-amber-700 mt-3">Only admins can send alerts.</p>}
           </Card>
-        )}
 
-        {result && (
-          <Card title="Send result">
-            <ul className="space-y-1 text-sm">
-              {result.map((a, i) => (
-                <li key={i} className="flex flex-wrap gap-2">
-                  {a.error ? (
-                    <span className="text-red-600">{a.error}</span>
-                  ) : (
-                    <>
-                      <span className="font-mono text-xs bg-gray-100 rounded px-1.5">#{a.code}</span>
-                      <span>{HAZARD_LABELS[a.hazard]} → {(a.personas || []).map((p) => PERSONA_LABEL[p]).join(", ")}</span>
-                      <span className="text-gray-500">
-                        {a.status === "no_recipients"
-                          ? "nobody registered yet"
-                          : [
-                              a.channels?.includes("sms") && `${a.acceptedCount} SMS accepted by the gateway`,
-                              a.channels?.includes("voice") && `${a.callCount} calls placed`,
-                            ].filter(Boolean).join(" · ") + ` (${a.recipientCount} people)`}
-                      </span>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
+          {detail && !loadingDetail && <SatelliteCard satellite={detail.satellite} district={selected} />}
 
-        {isAdmin && (
-          <div id="custom-alert">
-            <Card title="Custom alert" subtitle={`Write your own message for ${selected}`}>
-              <div className="space-y-3">
-                <CustomAlert key={preset?.key || selected} district={selected} onSend={send} sending={sending} preset={preset} />
-                <DeliveryChoice voice={voice} setVoice={setVoice} meta={meta} />
+          {isAdmin && <InsightsCard district={selected} token={token} onUseDraft={(a) => {
+            setPreset({ ...a, key: Date.now() });
+            setTimeout(() => document.getElementById("custom-alert")?.scrollIntoView({ behavior: "smooth" }), 50);
+          }} />}
+
+          {detail && !loadingDetail && (
+            <Card
+              title="Hazard signals and draft messages"
+              subtitle="Drafts only. Edit them, add reviewed translations, then send. Thresholds should be agreed with the met service and district disaster office."
+            >
+              {!detail.hazards.length && (
+                <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                  No hazard signal for {selected} in the next 7 days or from the season so far.
+                </p>
+              )}
+              <div className="space-y-6">
+                {detail.hazards.map((h, i) => (
+                  <div key={`${h.hazard}-${i}`}>
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <SeverityBadge severity={h.severity} />
+                      <span className="font-semibold text-gray-800">{h.label || HAZARD_LABELS[h.hazard]}</span>
+                      {h.area && (
+                        <span className="text-[11px] font-semibold text-gray-700 bg-gray-100 rounded-full px-2 py-0.5">📍 {h.area} area</span>
+                      )}
+                      {h.basis === "satellite" && (
+                        <span className="text-[11px] font-semibold text-sky-800 bg-sky-50 border border-sky-100 rounded-full px-2 py-0.5">🛰️ uses satellite data</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">{h.reason}</p>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {h.drafts.map((d) => {
+                        const key = `${i}:${d.persona}`;
+                        return drafts[key] ? (
+                          <DraftEditor
+                            key={key}
+                            draft={drafts[key]}
+                            languages={languages}
+                            token={token}
+                            onChange={(next) => setDrafts((prev) => ({ ...prev, [key]: next }))}
+                          />
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
+              {detail.hazards.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-3 mt-6 pt-4 border-t border-gray-100">
+                  <DeliveryChoice voice={voice} setVoice={setVoice} meta={meta} />
+                  <p className="text-xs text-gray-500">
+                    {ready.length} message group(s) selected. People get their language only where a translation is ticked as checked; everyone else gets English.
+                  </p>
+                  <button
+                    disabled={!isAdmin || sending || !ready.length}
+                    onClick={() => send(ready)}
+                    className="bg-[#1b4332] hover:bg-[#2d6a4f] disabled:bg-gray-300 text-white text-sm font-semibold px-5 py-2.5 rounded-full"
+                  >
+                    {sending ? "Sending…" : "Send selected alerts"}
+                  </button>
+                </div>
+              )}
+              {!isAdmin && <p className="text-xs text-amber-700 mt-3">Only admins can send alerts.</p>}
             </Card>
-          </div>
-        )}
+          )}
 
-        {isAdmin && voice.call && (
-          <Card title="Voice call recordings" subtitle={`Played to people in ${selected} by their language`}>
-            <VoicePanel languages={languages} meta={meta} token={token} voice={voice} setVoice={setVoice} />
-          </Card>
-        )}
+          {result && (
+            <Card title="Send result">
+              <ul className="space-y-1 text-sm">
+                {result.map((a, i) => (
+                  <li key={i} className="flex flex-wrap gap-2">
+                    {a.error ? (
+                      <span className="text-red-600">{a.error}</span>
+                    ) : (
+                      <>
+                        <span className="font-mono text-xs bg-gray-100 rounded px-1.5">#{a.code}</span>
+                        <span>{HAZARD_LABELS[a.hazard]} → {(a.personas || []).map((p) => PERSONA_LABEL[p]).join(", ")}</span>
+                        <span className="text-gray-500">
+                          {a.status === "no_recipients"
+                            ? "nobody registered yet"
+                            : [
+                                a.channels?.includes("sms") && `${a.acceptedCount} SMS accepted by the gateway`,
+                                a.channels?.includes("voice") && `${a.callCount} calls placed`,
+                              ].filter(Boolean).join(" · ") + ` (${a.recipientCount} people)`}
+                        </span>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {isAdmin && (
+            <div id="custom-alert">
+              <Card title="Custom alert" subtitle={`Write your own message for ${selected}`}>
+                <div className="space-y-3">
+                  <CustomAlert key={preset?.key || selected} district={selected} onSend={send} sending={sending} preset={preset} />
+                  <DeliveryChoice voice={voice} setVoice={setVoice} meta={meta} />
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {isAdmin && voice.call && (
+            <Card title="Voice call recordings" subtitle={`Played to people in ${selected} by their language`}>
+              <VoicePanel languages={languages} meta={meta} token={token} voice={voice} setVoice={setVoice} />
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

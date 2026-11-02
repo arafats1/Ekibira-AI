@@ -10,6 +10,7 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^6.8.0",
     "@stripe/stripe-js": "^9.13.0",
+    "leaflet": "^1.9.4",
     "next": "16.1.6",
     "openai": "^6.32.0",
     "react": "19.2.3",

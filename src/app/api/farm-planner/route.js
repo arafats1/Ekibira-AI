@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
-import { DISTRICTS, findDistrict } from "@/lib/ews/regions";
+import { districtFor } from "@/lib/ews/regions";
 import { getDistrictForecast } from "@/lib/ews/forecast";
-import { assessHazards, HAZARD_LABELS } from "@/lib/ews/hazards";
+import { assessHazards, applySeason, HAZARD_LABELS } from "@/lib/ews/hazards";
+import { getSatellite, satelliteBrief } from "@/lib/ews/satellite";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -69,24 +70,23 @@ function buildForecastSummary(weather) {
 // ─── Probabilistic rain outlook (51-member ensemble) for a known district ───
 async function fetchRainOutlook(districtName) {
   // Accept "Kabale" as well as free text such as "Kitumba, Kabale".
-  const text = String(districtName || "").toLowerCase();
-  const district = findDistrict(districtName) || DISTRICTS.find((d) => text.includes(d.name.toLowerCase()));
+  const district = districtFor(districtName);
   if (!district) return null;
   try {
-    const forecast = await getDistrictForecast(district);
+    const [forecast, satellite] = await Promise.all([getDistrictForecast(district), getSatellite(district)]);
     const days = (forecast.rainfall.days || []).slice(0, 7).map((d) => ({
       date: d.date,
       median: d.median,
       chance10: d.exceedance?.[10] ?? null,
       chance20: d.exceedance?.[20] ?? null,
     }));
-    const hazards = assessHazards(district, forecast).map((h) => ({
+    const hazards = applySeason(district, assessHazards(district, forecast), satellite).map((h) => ({
       hazard: h.hazard,
-      label: HAZARD_LABELS[h.hazard],
+      label: h.label || HAZARD_LABELS[h.hazard],
       severity: h.severity,
       reason: h.reason,
     }));
-    return { district: district.name, source: forecast.rainfall.label, days, hazards, lat: district.lat, lng: district.lng };
+    return { district: district.name, source: forecast.rainfall.label, days, hazards, lat: district.lat, lng: district.lng, satellite: satelliteBrief(district, satellite) };
   } catch {
     return null;
   }
@@ -101,7 +101,10 @@ function buildOutlookSummary(outlook) {
   const hazards = outlook.hazards.length
     ? outlook.hazards.map((h) => `- ${h.severity.toUpperCase()} ${h.label}: ${h.reason}`).join("\n")
     : "- None";
-  return `\nRAIN PROBABILITIES FOR ${outlook.district.toUpperCase()} DISTRICT (${outlook.source}):\n${days}\nKIBIRAAI HAZARD SIGNALS:\n${hazards}`;
+  const season = outlook.satellite
+    ? `\n${outlook.satellite}\nUse the season so far when planning: after months of low rain, prioritise water saving, mulching and drought-tolerant varieties and delay planting until rain is reliable; after a wet season, watch for waterlogging and disease. Quote these figures exactly.`
+    : "";
+  return `\nRAIN PROBABILITIES FOR ${outlook.district.toUpperCase()} DISTRICT (${outlook.source}):\n${days}\nKIBIRAAI HAZARD SIGNALS:\n${hazards}${season}`;
 }
 
 // ─── AI System Prompt ───

@@ -42,6 +42,28 @@ export const DISTRICTS = [
   { name: "Mbale", region: "elgon", lat: 1.08, lng: 34.175, languages: ["lugisu", "en"], hazards: ["heavy_rain", "flood", "landslide"] },
 ];
 
+/**
+ * Extra forecast points inside larger or more varied districts, so one
+ * district headquarters doesn't stand in for slopes, lowlands and lake shores
+ * alike. Coordinates from the Open-Meteo place search (GeoNames). Each point
+ * was checked to get a different ECMWF ensemble grid cell (0.25°) from its
+ * district headquarters, as Open-Meteo reports it; a point in the same cell
+ * would only repeat the district forecast. Recheck when adding points.
+ */
+export const AREAS = [
+  { name: "Kilembe", district: "Kasese", lat: 0.1984, lng: 30.013, note: "Rwenzori foothills, Nyamwamba river" },
+  { name: "Bwera", district: "Kasese", lat: 0.0661, lng: 29.7775, note: "west, on the DRC border" },
+  { name: "Karugutu", district: "Ntoroko", lat: 0.7922, lng: 30.2223, note: "south, Semliki valley" },
+  { name: "Kihihi", district: "Kanungu", lat: -0.75, lng: 29.7, note: "north, lowland plain" },
+  { name: "Rwenshama", district: "Rukungiri", lat: -0.4124, lng: 29.7743, note: "north, Lake Edward shore" },
+  { name: "Kikagati", district: "Isingiro", lat: -1.0425, lng: 30.6632, note: "south, Kagera river" },
+  { name: "Nakivale", district: "Isingiro", lat: -0.7406, lng: 30.9963, note: "east, Nakivale settlement" },
+  { name: "Kinoni", district: "Kiruhura", lat: -0.0394, lng: 31.0172, note: "north-east, Nyabushozi" },
+  { name: "Bunagana", district: "Kisoro", lat: -1.2938, lng: 29.6021, note: "west, on the DRC border" },
+];
+
+export const areasOf = (districtName) => AREAS.filter((a) => a.district === districtName);
+
 export const PERSONAS = [
   { key: "farmer", label: "Smallholder farmer" },
   { key: "vendor", label: "Market vendor" },
@@ -64,4 +86,21 @@ export const LANGUAGES = [
 export function findDistrict(name) {
   const n = String(name || "").trim().toLowerCase();
   return DISTRICTS.find((d) => d.name.toLowerCase() === n) || null;
+}
+
+/**
+ * The district a place belongs to: by name in the text ("Kabale town",
+ * "Bwindi, Kanungu"), else the nearest district headquarters within maxKm.
+ */
+export function districtFor(text, lat, lng, maxKm = 35) {
+  const t = String(text || "").toLowerCase();
+  const named = DISTRICTS.find((d) => new RegExp(`\\b${d.name.toLowerCase()}\\b`).test(t));
+  if (named) return named;
+  if (lat == null || lng == null) return null;
+  let best = null;
+  for (const d of DISTRICTS) {
+    const km = Math.hypot((d.lat - lat) * 111, (d.lng - lng) * 111 * Math.cos((lat * Math.PI) / 180));
+    if (km <= maxKm && (!best || km < best.km)) best = { d, km };
+  }
+  return best?.d || null;
 }

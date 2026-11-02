@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { PERSONAS, findDistrict } from "@/lib/ews/regions";
 import { getDistrictForecast } from "@/lib/ews/forecast";
-import { assessHazards, assessDiseaseRisks, HAZARD_LABELS } from "@/lib/ews/hazards";
+import { assessHazards, assessDiseaseRisks, applySeason, seasonState, HAZARD_LABELS } from "@/lib/ews/hazards";
 import { getDailyWeather, getClimateNormals } from "@/lib/ews/weather";
 import { smsSegments, FOOTER_SAMPLE } from "@/lib/ews/messages";
 import { getSatellite } from "@/lib/ews/satellite";
@@ -76,6 +76,9 @@ function clean(output) {
     groundTruth: String(output.groundTruth || ""),
     predictions: (output.predictions || []).slice(0, 6).map((p) => ({
       outcome: String(p.outcome || ""),
+      // Days from today, for the timeline; clamped so a bad value can't break the chart.
+      fromDay: Math.max(0, Math.min(90, Math.round(Number(p.fromDay) || 0))),
+      toDay: Math.max(1, Math.min(90, Math.round(Number(p.toDay) || 7))),
       hazard: HAZARD_KEYS.includes(p.hazard) ? p.hazard : null,
       likelihood: pick(p.likelihood, LIKELIHOODS, "low"),
       timeframe: String(p.timeframe || ""),
@@ -83,6 +86,8 @@ function clean(output) {
       evidence: String(p.evidence || ""),
     })),
     suggestedAlerts,
+    policyBrief: String(output.policyBrief || ""),
+    agentChecks: (output.agentChecks || []).map(String).slice(0, 5),
     dataGaps: (output.dataGaps || []).map(String).slice(0, 5),
     confidence: pick(output.confidence, LIKELIHOODS, "low"),
   };
@@ -123,7 +128,8 @@ export async function POST(request) {
   }
 
   const signals = forecast ? assessHazards(district, forecast) : [];
-  const allSignals = [...signals, ...assessDiseaseRisks(weather, signals, normal)];
+  const allSignals = applySeason(district, [...signals, ...assessDiseaseRisks(weather, signals, normal)], satellite, weather, normal);
+  const season = seasonState(satellite, weather, normal);
   const recentFeedback = (feedback?.data || []).filter((f) => Date.now() - new Date(f.createdAt) < 60 * 86400000);
 
   const evidence = {
@@ -163,9 +169,10 @@ export async function POST(request) {
     satelliteRainfallMonthly: satellite?.chirps
       ? {
           source: satellite.chirps.source,
-          note: `Monthly totals; pct is against the ${satellite.chirps.baseline} average for the month; rank 1 = driest year on record for that month. Lags a few weeks.`,
-          months: satellite.chirps.months.map(({ month, total, normal, pct, rank, years, rainyDays, longestDry }) => ({ month, total, normal, pct, rank, years, rainyDays, longestDry })),
+          note: `Monthly totals; pct is against the ${satellite.chirps.baseline} average for the month; rank 1 = driest year on record for that month. prelim = built from preliminary 5-day totals, final data later. monthSoFar compares the rain so far with the usual for the same days.`,
+          months: satellite.chirps.months.map(({ month, total, normal, pct, rank, years, prelim }) => ({ month, total, normal, pct, rank, years, prelim })),
           last3Months: satellite.chirps.season,
+          monthSoFar: satellite.chirps.current,
         }
       : null,
     vegetationNdviMonthly: satellite?.ndvi
@@ -175,7 +182,13 @@ export async function POST(request) {
           months: satellite.ndvi.months,
         }
       : null,
-    ruleBasedSignals: allSignals.map((s) => ({ hazard: s.hazard, severity: s.severity, reason: s.reason })),
+    seasonSoFar: season
+      ? {
+          note: "pct = CHIRPS rain for the last 3 published months as % of the 2006-2025 usual; recentPct = last 30 days (model analysis) as % of usual; ndvi.change = greenness vs the same month in earlier years.",
+          ...season,
+        }
+      : null,
+    ruleBasedSignals: allSignals.map((s) => ({ hazard: s.hazard, severity: s.severity, basis: s.basis || "forecast", reason: s.reason })),
     agentFieldReports: compactReports(reports?.data),
     communityFeedbackLast60Days: { count: recentFeedback.length, byObservation: tally(recentFeedback, "observation") },
   };
@@ -199,29 +212,62 @@ export async function POST(request) {
             "but treat unverified ones with care. Consider weather-driven disease risk (crop blight and fungal disease after humid, mild spells; " +
             "ticks, worms and foot rot in livestock after long wet spells; malaria 2-4 weeks after rains in warm weather; cholera and diarrhoea after floods). " +
             "Never claim certainty you do not have, never invent numbers, and say what data is missing.\n" +
+            "Think at two time scales: the next 7 days (forecast) and the season so far (CHIRPS and NDVI). A dry or wet season changes what a forecast means: " +
+            "rain after a dry season is less of a flood or landslide threat but matters for planting; heavy rain on ground that is already wet is more dangerous; " +
+            "months of low rain with less green pasture point to water and pasture shortages, food insecurity and rising food prices before they are visible in a weekly forecast. " +
+            "Lower greenness can also mean harvest or cleared land, so treat NDVI alone as a prompt to check, not proof.\n" +
+            "When seasonSoFar shows a dry season (pct under 75) or a wet one (pct 130 or more), address it explicitly in the summary, patterns, predictions and policyBrief, " +
+            "quoting the figures (e.g. 'Jul–Sep had 51% of the usual rain'), and say whether the last 30 days (recentPct) show it easing or continuing. " +
+            "Every pattern and every prediction's evidence must cite at least one number from the data. " +
+            "Only predict disease when a rule-based disease signal or a clear run of humid or unusually wet days supports it; near-normal rain is not evidence of disease. " +
+            "Prefer fewer, well-supported predictions to generic ones.\n" +
+            "policyBrief is for district disaster, agriculture and health officials: 3-5 plain sentences on the situation, what it could lead to in the coming weeks, " +
+            "and preparedness actions within their remit (e.g. pre-position supplies, water trucking, seed for drought-tolerant varieties, drain clearing, health centre stock). " +
+            "agentChecks are short, specific things community agents should look at and report this week to confirm or rule out the risks (e.g. water levels at named kinds of sources, pasture, crop wilting, cracks on slopes).\n" +
             "Suggested alerts are SMS drafts for a person to review: plain words for people with little schooling, one practical action, " +
             "under 140 characters, starting with WARNING, BE READY or NOTICE to match severity. Only suggest an alert when the data supports it.\n" +
             "Reply with JSON: {\"headline\": string, \"summary\": string (3-4 sentences), \"patterns\": [string], " +
             "\"groundTruth\": string (what reports and feedback show, or that there are none), " +
-            `"predictions": [{"outcome": string, "hazard": one of ${JSON.stringify(HAZARD_KEYS)} or null, "likelihood": "low"|"medium"|"high", "timeframe": string, "affected": string, "evidence": string}], ` +
+            `"predictions": [{"outcome": string, "hazard": one of ${JSON.stringify(HAZARD_KEYS)} or null, "likelihood": "low"|"medium"|"high", "timeframe": string, "fromDay": integer days from today when it could start, "toDay": integer days from today when it would end (max 90), "affected": string, "evidence": string}], ` +
             `"suggestedAlerts": [{"hazard": one of ${JSON.stringify(HAZARD_KEYS)}, "severity": "advisory"|"watch"|"warning", "personas": subset of ${JSON.stringify(PERSONA_KEYS)}, "message": string, "why": string}], ` +
-            "\"dataGaps\": [string], \"confidence\": \"low\"|\"medium\"|\"high\"}",
+            "\"policyBrief\": string, \"agentChecks\": [string], \"dataGaps\": [string], \"confidence\": \"low\"|\"medium\"|\"high\"}",
         },
         { role: "user", content: JSON.stringify(evidence) },
       ],
     });
     const output = JSON.parse(completion.choices?.[0]?.message?.content || "{}");
+    const recentUsual = normal?.past30?.meanRain;
     return NextResponse.json({
       district: district.name,
       generatedAt: new Date().toISOString(),
       model: completion.model,
       insights: clean(output),
+      // The numbers behind the analysis, for the charts beside it.
+      visuals: {
+        daily: [
+          ...(weather?.past || []).map((d) => ({ date: d.date, observed: d.rain })),
+          ...(forecast?.rainfall.days || []).slice(0, 7).map((d) => ({ date: d.date, median: d.median, p90: d.p90 })),
+        ],
+        usualDaily: recentUsual ? Math.round((recentUsual / 30) * 10) / 10 : null,
+        recent: weather?.pastSummary ? { total: weather.pastSummary.rainTotal, usual: recentUsual ?? null } : null,
+        next7: forecast
+          ? {
+              median: Math.round(forecast.rainfall.days.slice(0, 7).reduce((n, d) => n + (d.median || 0), 0)),
+              p90: Math.round(forecast.rainfall.days.slice(0, 7).reduce((n, d) => n + (d.p90 || 0), 0)),
+              usual: normal?.next7?.meanRain ?? null,
+            }
+          : null,
+        season,
+        signals: allSignals.map((s) => ({ hazard: s.hazard, label: s.label || HAZARD_LABELS[s.hazard], severity: s.severity, basis: s.basis || "forecast" })),
+      },
       inputs: {
         reports: evidence.agentFieldReports.length,
         feedback: recentFeedback.length,
         normal: Boolean(normal),
         ensemble: Boolean(forecast),
         signals: allSignals.length,
+        satellite: Boolean(satellite?.chirps),
+        ndvi: Boolean(satellite?.ndvi),
       },
       needsReview: true,
     });
