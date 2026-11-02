@@ -21,7 +21,7 @@ import {
 import { DISTRICTS, PERSONAS, LANGUAGES, REGIONS } from "@/lib/ews/regions";
 import { RAIN_CATEGORY } from "@/lib/ews/satellite";
 import { HAZARD_LABELS } from "@/lib/ews/hazards";
-import { smsSegments, FOOTER_SAMPLE } from "@/lib/ews/messages";
+import { smsSegments, FOOTER_SAMPLE, draftMessages } from "@/lib/ews/messages";
 import { parseContactsCsv } from "@/lib/ews/csv";
 import "leaflet/dist/leaflet.css";
 
@@ -1094,12 +1094,39 @@ function markerIcon(L, severity, base, selected) {
   });
 }
 
-function popupHtml(title, sub, hazards) {
-  const top = hazards?.[0];
-  const signal = top
-    ? `<div style="margin-top:4px"><b style="color:${SEVERITY_COLOR[top.severity]};text-transform:uppercase;font-size:11px">${escapeHtml(top.severity)}</b> ${escapeHtml(top.label || HAZARD_LABELS[top.hazard])}</div><div style="color:#4b5563;font-size:12px;margin-top:2px">${escapeHtml(top.reason)}</div>`
-    : `<div style="margin-top:4px;color:#15803d">No signal</div>`;
-  return `<div style="max-width:240px"><b>${escapeHtml(title)}</b><div style="color:#6b7280;font-size:12px">${escapeHtml(sub)}</div>${signal}</div>`;
+/**
+ * Hover card for a map point: every signal, why the top one fired, and the
+ * general advice its SMS draft would give.
+ */
+function cardHtml(title, sub, hazards, place) {
+  const list = hazards || [];
+  const top = list[0];
+  const badge = (h) =>
+    `<span style="display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;color:#fff;background:${SEVERITY_COLOR[h.severity]};border-radius:999px;padding:1px 7px;margin-right:6px">${escapeHtml(h.severity)}</span>`;
+  let body = `<div style="margin-top:6px;color:#15803d;font-weight:600">No signal for the next 7 days or the season so far</div>`;
+  if (top) {
+    const advice = draftMessages(top, place, ["other"])[0]?.message.replace(/^[A-Z ]+:\s*/, "");
+    body =
+      list
+        .slice(0, 4)
+        .map((h) => `<div style="margin-top:6px;display:flex;align-items:center">${badge(h)}<b>${escapeHtml(h.label || HAZARD_LABELS[h.hazard])}</b></div>`)
+        .join("") +
+      `<div style="color:#4b5563;font-size:12px;margin-top:6px;line-height:1.35">${escapeHtml(top.reason)}</div>` +
+      (advice ? `<div style="margin-top:6px;padding:6px 8px;border-radius:8px;background:#f0f7f3;font-size:12px;line-height:1.35"><b>What to do:</b> ${escapeHtml(advice)}</div>` : "");
+  }
+  return `<div style="width:260px;white-space:normal;font-size:13px;color:#111827"><b style="font-size:14px">${escapeHtml(title)}</b><div style="color:#6b7280;font-size:12px">${escapeHtml(sub)}</div>${body}<div style="margin-top:6px;color:#9ca3af;font-size:11px">Click to open the district</div></div>`;
+}
+
+const TIP = { direction: "top", offset: [0, -10], opacity: 1 };
+
+// Open the card below points in the top half of the map, so the map edge doesn't cut it off.
+function placeCard(map, marker) {
+  marker.on("tooltipopen", ({ tooltip }) => {
+    const below = map.latLngToContainerPoint(marker.getLatLng()).y < map.getSize().y / 2;
+    tooltip.options.direction = below ? "bottom" : "top";
+    tooltip.options.offset = below ? [0, 10] : [0, -10];
+    tooltip.update();
+  });
 }
 
 /** Districts and extra forecast points, coloured by their highest signal. */
@@ -1128,13 +1155,15 @@ function RiskMap({ overview, selected, onSelect }) {
       for (const d of overview) {
         for (const a of d.areas || []) {
           const m = L.marker([a.lat, a.lng], { icon: markerIcon(L, a.hazards?.[0]?.severity, 10, false) });
-          m.bindPopup(popupHtml(`${a.name}, ${d.district}`, a.note, a.hazards));
+          m.bindTooltip(cardHtml(`${a.name}, ${d.district}`, a.note, a.hazards, `${a.name}, ${d.district}`), TIP);
+          placeCard(map.current, m);
           m.on("click", () => onSelect(d.district));
           layer.current.addLayer(m);
         }
         const own = (d.hazards || []).filter((h) => !h.area);
         const m = L.marker([d.lat, d.lng], { icon: markerIcon(L, own[0]?.severity, 16, d.district === selected), zIndexOffset: 500 });
-        m.bindPopup(popupHtml(d.district, `${REGIONS[d.region]} · district headquarters`, own));
+        m.bindTooltip(cardHtml(d.district, `${REGIONS[d.region]} · district headquarters`, own, d.district), TIP);
+        placeCard(map.current, m);
         m.on("click", () => onSelect(d.district));
         layer.current.addLayer(m);
       }
@@ -1155,7 +1184,7 @@ function RiskMap({ overview, selected, onSelect }) {
   return (
     <Card
       title="Risk map"
-      subtitle="District headquarters (large dots) and extra forecast points (small dots), coloured by the highest signal for the next 7 days or the season so far. Click one to open it."
+      subtitle="District headquarters (large dots) and extra forecast points (small dots), coloured by the highest signal for the next 7 days or the season so far. Point at one for details; click to open it."
     >
       <div ref={box} className="h-[380px] rounded-xl overflow-hidden border border-gray-100 relative z-0" />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-gray-600">
