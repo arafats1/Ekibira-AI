@@ -125,7 +125,7 @@ export default function Impact() {
             </div>
             <h4 className="font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">Technology</h4>
             <p className="text-[#6b7c6b] text-sm font-[family-name:var(--font-body)]">
-              AI + satellite data + local knowledge = actionable climate intelligence accessible on any device
+              AI + weather forecasts + satellite rainfall + local knowledge = actionable climate intelligence accessible on any device
             </p>
           </div>
           <div className="bg-white rounded-2xl p-5 sm:p-6 text-center border border-[#eef2e6]" style={{ boxShadow: "var(--card-shadow)" }}>

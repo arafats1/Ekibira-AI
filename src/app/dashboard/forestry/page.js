@@ -42,7 +42,7 @@ export default function ForestryDashboard() {
       href: "/forest-sentinel",
       icon: "🌲",
       title: "Forest Sentinel",
-      desc: "Real-time deforestation monitoring with satellite imagery, NDVI analysis, and conservation alerts for any forest region.",
+      desc: "Acoustic logging detection and conservation alerts for forest regions.",
       tag: "Full Access",
       tagColor: "bg-emerald-100 text-emerald-700",
     },
@@ -75,7 +75,7 @@ export default function ForestryDashboard() {
   const quickQueries = [
     "Deforestation rate in Kibira National Forest 2024-2025",
     "Carbon stock assessment for Bwindi Impenetrable Forest",
-    "NDVI change detection in Mabira Forest Reserve",
+    "Acoustic monitoring in Mabira Forest Reserve",
     "Biodiversity impact of logging in Central African forests",
     "Reforestation progress in Uganda national parks",
     "Climate change impact on East African montane forests",
@@ -136,7 +136,7 @@ export default function ForestryDashboard() {
                   <h2 className="text-xl sm:text-2xl font-bold font-[family-name:var(--font-display)]">Forest Sentinel</h2>
                 </div>
                 <p className="text-emerald-200 text-sm font-[family-name:var(--font-body)] max-w-lg">
-                  Launch the full forest monitoring system — satellite imagery analysis, NDVI vegetation tracking,
+                  Launch the full forest monitoring system — acoustic logging detection,
                   deforestation alerts, carbon stock estimates, and conservation reporting.
                 </p>
               </div>

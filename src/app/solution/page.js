@@ -14,7 +14,7 @@ export default function SolutionPage() {
   const reforestationServices = [
     {
       title: "Deforestation Risk Mapping",
-      description: "AI-powered analysis of satellite imagery and land-use patterns identifies at-risk areas before trees are lost, allowing for targeted intervention.",
+      description: "AI-assisted analysis of published forest-loss research, land-use patterns and local reports helps target where to intervene.",
       icon: "📊"
     },
     {
@@ -82,9 +82,9 @@ export default function SolutionPage() {
   const urbanFloodHeatFeatures = [
     {
       title: "Hyperlocal Heat Island Mapping",
-      description: "Satellite thermal imagery combined with ground-level data maps neighborhood-level heat intensity across African cities, identifying which informal settlements are dangerously hot — and which schools and clinics sit in those zones.",
+      description: "A neighborhood heat model, built from local land-cover and population estimates and the weather forecast, flags which informal settlements are likely to get dangerously hot — and which schools and clinics sit in those zones.",
       icon: "🌡️",
-      stat: "50m resolution heat maps"
+      stat: "Neighborhood heat estimates"
     },
     {
       title: "72-Hour Flood Prediction Engine",
@@ -136,7 +136,7 @@ export default function SolutionPage() {
   const solutionPillars = [
     {
       title: "Data-to-Action",
-      description: "From satellite signals to actionable playbooks, every insight is designed for immediate use in the field.",
+      description: "From forecasts and satellite rainfall to actionable playbooks, every insight is designed for immediate use in the field.",
     },
     {
       title: "Community First",
@@ -160,7 +160,7 @@ export default function SolutionPage() {
   const dataToActionPipeline = [
     { layer: "Educate & Advise", tool: "Dr. Kibira AI", description: "Users query the AI for region-specific data on deforestation, native species, carbon potential, and climate-smart farming practices.", color: "bg-emerald-500" },
     { layer: "Detect & Protect", tool: "Forest Acoustic Sentinel", description: "IoT sound sensors detect illegal logging in real-time, alert rangers, and feed data back into the deforestation risk model.", color: "bg-amber-500" },
-    { layer: "Predict & Prepare", tool: "Urban Heat & Flood AI", description: "Satellite and weather data predict heat extremes and flash floods, push early warnings, and generate neighborhood-level climate action plans.", color: "bg-blue-500" },
+    { layer: "Predict & Prepare", tool: "Urban Heat & Flood AI", description: "Weather forecasts and a neighborhood risk model estimate heat extremes and flash floods, push early warnings, and generate neighborhood-level climate action plans.", color: "bg-blue-500" },
     { layer: "Protect Children", tool: "Children's Early Warning", description: "Facility-aware heat, flood, air-quality, and vector foresight turns climate signals into school and clinic playbooks before children are exposed.", color: "bg-rose-500" },
   ];
 
@@ -228,7 +228,7 @@ export default function SolutionPage() {
                 </h2>
                 <div className="space-y-6 text-[#5d6f5d] font-[family-name:var(--font-body)] text-lg">
                   <p>
-                    KibiraAI uses satellite imagery, land-use data, and ecological models to pinpoint
+                    KibiraAI uses published forest-loss research, land-use data, and ecological knowledge to show
                     where forests are most at risk — then generates region-specific reforestation plans
                     using native species matched to local soil and rainfall.
                   </p>
@@ -386,7 +386,7 @@ export default function SolutionPage() {
                   Urban Heat &amp; Flood Early Warning System
                 </h2>
                 <p className="text-white/70 text-lg max-w-3xl mb-4 font-[family-name:var(--font-body)]">
-                  Beyond data — predictive urban protection. A hyperlocal AI system for Kampala and African cities that combines satellite thermal imagery, weather data, and drainage topology to predict heat extremes and flash floods before they strike.
+                  Beyond data — predictive urban protection. A hyperlocal AI system for Kampala and African cities that combines weather forecasts with neighborhood drainage, land-cover and population estimates to flag heat extremes and flash floods before they strike.
                 </p>
                 <a 
                   href="/urban-warning" 
@@ -415,7 +415,7 @@ export default function SolutionPage() {
                   <p className="text-xs uppercase tracking-[0.3em] text-blue-300 font-semibold mb-6 font-[family-name:var(--font-body)]">Early Warning Pipeline</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {[
-                      { step: "1", label: "Satellite Scan", desc: "Landsat thermal + Sentinel-1 radar" },
+                      { step: "1", label: "Forecast", desc: "Rain and temperature forecasts per ward" },
                       { step: "2", label: "AI Analysis", desc: "ML predicts heat/flood risk per ward" },
                       { step: "3", label: "Alert Pushed", desc: "SMS/WhatsApp to at-risk residents" },
                       { step: "4", label: "Action Plan", desc: "Per-parish interventions generated" },
@@ -564,7 +564,7 @@ export default function SolutionPage() {
                 <div className="space-y-4 text-sm font-[family-name:var(--font-body)] text-white/80">
                   <div className="border border-white/10 rounded-xl p-4">
                     <p className="text-white font-semibold">1. Data Capture</p>
-                    <p className="mt-1">Satellite, climate, and local inputs establish real-time context.</p>
+                    <p className="mt-1">Weather forecasts, satellite rainfall (CHIRPS), river models and local reports establish context.</p>
                   </div>
                   <div className="border border-white/10 rounded-xl p-4">
                     <p className="text-white font-semibold">2. AI Diagnosis</p>

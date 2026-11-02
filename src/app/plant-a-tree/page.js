@@ -627,7 +627,7 @@ export default function PlantATreePage() {
                   </div>
                 </div>
                 <p className="text-white/40 text-[10px] sm:text-xs mt-4 text-center font-[family-name:var(--font-body)]">
-                  All trees are GPS-tagged and monitored via satellite. You&apos;ll receive a certificate with coordinates.
+                  All trees are GPS-tagged. You&apos;ll receive a certificate with coordinates.
                 </p>
               </div>
             </div>
@@ -663,7 +663,7 @@ export default function PlantATreePage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 text-center">
               {[
                 { icon: "🌍", label: "GPS-Tagged", desc: "Every tree has coordinates" },
-                { icon: "📱", label: "Satellite Tracked", desc: "Growth monitored via AI" },
+                { icon: "📱", label: "Planting Updates", desc: "Follow your trees' progress" },
                 { icon: "🔒", label: "Marz Pay", desc: "UGX MoMo & USD cards" },
                 { icon: "📜", label: "Certificate", desc: "Digital proof of planting" },
               ].map((item, i) => (

@@ -5,6 +5,7 @@ import { getDistrictForecast } from "@/lib/ews/forecast";
 import { assessHazards, assessDiseaseRisks, HAZARD_LABELS } from "@/lib/ews/hazards";
 import { getDailyWeather, getClimateNormals } from "@/lib/ews/weather";
 import { smsSegments, FOOTER_SAMPLE } from "@/lib/ews/messages";
+import { getSatellite } from "@/lib/ews/satellite";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
@@ -111,10 +112,11 @@ export async function POST(request) {
     return NextResponse.json({ error: err.message }, { status: err.status || 403 });
   }
 
-  const [forecast, [weather], [normal]] = await Promise.all([
+  const [forecast, [weather], [normal], satellite] = await Promise.all([
     getDistrictForecast(district).catch(() => null),
     getDailyWeather([district]),
     getClimateNormals([district]),
+    getSatellite(district),
   ]);
   if (!forecast && !weather) {
     return NextResponse.json({ error: "No forecast data available right now" }, { status: 502 });
@@ -158,6 +160,21 @@ export async function POST(request) {
           riverFlowVsUsual: forecast.river?.map((r) => ({ date: r.date, ratio: r.ratio })),
         }
       : null,
+    satelliteRainfallMonthly: satellite?.chirps
+      ? {
+          source: satellite.chirps.source,
+          note: `Monthly totals; pct is against the ${satellite.chirps.baseline} average for the month; rank 1 = driest year on record for that month. Lags a few weeks.`,
+          months: satellite.chirps.months.map(({ month, total, normal, pct, rank, years, rainyDays, longestDry }) => ({ month, total, normal, pct, rank, years, rainyDays, longestDry })),
+          last3Months: satellite.chirps.season,
+        }
+      : null,
+    vegetationNdviMonthly: satellite?.ndvi
+      ? {
+          source: satellite.ndvi.source,
+          note: "Mean NDVI over a ~22 km box; usual = same month in earlier years since " + satellite.ndvi.since + ". partial = not final yet (month unfinished or ended under a week ago).",
+          months: satellite.ndvi.months,
+        }
+      : null,
     ruleBasedSignals: allSignals.map((s) => ({ hazard: s.hazard, severity: s.severity, reason: s.reason })),
     agentFieldReports: compactReports(reports?.data),
     communityFeedbackLast60Days: { count: recentFeedback.length, byObservation: tally(recentFeedback, "observation") },
@@ -175,6 +192,8 @@ export async function POST(request) {
             "You are a climate risk analyst supporting a community early warning team in rural Uganda. " +
             "You get data for one district: observed weather for the last 30 days, the normal for the same dates in recent years, " +
             "a deterministic 7-day forecast, a 51-member ensemble rainfall forecast with exceedance probabilities, river flow vs usual, " +
+            "CHIRPS satellite rainfall by month against the long-term average (use it for season-scale dryness or wetness, e.g. drought or saturated slopes), " +
+            "Sentinel-2 vegetation greenness (NDVI) by month when available, " +
             "rule-based hazard signals, field reports from community agents (text, plus an AI note on their photos) and community feedback.\n" +
             "Reason only from this data. Compare recent conditions with the normal. Use agent reports as local ground truth, " +
             "but treat unverified ones with care. Consider weather-driven disease risk (crop blight and fungal disease after humid, mild spells; " +

@@ -4,6 +4,7 @@ import { getDistrictForecast, getDistrictForecasts } from "@/lib/ews/forecast";
 import { assessHazards, assessDiseaseRisks, SEVERITY_ORDER } from "@/lib/ews/hazards";
 import { getDailyWeather, getClimateNormals } from "@/lib/ews/weather";
 import { draftMessages } from "@/lib/ews/messages";
+import { getSatellite } from "@/lib/ews/satellite";
 
 const PERSONA_KEYS = PERSONAS.map((p) => p.key);
 
@@ -15,7 +16,7 @@ function bySeverity(a, b) {
 }
 
 /**
- * GET /api/ews/outlook?district=Kisoro  → weather, rainfall forecast, hazard signals and draft SMS per persona
+ * GET /api/ews/outlook?district=Kisoro  → weather, rainfall forecast, satellite rainfall and NDVI, hazard signals and draft SMS per persona
  * GET /api/ews/outlook                  → current temperature and hazard signals for every district (overview)
  */
 export async function GET(request) {
@@ -26,17 +27,18 @@ export async function GET(request) {
     const district = findDistrict(name);
     if (!district) return NextResponse.json({ error: "Unknown district" }, { status: 404, headers: CORS });
     try {
-      const [forecast, [weather], [normal]] = await Promise.all([
+      const [forecast, [weather], [normal], satellite] = await Promise.all([
         getDistrictForecast(district),
         getDailyWeather([district]),
         getClimateNormals([district]),
+        getSatellite(district),
       ]);
       const signals = assessHazards(district, forecast);
       const hazards = [...signals, ...assessDiseaseRisks(weather, signals, normal)].sort(bySeverity).map((signal) => ({
         ...signal,
         drafts: draftMessages(signal, district.name, PERSONA_KEYS),
       }));
-      return NextResponse.json({ district, forecast, weather, normal, hazards }, { headers: CORS });
+      return NextResponse.json({ district, forecast, weather, normal, satellite, hazards }, { headers: CORS });
     } catch (err) {
       return NextResponse.json({ error: `Forecast unavailable: ${err.message}` }, { status: 502, headers: CORS });
     }

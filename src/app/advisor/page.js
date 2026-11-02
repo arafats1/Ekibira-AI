@@ -663,7 +663,7 @@ function AdvisorPageContent() {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
                   {[
-                    { icon: "🛰️", title: "Deforestation Analysis", desc: "Patterns, drivers & satellite insights", query: "Analyze the deforestation patterns in Uganda's major forests. Show historical trends, primary drivers, spatial patterns, and what satellite data reveals." },
+                    { icon: "🛰️", title: "Deforestation Analysis", desc: "Patterns, drivers & trends", query: "Analyze the deforestation patterns in Uganda's major forests. Show historical trends, primary drivers, spatial patterns, and what satellite data reveals." },
                     { icon: "🌱", title: "Reforestation Strategies", desc: "Native species & restoration plans", query: "Recommend native reforestation strategies for degraded forests in East Africa. Include species selection, planting design, and community engagement models." },
                     { icon: "📊", title: "Carbon Sequestration", desc: "Tracking, credits & projections", query: "What is the carbon sequestration potential for a 500-hectare reforestation project in the Congo Basin? Include species-specific rates, 20-year projections, and carbon credit valuation." },
                     { icon: "🌍", title: "Climate Predictions", desc: "10-20 year regional projections", query: "What are the climate change predictions for East Africa over the next 20 years? Include temperature, rainfall, forest cover, and ecosystem impacts." },

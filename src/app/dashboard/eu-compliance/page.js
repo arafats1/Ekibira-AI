@@ -664,7 +664,7 @@ export default function EUComplianceDashboard() {
               <span className="text-2xl">🌿</span>
               <h3 className="font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">Dr. Kibira AI</h3>
             </div>
-            <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)] mb-3">AI-powered deforestation analysis, compliance reports, and satellite data interpretation.</p>
+            <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)] mb-3">AI-powered deforestation analysis, compliance reports, and research-based interpretation.</p>
             <span className="text-sm text-indigo-600 font-semibold font-[family-name:var(--font-body)] group-hover:underline">Start Analysis →</span>
           </Link>
           <Link href="/forest-sentinel" className="bg-white rounded-xl p-5 border border-[#e5e7eb] hover:shadow-md hover:border-indigo-300 transition-all group">
@@ -672,7 +672,7 @@ export default function EUComplianceDashboard() {
               <span className="text-2xl">🌲</span>
               <h3 className="font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">Forest Sentinel</h3>
             </div>
-            <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)] mb-3">Real-time forest monitoring with satellite imagery and deforestation alerts.</p>
+            <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)] mb-3">Acoustic forest monitoring and logging alerts.</p>
             <span className="text-sm text-indigo-600 font-semibold font-[family-name:var(--font-body)] group-hover:underline">Monitor Forests →</span>
           </Link>
           <Link href="/urban-warning" className="bg-white rounded-xl p-5 border border-[#e5e7eb] hover:shadow-md hover:border-indigo-300 transition-all group">

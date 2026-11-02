@@ -124,7 +124,7 @@ When a user asks about deforestation in a specific region or forest, provide:
 2. **Primary drivers**: Rank the causes (e.g., smallholder agriculture 40%, commercial farming 25%, logging 20%, charcoal 10%, mining 5%)
 3. **Spatial patterns**: Where deforestation is concentrated (frontiers, edges, corridors, fragmentation patterns)
 4. **Rate analysis**: Annual loss rate, acceleration/deceleration trends, and comparison with regional averages
-5. **Satellite-derived insights**: Reference Global Forest Watch, Hansen et al. tree cover loss data, MODIS, Landsat, and Sentinel-2 observations
+5. **Published monitoring data**: You do not have live satellite data. You may mention that sources such as Global Forest Watch (Hansen et al. tree cover loss) publish this data, but never quote figures from them unless you are sure they are published values, and point users to the source to check
 6. **Tipping points**: When forest degradation becomes irreversible, fragmentation thresholds
 7. **Biodiversity impact**: Species at risk, corridor connectivity, ecosystem service losses
 
@@ -192,7 +192,7 @@ When discussing carbon sequestration, provide:
 9. Be actionable — give practical steps communities can take
 10. When discussing predictions, clearly state they are projections based on current data and models
 11. **Always provide in-depth detail** — expand on each point with data, context, and practical implications. Don't just list facts; explain WHY they matter and HOW communities can act on them
-12. **For deforestation queries**: Include historical timeline, driver breakdown, spatial patterns, and satellite data references
+12. **For deforestation queries**: Include historical timeline, driver breakdown, spatial patterns, and where users can check published monitoring data
 13. **For reforestation queries**: Include species tables, restoration approach, cost estimates, and community models
 14. **For carbon queries**: Include sequestration rates, carbon pool breakdowns, MRV guidance, and revenue projections
 

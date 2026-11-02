@@ -18,6 +18,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { DISTRICTS, PERSONAS, LANGUAGES, REGIONS } from "@/lib/ews/regions";
+import { RAIN_CATEGORY } from "@/lib/ews/satellite";
 import { HAZARD_LABELS } from "@/lib/ews/hazards";
 import { smsSegments, FOOTER_SAMPLE } from "@/lib/ews/messages";
 import { parseContactsCsv } from "@/lib/ews/csv";
@@ -222,7 +223,7 @@ function InsightsCard({ district, token, onUseDraft }) {
   return (
     <Card
       title="AI weather insights"
-      subtitle="Reads the last 30 days against the normal for these dates, the ensemble outlook, river flow, agent field reports and community feedback. Suggestions only."
+      subtitle="Reads the last 30 days against the normal for these dates, the ensemble outlook, river flow, CHIRPS satellite rainfall, agent field reports and community feedback. Suggestions only."
       right={
         <button
           onClick={analyse}
@@ -334,6 +335,99 @@ function ForecastChart({ rainfall }) {
         </ComposedChart>
       </ResponsiveContainer>
     </div>
+  );
+}
+
+const monthName = (key, opts = { month: "short", year: "2-digit" }) => new Date(`${key}-15T12:00:00`).toLocaleDateString("en-GB", opts);
+const ordinal = (n) => `${n}${["th", "st", "nd", "rd"][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10 < 4 ? n % 10 : 0]}`;
+
+function chirpsSentence(m, season) {
+  const parts = [`${m.total}mm${m.pct != null ? `, ${m.pct}% of usual (${RAIN_CATEGORY[m.category]})` : ""}.`];
+  if (m.years > 3 && m.rank <= 3) parts.push(`The ${m.rank === 1 ? "driest" : `${ordinal(m.rank)} driest`} of ${m.years} years on record.`);
+  else if (m.years > 3 && m.rank > m.years - 3) {
+    const n = m.years - m.rank + 1;
+    parts.push(`The ${n === 1 ? "wettest" : `${ordinal(n)} wettest`} of ${m.years} years on record.`);
+  }
+  parts.push(`${m.rainyDays} rainy days, longest dry run ${m.longestDry} days.`);
+  if (season?.pct != null) {
+    parts.push(`Last 3 months (${monthName(season.from, { month: "short" })}–${monthName(season.to, { month: "short" })}): ${season.total}mm, ${season.pct}% of usual.`);
+  }
+  return parts.join(" ");
+}
+
+/** CHIRPS monthly rainfall against the long-term average, and Sentinel-2 NDVI when configured. */
+function SatelliteCard({ satellite, district }) {
+  const chirps = satellite?.chirps;
+  const ndvi = satellite?.ndvi;
+  const latest = chirps?.latest;
+  const data = (chirps?.months || []).map((m) => ({ month: monthName(m.month), total: m.total, normal: m.normal }));
+  return (
+    <Card
+      title="Satellite record"
+      subtitle={chirps ? `${chirps.source}. Usual = ${chirps.baseline} average for the month.` : "CHIRPS satellite rainfall by month"}
+    >
+      {!satellite && <p className="text-sm text-gray-500">The satellite data service could not be reached.</p>}
+      {satellite && !chirps && (
+        <p className="text-sm text-gray-500">No CHIRPS months for {district} yet. The backend sync fills them in (the first run takes about an hour).</p>
+      )}
+      {chirps && (
+        <>
+          <p className="text-sm text-gray-700 mb-3">
+            <b>{monthName(latest.month, { month: "long", year: "numeric" })}:</b> {chirpsSentence(latest, chirps.season)}
+          </p>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#eef2e6" />
+                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} unit="mm" />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="total" name="Rain (mm)" fill="#74c69d" radius={[4, 4, 0, 0]} />
+                <Line dataKey="normal" name="Usual (mm)" stroke="#1b4332" strokeDasharray="4 3" dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Averaged over about 22km around the district headquarters. CHIRPS final data is published a few weeks after each month ends, so the latest
+            month here lags; the 7-day outlook above covers recent days.
+          </p>
+        </>
+      )}
+
+      <h3 className="text-sm font-semibold text-gray-700 mt-5 mb-2">Vegetation greenness (Sentinel-2 NDVI)</h3>
+      {ndvi ? (
+        <>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {ndvi.months.slice(-6).map((m) => (
+              <div key={m.month} className="rounded-xl border border-gray-100 bg-gray-50/60 p-2 text-center">
+                <p className="text-[11px] font-semibold text-gray-500">
+                  {monthName(m.month)}
+                  {m.partial ? " *" : ""}
+                </p>
+                <p className="text-lg font-bold text-gray-800">{m.ndvi.toFixed(2)}</p>
+                {m.change != null && (
+                  <p className={`text-[11px] ${m.change < -0.05 ? "text-amber-700" : m.change > 0.05 ? "text-emerald-700" : "text-gray-500"}`}>
+                    {m.change > 0 ? "+" : ""}
+                    {m.change.toFixed(2)} vs usual
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            {ndvi.source}, mean over the same area. Usual = the same month in earlier years since {ndvi.since}. * not final yet: more satellite passes may still be added. Lower than usual
+            can mean dry stress, harvest or cleared land; check with agents.
+          </p>
+        </>
+      ) : (
+        <p className="text-xs text-gray-500">
+          {satellite?.ndviConfigured
+            ? "No clear Sentinel-2 months yet; the sync fills them in."
+            : "Not switched on. Add a free Copernicus Data Space client (CDSE_CLIENT_ID and CDSE_CLIENT_SECRET) to the backend to fetch it."}
+        </p>
+      )}
+    </Card>
   );
 }
 
@@ -739,6 +833,8 @@ export function OutlookTab({ token, isAdmin, meta }) {
             </>
           )}
         </Card>
+
+        {detail && !loadingDetail && <SatelliteCard satellite={detail.satellite} district={selected} />}
 
         {isAdmin && <InsightsCard district={selected} token={token} onUseDraft={(a) => {
           setPreset({ ...a, key: Date.now() });

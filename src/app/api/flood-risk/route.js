@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
-// Kampala neighborhood flood risk model
-// In production, this would pull from real satellite data (Sentinel-1 radar),
-// weather APIs, and drainage topology databases
+// Kampala neighborhood flood risk model. Baselines are rough estimates, not
+// satellite or survey measurements.
 const NEIGHBORHOOD_BASELINES = {
   bwaise: {
     name: "Bwaise",
@@ -68,8 +67,7 @@ function calculateFloodRisk(neighborhoodId, rainfallMm, soilSaturation, hoursAhe
   const baseline = NEIGHBORHOOD_BASELINES[neighborhoodId];
   if (!baseline) return null;
 
-  // ML-inspired risk scoring (simplified deterministic model for demo)
-  // In production: trained on historical flood events + Sentinel-1 SAR data
+  // Simple deterministic risk score, not a trained model.
   const rainfallFactor = Math.min(1, rainfallMm / 60); // normalized, 60mm = extreme
   const saturationFactor = soilSaturation; // 0-1
   const drainagePenalty = 1 - baseline.drainageCapacity;
@@ -178,6 +176,6 @@ export async function GET() {
     neighborhoods: results,
     generatedAt: new Date().toISOString(),
     dataSource: "KibiraAI Flood Risk Model v1.0",
-    note: "In production, rainfall and soil data would come from live weather APIs and Sentinel-1 satellite radar",
+    note: "Estimates from a simple model with approximate neighborhood baselines. Not satellite or survey measurements.",
   });
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-// Kampala neighborhood heat island model
-// In production: Landsat Band 10 thermal imagery + ground weather stations
+// Kampala neighborhood heat island model. Baselines are rough estimates, not
+// satellite or station measurements.
 const HEAT_BASELINES = {
   bwaise: {
     name: "Bwaise",
@@ -154,7 +154,7 @@ function calculateHeatRisk(neighborhoodId, ambientTemp, humidity, windSpeed) {
     },
     interventions,
     generatedAt: new Date().toISOString(),
-    model: "KibiraAI Heat Island v1.0 (Landsat Band 10 proxy)",
+    model: "KibiraAI Heat Island v1.0 (estimated baselines)",
   };
 }
 
@@ -195,6 +195,6 @@ export async function GET() {
     neighborhoods: results,
     generatedAt: new Date().toISOString(),
     dataSource: "KibiraAI Heat Island Model v1.0",
-    note: "In production, thermal data would come from Landsat Band 10 satellite imagery and ground weather stations",
+    note: "Estimates from a simple model with approximate neighborhood baselines. Not satellite or weather-station measurements.",
   });
 }

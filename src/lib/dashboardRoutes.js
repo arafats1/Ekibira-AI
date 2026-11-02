@@ -31,7 +31,7 @@ export const SIGNUP_ACCOUNT_TYPES = [
     icon: "🌲",
     title: "Forestry & Conservation",
     navLabel: "Forestry & Conservation",
-    desc: "Forest Sentinel access with real-time deforestation monitoring, acoustic alerts, NDVI analysis, and conservation reporting.",
+    desc: "Forest Sentinel access with acoustic logging alerts and conservation reporting.",
     color: "border-emerald-400 bg-emerald-50",
     activeColor: "border-emerald-500 bg-emerald-100 ring-2 ring-emerald-400",
   },
