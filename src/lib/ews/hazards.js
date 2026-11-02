@@ -34,9 +34,14 @@ const RULES = {
     { severity: "watch", mm: 50, minProbability: 0.4 },
     { severity: "advisory", mm: 50, minProbability: 0.2 },
   ],
-  riverRatio: [
-    { severity: "warning", ratio: 2 },
-    { severity: "watch", ratio: 1.5 },
+  // River forecast against the river's own flood levels (GloFAS 2- and 5-year
+  // return periods, the levels GloFAS warns on). median = middle forecast,
+  // p75 = a wet case that 1 in 4 forecasts reach.
+  river: [
+    { severity: "warning", band: "median", level: "flood5" },
+    { severity: "watch", band: "median", level: "flood2" },
+    { severity: "watch", band: "p75", level: "flood5" },
+    { severity: "advisory", band: "p75", level: "flood2" },
   ],
   dryWeek: [
     { severity: "watch", minProbability: 0.8 },
@@ -127,20 +132,23 @@ function landslideSignal(accumulations) {
   return best;
 }
 
+const LEVEL_NAME = { flood2: "2-year flood level (about bank-full)", flood5: "5-year flood level" };
+const BAND_NAME = { median: "the middle forecast", p75: "1 in 4 forecasts" };
+
 function floodSignal(river, rain) {
   let best = null;
   for (const day of river || []) {
-    if (day.ratio == null) continue;
-    const rule = RULES.riverRatio.find((r) => day.ratio >= r.ratio);
+    const rule = RULES.river.find((r) => day[r.band] != null && day[r.level] && day[r.band] >= day[r.level]);
     if (rule) {
       best = stronger(best, {
         hazard: "flood",
         severity: rule.severity,
-        probability: null,
+        probability: null, // SMS drafts say "rivers rising"
         thresholdMm: null,
         date: day.date,
         endDate: day.date,
-        reason: `River flow forecast at ${day.ratio}x its usual level on ${day.date} (GloFAS)`,
+        basis: "river",
+        reason: `River near here forecast at ${day[rule.band]} m³/s on ${day.date} in ${BAND_NAME[rule.band]}, above its ${LEVEL_NAME[rule.level]} of ${day[rule.level]} m³/s (usual this month ${day.usual} m³/s, GloFAS)`,
       });
     }
   }

@@ -582,6 +582,74 @@ function chirpsSentence(m, season) {
 }
 
 /** CHIRPS monthly rainfall against the long-term average, and Sentinel-2 NDVI when configured. */
+const fmtDay = (date) => new Date(`${date}T12:00:00`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+
+/** Plain words for where a district's flood signal comes from. */
+function floodReason(forecast, hazards, district) {
+  const flood = hazards.find((h) => h.hazard === "flood" && !h.area);
+  const river = forecast.river || [];
+  const peak = river.reduce((best, d) => (d.median != null && (!best || d.median > best.median) ? d : best), null);
+  const parts = [];
+  if (peak) {
+    const vsLevel =
+      peak.median >= peak.flood5 ? `above its 5-year flood level (${peak.flood5} m³/s)`
+      : peak.median >= peak.flood2 ? `above its 2-year flood level (${peak.flood2} m³/s)`
+      : `below its 2-year flood level of ${peak.flood2} m³/s`;
+    const vsUsual = peak.usual ? `, ${Math.round((peak.median / peak.usual) * 10) / 10}× the usual ${peak.usual} m³/s for the month` : "";
+    parts.push(`The river near ${district} is forecast to peak at ${peak.median} m³/s on ${fmtDay(peak.date)}, ${vsLevel}${vsUsual}.`);
+  }
+  if (!flood) parts.push("There is no flood signal.");
+  else if (flood.basis === "river") parts.push("The flood signal comes from this river forecast.");
+  else parts.push(`The flood signal comes from heavy rain forecast in a flood-prone district${peak ? ", not from the river" : ""}.`);
+  return parts.join(" ");
+}
+
+/** River forecast at the district's river point against its usual flow and flood levels. */
+function RiverChart({ forecast, hazards, district, floodProne }) {
+  const river = forecast?.river;
+  if (!river?.length) {
+    return floodProne ? <p className="text-xs text-gray-500 mt-5">No river forecast available for {district} right now.</p> : null;
+  }
+  const { flood2, flood5 } = river[0];
+  const data = river.map((d) => ({ ...d, day: fmtDay(d.date) }));
+  const top = Math.max(flood5, ...river.map((d) => d.p75 || 0)) * 1.15;
+  const km = forecast.riverPoint
+    ? Math.round(Math.hypot((forecast.riverPoint.lat - forecast.lat) * 111, (forecast.riverPoint.lng - forecast.lng) * 111 * Math.cos((forecast.lat * Math.PI) / 180)))
+    : null;
+  return (
+    <div className="mt-5">
+      <h3 className="text-sm font-semibold text-gray-700">River flow (GloFAS)</h3>
+      <p className="text-sm text-gray-700 mt-1 mb-2">{floodReason(forecast, hazards, district)}</p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 mb-2">
+        <span className="flex items-center gap-1.5"><span className="w-4 border-t-2" style={{ borderColor: RAIN_FORECAST }} />Forecast (middle)</span>
+        <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed" style={{ borderColor: RAIN_FORECAST }} />Wet case (1 in 4)</span>
+        <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-gray-400" />Usual for the month</span>
+        <span className="flex items-center gap-1.5"><span className="w-4 border-t-2" style={{ borderColor: SEVERITY_COLOR.advisory }} />2-year flood level</span>
+        <span className="flex items-center gap-1.5"><span className="w-4 border-t-2" style={{ borderColor: SEVERITY_COLOR.warning }} />5-year flood level</span>
+      </div>
+      <div className="h-56">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 8, right: 8, left: -6, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="#f1f3ee" />
+            <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#6b7280" }} tickLine={false} axisLine={{ stroke: "#e5e7eb" }} />
+            <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} domain={[0, Math.ceil(top)]} tickLine={false} axisLine={false} unit=" m³/s" width={70} />
+            <Tooltip formatter={(v, name) => [`${v} m³/s`, name]} />
+            <ReferenceLine y={flood2} stroke={SEVERITY_COLOR.advisory} strokeWidth={1.5} />
+            <ReferenceLine y={flood5} stroke={SEVERITY_COLOR.warning} strokeWidth={1.5} />
+            <Line dataKey="usual" name="Usual for the month" stroke="#9ca3af" strokeDasharray="4 3" dot={false} />
+            <Line dataKey="p75" name="Wet case (1 in 4)" stroke={RAIN_FORECAST} strokeDasharray="5 3" strokeWidth={2} dot={false} />
+            <Line dataKey="median" name="Forecast (middle)" stroke={RAIN_FORECAST} strokeWidth={2} dot={{ r: 3 }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="text-xs text-gray-500 mt-2">
+        River point{km != null ? ` about ${km}km from the district headquarters` : ""}: the GloFAS cell carrying the most water nearby. Flood levels are estimated from
+        10 years of GloFAS flow (2013–2022); a 2-year flood is about bank-full. GloFAS cells are about 5km, so small streams and flash floods can be missed.
+      </p>
+    </div>
+  );
+}
+
 function SatelliteCard({ satellite, district }) {
   const chirps = satellite?.chirps;
   const ndvi = satellite?.ndvi;
@@ -1322,6 +1390,7 @@ export function OutlookTab({ token, isAdmin, meta }) {
                 <p className="text-xs text-gray-500 mt-3">
                   Forecast points are district headquarters on an ensemble grid of about 25km, so neighbouring districts can share values.
                 </p>
+                <RiverChart forecast={detail.forecast} hazards={detail.hazards} district={selected} floodProne={detail.district.hazards.includes("flood")} />
                 <AreaTable district={selected} areas={detail.areas} />
               </>
             )}

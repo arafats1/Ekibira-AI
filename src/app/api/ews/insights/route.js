@@ -163,7 +163,12 @@ export async function POST(request) {
           days: forecast.rainfall.days.map((d) => ({ date: d.date, median: d.median, p90: d.p90, exceedance: d.exceedance })),
           threeDayTotals: forecast.rainfall.accumulations,
           dryWeek: forecast.rainfall.dryWeek,
-          riverFlowVsUsual: forecast.river?.map((r) => ({ date: r.date, ratio: r.ratio })),
+          riverFlow: forecast.river
+            ? {
+                note: "m³/s at the main river near the district point (GloFAS). median = middle forecast, p75 = wet case reached by 1 in 4 forecasts; flood2/flood5 = the river's 2- and 5-year flood levels; usual = median flow for this month.",
+                days: forecast.river,
+              }
+            : null,
         }
       : null,
     satelliteRainfallMonthly: satellite?.chirps
@@ -204,7 +209,7 @@ export async function POST(request) {
           content:
             "You are a climate risk analyst supporting a community early warning team in rural Uganda. " +
             "You get data for one district: observed weather for the last 30 days, the normal for the same dates in recent years, " +
-            "a deterministic 7-day forecast, a 51-member ensemble rainfall forecast with exceedance probabilities, river flow vs usual, " +
+            "a deterministic 7-day forecast, a 51-member ensemble rainfall forecast with exceedance probabilities, river flow against the river's usual flow and flood levels, " +
             "CHIRPS satellite rainfall by month against the long-term average (use it for season-scale dryness or wetness, e.g. drought or saturated slopes), " +
             "Sentinel-2 vegetation greenness (NDVI) by month when available, " +
             "rule-based hazard signals, field reports from community agents (text, plus an AI note on their photos) and community feedback.\n" +

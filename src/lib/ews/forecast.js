@@ -7,8 +7,12 @@
  *        { source, issuedAt, days: [{ date, median, p90, exceedance: { "10": 0.4, "20": 0.2, ... } }] }
  *   2. Open-Meteo ensemble (ECMWF IFS 0.25°, 51 members) — free, no key.
  *
- * River discharge comes from the Open-Meteo flood API (GloFAS).
+ * River discharge comes from the Open-Meteo flood API (GloFAS), at a river
+ * point near each flood-prone place, compared with that river's own flood
+ * levels (rivers.json, from scripts/glofas-river-points.mjs).
  */
+
+import RIVERS from "./rivers.json";
 
 export const EXCEEDANCE_MM = [10, 20, 30, 50];
 const ACCUMULATION_MM = [50, 80];
@@ -141,26 +145,41 @@ async function fetchExternal(lat, lng) {
   };
 }
 
+/** The river point for a district or extra forecast point, if it has one. */
+export function riverFor(point) {
+  return RIVERS.points[point.district ? `${point.name}, ${point.district}` : point.name] || null;
+}
+
+/**
+ * 7-day river forecast at each place's river point: the ensemble median and
+ * 75th percentile (a wet case), with the river's usual flow for the month and
+ * its 2- and 5-year flood levels. Null for places without a river point.
+ */
 async function fetchRiverDischarge(points) {
+  const rivers = points.map(riverFor);
+  const withRiver = rivers.map((r, i) => (r ? i : -1)).filter((i) => i >= 0);
+  if (!withRiver.length) return points.map(() => null);
   const url =
-    `https://flood-api.open-meteo.com/v1/flood?${coords(points)}` +
-    `&daily=river_discharge,river_discharge_mean&forecast_days=7`;
+    `https://flood-api.open-meteo.com/v1/flood?${coords(withRiver.map((i) => rivers[i]))}` +
+    `&daily=river_discharge_median,river_discharge_p75,river_discharge_max&forecast_days=7`;
   try {
     const data = asArray(await fetchJson(url, 15000));
-    return points.map((_, i) => {
-      const d = data[i]?.daily;
-      if (!d?.time?.length) return null;
-      return d.time.map((date, j) => {
-        const discharge = d.river_discharge?.[j];
-        const mean = d.river_discharge_mean?.[j];
-        return {
-          date,
-          discharge: round(discharge, 2),
-          mean: round(mean, 2),
-          ratio: discharge != null && mean ? round(discharge / mean, 2) : null,
-        };
-      });
+    const out = points.map(() => null);
+    withRiver.forEach((i, k) => {
+      const d = data[k]?.daily;
+      const r = rivers[i];
+      if (!d?.time?.length) return;
+      out[i] = d.time.map((date, j) => ({
+        date,
+        median: round(d.river_discharge_median?.[j], 2),
+        p75: round(d.river_discharge_p75?.[j], 2),
+        max: round(d.river_discharge_max?.[j], 2),
+        usual: r.usualByMonth[+date.slice(5, 7) - 1],
+        flood2: r.flood2,
+        flood5: r.flood5,
+      }));
     });
+    return out;
   } catch {
     return points.map(() => null);
   }
@@ -192,7 +211,8 @@ export async function getDistrictForecasts(districts) {
     const rainfall = external[i] || ensemble[needEnsemble.indexOf(district)] || null;
     const base = { district: district.name, lat: district.lat, lng: district.lng, generatedAt };
     if (!rainfall) return { ...base, error: ensembleError || "No rainfall forecast returned" };
-    return { ...base, rainfall, river: river[i] };
+    const point = riverFor(district);
+    return { ...base, rainfall, river: river[i], riverPoint: point ? { lat: point.lat, lng: point.lng } : null };
   });
 }
 
