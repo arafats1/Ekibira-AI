@@ -834,7 +834,7 @@ function RevenueTab({ token }) {
 }
 
 /* ── Dashboard Stats ── */
-function StatsCards({ token }) {
+function StatsCards({ token, onOpen }) {
   const [stats, setStats] = useState({ users: 0, chats: 0, knowledge: 0, revenueUgx: 0, reachable: 0, pendingAgents: 0 });
 
   useEffect(() => {
@@ -871,31 +871,39 @@ function StatsCards({ token }) {
   }, [token]);
 
   const cards = [
-    { label: "People getting warnings", value: stats.reachable, icon: "📡", color: "bg-[#ecfdf5] border-[#a7f3d0]" },
-    { label: "Agents waiting approval", value: stats.pendingAgents, icon: "📣", color: "bg-[#fef2f2] border-[#fecaca]" },
-    { label: "Registered Users", value: stats.users, icon: "👥", color: "bg-[#f0fdf4] border-[#d1e7d1]" },
-    { label: "AI Conversations", value: stats.chats, icon: "💬", color: "bg-[#eff6ff] border-[#bfdbfe]" },
-    { label: "Knowledge Entries", value: stats.knowledge, icon: "📚", color: "bg-[#fef3c7] border-[#fde68a]" },
+    { label: "People getting warnings", value: stats.reachable, icon: "📡", color: "bg-[#ecfdf5] border-[#a7f3d0]", tab: "register", anchor: "members" },
+    { label: "Agents waiting approval", value: stats.pendingAgents, icon: "📣", color: "bg-[#fef2f2] border-[#fecaca]", tab: "agents" },
+    { label: "Registered Users", value: stats.users, icon: "👥", color: "bg-[#f0fdf4] border-[#d1e7d1]", tab: "users" },
+    { label: "AI Conversations", value: stats.chats, icon: "💬", color: "bg-[#eff6ff] border-[#bfdbfe]", tab: "chats" },
+    { label: "Knowledge Entries", value: stats.knowledge, icon: "📚", color: "bg-[#fef3c7] border-[#fde68a]", tab: "knowledge" },
     {
       label: "Kibira Revenue (UGX)",
       value: Number(stats.revenueUgx || 0).toLocaleString("en-UG"),
       icon: "💰",
       color: "bg-[#fff7ed] border-[#fed7aa]",
+      tab: "revenue",
     },
   ];
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4 mb-8">
       {cards.map((card) => (
-        <div key={card.label} className={`rounded-xl border p-4 ${card.color}`}>
+        <button
+          key={card.label}
+          type="button"
+          onClick={() => onOpen(card.tab, card.anchor)}
+          title={`Open ${card.label.toLowerCase()}`}
+          className={`group rounded-xl border p-4 text-left transition hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300 ${card.color}`}
+        >
           <div className="flex items-center gap-3">
             <span className="text-2xl">{card.icon}</span>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-2xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{card.value}</p>
               <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">{card.label}</p>
             </div>
+            <span className="text-[#6b7c6b] opacity-0 group-hover:opacity-100 transition-opacity">→</span>
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -951,10 +959,32 @@ export default function AdminPage() {
       .catch(() => {});
   }, [isAdmin]);
 
-  function openTab(id) {
+  function openTab(id, anchor) {
     setTab(id);
     window.history.replaceState(null, "", `/admin?tab=${id}`);
+    // Let the tab render, then bring the section into view.
+    setTimeout(() => document.getElementById(anchor || "admin-tab-content")?.scrollIntoView({ behavior: "smooth", block: "start" }), anchor ? 400 : 50);
   }
+
+  const tabGroup = (group) => (
+    <div key={group.label} className="min-w-0">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6b7c6b] mb-1.5 ml-1 font-[family-name:var(--font-body)]">{group.label}</p>
+      <div className="flex gap-1 p-1 bg-white rounded-xl border border-[#e5e7eb] w-fit max-w-full flex-wrap">
+        {group.tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => openTab(t.id)}
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors font-[family-name:var(--font-body)] ${
+              tab === t.id ? "bg-[#2d6a4f] text-white shadow-sm" : "text-[#6b7c6b] hover:text-[#1a2e1a] hover:bg-[#f0fdf4]"
+            }`}
+          >
+            <span>{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   function signOut() {
     logout();
@@ -1005,34 +1035,15 @@ export default function AdminPage() {
       </header>
 
       <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <StatsCards token={token} />
+        {/* Platform tabs at the top; early warning tabs sit above their content. */}
+        <div className="mb-6">{tabGroup(TAB_GROUPS[1])}</div>
 
-        {/* Tab Navigation */}
-        <div className="flex flex-col 2xl:flex-row gap-3 mb-6">
-          {TAB_GROUPS.map((group) => (
-            <div key={group.label} className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6b7c6b] mb-1.5 ml-1 font-[family-name:var(--font-body)]">
-                {group.label}
-              </p>
-              <div className="flex gap-1 p-1 bg-white rounded-xl border border-[#e5e7eb] w-fit max-w-full flex-wrap">
-                {group.tabs.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => openTab(t.id)}
-                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors font-[family-name:var(--font-body)] ${
-                      tab === t.id ? "bg-[#2d6a4f] text-white shadow-sm" : "text-[#6b7c6b] hover:text-[#1a2e1a] hover:bg-[#f0fdf4]"
-                    }`}
-                  >
-                    <span>{t.icon}</span>
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <StatsCards token={token} onOpen={openTab} />
+
+        <div className="mb-6">{tabGroup(TAB_GROUPS[0])}</div>
 
         {/* Tab Content: early warning tabs draw their own cards */}
+        <div id="admin-tab-content" className="scroll-mt-4" />
         {EWS_TABS.has(tab) ? (
           <div>
             {tab === "outlook" && <OutlookTab token={token} isAdmin meta={meta} />}

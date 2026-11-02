@@ -23,6 +23,7 @@ import { RAIN_CATEGORY } from "@/lib/ews/satellite";
 import { HAZARD_LABELS } from "@/lib/ews/hazards";
 import { smsSegments, FOOTER_SAMPLE, draftMessages } from "@/lib/ews/messages";
 import { parseContactsCsv } from "@/lib/ews/csv";
+import { placeReport, trackRecord } from "@/lib/ews/track";
 import "leaflet/dist/leaflet.css";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
@@ -476,7 +477,7 @@ function InsightsCard({ district, token, onUseDraft }) {
                       <span className="font-semibold text-gray-800">{p.outcome}</span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      {p.timeframe}{p.affected ? ` · ${p.affected}` : ""}
+                      {p.place ? `📍 ${p.place} · ` : ""}{p.timeframe}{p.affected ? ` · ${p.affected}` : ""}
                     </p>
                     <p className="text-xs text-gray-600 mt-1">{p.evidence}</p>
                   </div>
@@ -1130,7 +1131,26 @@ function placeCard(map, marker) {
 }
 
 /** Districts and extra forecast points, coloured by their highest signal. */
-function RiskMap({ overview, selected, onSelect }) {
+const REPORT_HAZARD = { heavy_rain: "Heavy rain", flood: "Flooding", landslide: "Landslide", hailstorm: "Hailstorm", strong_wind: "Strong wind", dry_spell: "Dry spell", crop_disease: "Crop disease", livestock_disease: "Livestock disease", human_disease: "People sick", other: "Other" };
+
+function reportCardHtml(r, where) {
+  const text = String(r.description || "");
+  return `<div style="width:260px;white-space:normal;font-size:13px;color:#111827"><div style="font-size:11px;font-weight:700;color:#1e3a8a;text-transform:uppercase">Field report · ${escapeHtml(r.impact || "")}</div>` +
+    `<b style="font-size:14px">${escapeHtml(REPORT_HAZARD[r.category] || r.category)}</b>` +
+    `<div style="color:#6b7280;font-size:12px">${escapeHtml([r.village, r.district, r.occurredOn].filter(Boolean).join(" · "))}</div>` +
+    `<div style="color:#374151;font-size:12px;margin-top:6px;line-height:1.35">${escapeHtml(text.length > 220 ? `${text.slice(0, 220)}…` : text)}</div>` +
+    `<div style="color:#9ca3af;font-size:11px;margin-top:6px">Located by ${escapeHtml(where.source)}${where.km != null ? ` · ${where.km}km from ${escapeHtml(where.point)}` : ""} · ${escapeHtml(r.status === "new" ? "not yet reviewed" : r.status)}</div></div>`;
+}
+
+const reportIcon = (L) =>
+  L.divIcon({
+    className: "",
+    html: '<div style="width:12px;height:12px;background:#1e3a8a;border:2px solid #fff;transform:rotate(45deg);box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>',
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+  });
+
+function RiskMap({ overview, reports = [], selected, onSelect }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
@@ -1167,11 +1187,22 @@ function RiskMap({ overview, selected, onSelect }) {
         m.on("click", () => onSelect(d.district));
         layer.current.addLayer(m);
       }
+      // Field reports with a location (phone GPS, village or named place).
+      for (const r of reports) {
+        const district = DISTRICTS.find((x) => x.name === r.district);
+        const where = district && placeReport(r, district);
+        if (!where?.lat) continue;
+        const m = L.marker([where.lat, where.lng], { icon: reportIcon(L), zIndexOffset: 800 });
+        m.bindTooltip(reportCardHtml(r, where), TIP);
+        placeCard(map.current, m);
+        m.on("click", () => onSelect(r.district));
+        layer.current.addLayer(m);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [overview, selected, onSelect]);
+  }, [overview, reports, selected, onSelect]);
 
   useEffect(() => () => map.current?.remove(), []);
 
@@ -1194,7 +1225,101 @@ function RiskMap({ overview, selected, onSelect }) {
             {s === "none" ? "No signal" : s[0].toUpperCase() + s.slice(1)} ({counts[s] || 0} {counts[s] === 1 ? "district" : "districts"})
           </span>
         ))}
+        {reports.length > 0 && (
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rotate-45 border-2 border-white shadow" style={{ background: "#1e3a8a" }} />
+            Field reports, last 14 days
+          </span>
+        )}
       </div>
+    </Card>
+  );
+}
+
+const HAZARD_NAME = (h) => REPORT_HAZARD[h] || HAZARD_LABELS[h] || h;
+
+/** Reports and SMS replies by place, and how signals there compared with them. */
+function GroundTruthCard({ district, token }) {
+  const [state, setState] = useState({ loading: true, record: null, error: null });
+  useEffect(() => {
+    const d = DISTRICTS.find((x) => x.name === district);
+    if (!d || !token) return;
+    let active = true;
+    setState({ loading: true, record: null, error: null });
+    const get = (path) =>
+      fetch(`${STRAPI_URL}/api${path}`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => (r.ok ? r.json() : { data: [] }));
+    const q = encodeURIComponent(district);
+    Promise.all([get(`/ews/reports?district=${q}&days=120&limit=300`), get(`/ews/feedback?district=${q}&limit=500`), get(`/ews/signal-logs?district=${q}&days=120`)])
+      .then(([reports, feedback, logs]) =>
+        active && setState({ loading: false, record: trackRecord({ district: d, logs: logs.data, reports: reports.data, feedback: feedback.data, loggingSince: logs.loggingSince }), error: null })
+      )
+      .catch((err) => active && setState({ loading: false, record: null, error: err.message }));
+    return () => {
+      active = false;
+    };
+  }, [district, token]);
+
+  const rec = state.record;
+  return (
+    <Card
+      title="On the ground"
+      subtitle="Agent reports and SMS replies by place, and how the automatic signals there compared with them. This is the local evidence AI insights weigh."
+    >
+      {state.loading && <p className="text-sm text-gray-500">Loading reports and signal history…</p>}
+      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {rec && (
+        <>
+          <p className="text-sm text-gray-700 mb-3">
+            {rec.since
+              ? `Signals logged for ${rec.loggedDays} day${rec.loggedDays === 1 ? "" : "s"}, since ${rec.since}. Only reports and replies from then on count. A track record needs a few months before it means much.`
+              : "Signal logging starts with the next warning check (every 3 hours), so there is no track record yet."}
+          </p>
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full text-sm min-w-[480px]">
+              <thead>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400">
+                  <th className="px-2 py-1.5 font-semibold">Place</th>
+                  <th className="px-2 py-1.5 font-semibold">Reports</th>
+                  <th className="px-2 py-1.5 font-semibold">SMS replies</th>
+                  <th className="px-2 py-1.5 font-semibold">Signals against the ground</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rec.places.map((p) => (
+                  <tr key={p.name} className="border-t border-gray-100 align-top">
+                    <td className="px-2 py-1.5">
+                      <span className="font-medium text-gray-800">{p.name}</span>
+                      <span className="block text-[11px] text-gray-400">{p.area ? "extra forecast point" : "district headquarters"}</span>
+                    </td>
+                    <td className="px-2 py-1.5 text-gray-700">{p.reports}</td>
+                    <td className="px-2 py-1.5 text-gray-700">{p.area ? "—" : p.replies}</td>
+                    <td className="px-2 py-1.5 text-xs text-gray-700">
+                      {p.hazards.length ? (
+                        <ul className="space-y-0.5">
+                          {p.hazards.map((h) => (
+                            <li key={h.hazard}>
+                              <b>{HAZARD_NAME(h.hazard)}</b>
+                              {h.signalDays ? `: signal on ${h.signalDays} day${h.signalDays === 1 ? "" : "s"}, confirmed ${h.confirmed}` : ""}
+                              {h.denied ? `, SMS said no heavy rain ${h.denied}` : ""}
+                              {h.missed ? `${h.signalDays ? ";" : ":"} reported ${h.missed} time${h.missed === 1 ? "" : "s"} with no signal` : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span className="text-gray-400">nothing yet</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-gray-500 mt-3">
+            Reports are placed by phone location, else the village or a place they name found on the map; SMS replies count for the district headquarters.
+            Confirmed = a matching report or reply within 2 days of a signal. No report doesn&apos;t prove nothing happened.
+          </p>
+        </>
+      )}
     </Card>
   );
 }
@@ -1353,6 +1478,16 @@ export function OutlookTab({ token, isAdmin, meta }) {
 
   const languages = useMemo(() => (detail?.district.languages || []).filter((l) => l !== "en"), [detail]);
 
+  // Recent field reports for the map (admins only).
+  const [mapReports, setMapReports] = useState([]);
+  useEffect(() => {
+    if (!token || !isAdmin) return;
+    fetch(`${STRAPI_URL}/api/ews/reports?days=14&limit=300`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : { data: [] }))
+      .then((d) => setMapReports((d.data || []).filter((r) => r.status !== "dismissed")))
+      .catch(() => {});
+  }, [token, isAdmin]);
+
   const openDistrict = useCallback((name) => {
     setSelected(name);
     document.getElementById("district-outlook")?.scrollIntoView({ behavior: "smooth" });
@@ -1397,7 +1532,7 @@ export function OutlookTab({ token, isAdmin, meta }) {
 
   return (
     <div className="space-y-6">
-      <RiskMap overview={overview} selected={selected} onSelect={openDistrict} />
+      <RiskMap overview={overview} reports={mapReports} selected={selected} onSelect={openDistrict} />
       <SeasonOverview overview={overview} onSelect={openDistrict} />
       <div id="district-outlook" className="grid lg:grid-cols-[300px_1fr] gap-6">
         <Card title="Districts" subtitle="Temperature now, with the highest signal for the next 7 days or the season so far">
@@ -1426,6 +1561,8 @@ export function OutlookTab({ token, isAdmin, meta }) {
           </Card>
 
           {detail && !loadingDetail && <SatelliteCard satellite={detail.satellite} district={selected} />}
+
+          {isAdmin && <GroundTruthCard district={selected} token={token} />}
 
           {isAdmin && <InsightsCard district={selected} token={token} onUseDraft={(a) => {
             setPreset({ ...a, key: Date.now() });
@@ -1556,8 +1693,124 @@ const EMPTY_FORM = {
   consent: false,
 };
 
+const SOURCE_LABEL = { ussd: "USSD", sms: "SMS", web: "Admin console", volunteer: "Agent", app: "App", import: "CSV import" };
+
+/** Everyone registered for warnings, newest first, with search and filters. */
+function MembersCard({ token, reloadKey }) {
+  const [filters, setFilters] = useState({ q: "", district: "", persona: "", active: "" });
+  const [page, setPage] = useState(1);
+  const [state, setState] = useState({ loading: true, rows: [], total: 0, error: null });
+  const PAGE = 50;
+
+  useEffect(() => {
+    let active = true;
+    const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE) });
+    for (const [k, v] of Object.entries(filters)) if (v) params.set(k, v);
+    const timer = setTimeout(() => {
+      fetch(`${STRAPI_URL}/api/ews/subscribers?${params}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(async (r) => {
+          const d = await r.json();
+          if (!r.ok) throw new Error(d?.error?.message || "Could not load members");
+          if (active) setState({ loading: false, rows: d.data || [], total: d.meta?.total || 0, error: null });
+        })
+        .catch((err) => active && setState({ loading: false, rows: [], total: 0, error: err.message }));
+    }, filters.q ? 300 : 0);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [token, filters, page, reloadKey]);
+
+  const setFilter = (k) => (e) => {
+    setPage(1);
+    setFilters((f) => ({ ...f, [k]: e.target.value }));
+  };
+  const field = "text-sm rounded-lg border border-gray-200 px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300";
+  const pages = Math.max(1, Math.ceil(state.total / PAGE));
+
+  return (
+    <div id="members">
+      <Card title="Community members" subtitle={`${state.total} registered${filters.q || filters.district || filters.persona || filters.active ? " matching the filters" : ""}. Newest first.`}>
+        <div className="flex flex-wrap gap-2 mb-3">
+          <input value={filters.q} onChange={setFilter("q")} placeholder="Search name, phone or village" className={`${field} w-56`} />
+          <select value={filters.district} onChange={setFilter("district")} className={field}>
+            <option value="">All districts</option>
+            {DISTRICTS.map((d) => <option key={d.name}>{d.name}</option>)}
+          </select>
+          <select value={filters.persona} onChange={setFilter("persona")} className={field}>
+            <option value="">All work</option>
+            {PERSONAS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+          </select>
+          <select value={filters.active} onChange={setFilter("active")} className={field}>
+            <option value="">Getting warnings or stopped</option>
+            <option value="true">Getting warnings</option>
+            <option value="false">Stopped</option>
+          </select>
+        </div>
+        {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+        {state.loading && <p className="text-sm text-gray-500">Loading…</p>}
+        {!state.loading && !state.error && !state.rows.length && <p className="text-sm text-gray-500">Nobody matches.</p>}
+        {state.rows.length > 0 && (
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full text-sm min-w-[760px]">
+              <thead>
+                <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400">
+                  <th className="px-2 py-1.5 font-semibold">Name and phone</th>
+                  <th className="px-2 py-1.5 font-semibold">Where</th>
+                  <th className="px-2 py-1.5 font-semibold">Work</th>
+                  <th className="px-2 py-1.5 font-semibold">Language and phone</th>
+                  <th className="px-2 py-1.5 font-semibold">Registered</th>
+                  <th className="px-2 py-1.5 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {state.rows.map((m) => (
+                  <tr key={m.id} className="border-t border-gray-100 align-top">
+                    <td className="px-2 py-1.5">
+                      <span className="font-medium text-gray-800">{m.name || "No name given"}</span>
+                      <span className="block text-xs text-gray-500 font-mono">{m.phone}</span>
+                    </td>
+                    <td className="px-2 py-1.5 text-gray-700">
+                      {m.district}
+                      <span className="block text-xs text-gray-500">{[m.village, m.parish, m.subCounty].filter(Boolean).join(", ") || "—"}</span>
+                    </td>
+                    <td className="px-2 py-1.5 text-gray-700">{PERSONA_LABEL[m.persona] || m.persona}</td>
+                    <td className="px-2 py-1.5 text-gray-700">
+                      {LANGUAGE_LABEL[m.language] || m.language}
+                      <span className="block text-xs text-gray-500">{m.phoneType === "smartphone" ? "Smartphone" : m.phoneType === "basic" ? "Basic phone" : "Phone not known"}</span>
+                    </td>
+                    <td className="px-2 py-1.5 text-gray-700">
+                      {new Date(m.createdAt).toLocaleDateString("en-GB")}
+                      <span className="block text-xs text-gray-500">{[SOURCE_LABEL[m.source] || m.source, m.registeredBy].filter(Boolean).join(" · ")}</span>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      {m.active ? (
+                        <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 rounded-full px-2 py-0.5">Getting warnings</span>
+                      ) : (
+                        <span className="text-xs font-semibold text-gray-600 bg-gray-100 rounded-full px-2 py-0.5">Stopped</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {pages > 1 && (
+          <div className="flex items-center justify-end gap-3 mt-3 text-sm">
+            <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="text-emerald-800 font-semibold disabled:text-gray-300">← Newer</button>
+            <span className="text-gray-500">Page {page} of {pages}</span>
+            <button disabled={page >= pages} onClick={() => setPage(page + 1)} className="text-emerald-800 font-semibold disabled:text-gray-300">Older →</button>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 export function RegisterTab({ token, ussdCode }) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [added, setAdded] = useState(0);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
@@ -1575,6 +1828,7 @@ export function RegisterTab({ token, ussdCode }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error?.message || "Could not register");
       setMessage({ ok: true, text: `Registered ${data.data.phone} for ${data.data.district}.` });
+      setAdded((n) => n + 1);
       setForm({ ...EMPTY_FORM, district: form.district, language: form.language });
     } catch (err) {
       setMessage({ ok: false, text: err.message });
@@ -1587,6 +1841,7 @@ export function RegisterTab({ token, ussdCode }) {
   const district = DISTRICTS.find((d) => d.name === form.district);
 
   return (
+    <div className="space-y-6">
     <div className="grid lg:grid-cols-[1fr_420px] gap-6">
       <Card title="Register a community member" subtitle="For staff signing people up in person. Agents use the mobile app.">
         <form onSubmit={submit} className="grid sm:grid-cols-2 gap-3">
@@ -1698,6 +1953,8 @@ export function RegisterTab({ token, ussdCode }) {
         </ul>
       </Card>
       </div>
+    </div>
+    <MembersCard token={token} reloadKey={added} />
     </div>
   );
 }
@@ -2011,6 +2268,12 @@ function ReportCard({ r, onStatus, onOpenMedia, showAgent = true }) {
         {r.district}{r.village ? ` · ${r.village}` : ""} · {r.occurredOn}{showAgent ? ` · by ${r.reporterName}` : ""}
         {r.peopleAffected != null ? ` · ${r.peopleAffected} people affected` : ""}
       </p>
+      {(r.locationSource || r.places?.length > 0) && (
+        <p className="text-xs text-gray-500">
+          📍 {r.locationSource === "gps" ? "Phone location" : r.locationSource === "village" ? "Village found on the map" : "No location"}
+          {r.places?.length > 0 && ` · places named: ${r.places.map((p) => `${p.name}${p.lat == null ? " (not found)" : ""}`).join(", ")}`}
+        </p>
+      )}
       <p className="text-sm text-gray-800 whitespace-pre-line">{r.description}</p>
       {r.media?.length > 0 && (
         <div className="flex flex-wrap gap-2">

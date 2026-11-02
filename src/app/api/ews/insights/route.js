@@ -6,6 +6,7 @@ import { assessHazards, assessDiseaseRisks, applySeason, seasonState, HAZARD_LAB
 import { getDailyWeather, getClimateNormals } from "@/lib/ews/weather";
 import { smsSegments, FOOTER_SAMPLE } from "@/lib/ews/messages";
 import { getSatellite } from "@/lib/ews/satellite";
+import { placeReport, pointsOf, trackRecord, trackLines } from "@/lib/ews/track";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
@@ -28,12 +29,19 @@ async function strapiAdmin(path, auth) {
   return res.json();
 }
 
-function compactReports(rows = []) {
-  return rows.slice(0, 40).map((r) => ({
+function compactReports(rows = [], district) {
+  return rows.slice(0, 40).map((r) => {
+    const where = placeReport(r, district);
+    return {
     date: r.occurredOn,
     category: r.category,
     impact: r.impact,
     village: r.village,
+    // The forecast point the report is nearest to, and how it was located.
+    nearestPoint: where.point,
+    kmFromPoint: where.km,
+    locatedBy: where.source,
+    placesNamed: (r.places || []).map((p) => p.name),
     // new = not yet checked; verified = reviewed by the team; responded = reviewed and acted on.
     status: r.status === "new" ? "unverified" : r.status === "verified" ? "reviewed" : r.status,
     peopleAffected: r.peopleAffected,
@@ -41,7 +49,8 @@ function compactReports(rows = []) {
     aiPhotoNote: r.aiSummary ? String(r.aiSummary).slice(0, 300) : undefined,
     photos: (r.media || []).filter((m) => m.mime?.startsWith("image/")).length,
     videos: (r.media || []).filter((m) => m.mime?.startsWith("video/")).length,
-  }));
+    };
+  });
 }
 
 function tally(rows, key) {
@@ -51,7 +60,7 @@ function tally(rows, key) {
   }, {});
 }
 
-function clean(output) {
+function clean(output, places) {
   const pick = (v, allowed, fallback) => (allowed.includes(v) ? v : fallback);
   const suggestedAlerts = (output.suggestedAlerts || [])
     .filter((a) => HAZARD_KEYS.includes(a.hazard) && a.message)
@@ -76,6 +85,7 @@ function clean(output) {
     groundTruth: String(output.groundTruth || ""),
     predictions: (output.predictions || []).slice(0, 6).map((p) => ({
       outcome: String(p.outcome || ""),
+      place: places.includes(p.place) ? p.place : null,
       // Days from today, for the timeline; clamped so a bad value can't break the chart.
       fromDay: Math.max(0, Math.min(90, Math.round(Number(p.fromDay) || 0))),
       toDay: Math.max(1, Math.min(90, Math.round(Number(p.toDay) || 7))),
@@ -108,10 +118,12 @@ export async function POST(request) {
 
   let reports;
   let feedback;
+  let logs;
   try {
-    [reports, feedback] = await Promise.all([
-      strapiAdmin(`/ews/reports?district=${encodeURIComponent(district.name)}&days=60&limit=100`, auth),
-      strapiAdmin(`/ews/feedback?district=${encodeURIComponent(district.name)}&limit=300`, auth),
+    [reports, feedback, logs] = await Promise.all([
+      strapiAdmin(`/ews/reports?district=${encodeURIComponent(district.name)}&days=120&limit=300`, auth),
+      strapiAdmin(`/ews/feedback?district=${encodeURIComponent(district.name)}&limit=500`, auth),
+      strapiAdmin(`/ews/signal-logs?district=${encodeURIComponent(district.name)}&days=120`, auth),
     ]);
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: err.status || 403 });
@@ -131,6 +143,9 @@ export async function POST(request) {
   const allSignals = applySeason(district, [...signals, ...assessDiseaseRisks(weather, signals, normal)], satellite, weather, normal);
   const season = seasonState(satellite, weather, normal);
   const recentFeedback = (feedback?.data || []).filter((f) => Date.now() - new Date(f.createdAt) < 60 * 86400000);
+  const recentReports = (reports?.data || []).filter((r) => Date.now() - new Date(r.createdAt) < 60 * 86400000);
+  const record = trackRecord({ district, logs: logs?.data || [], reports: reports?.data || [], feedback: feedback?.data || [], loggingSince: logs?.loggingSince });
+  const places = pointsOf(district).map((p) => p.name);
 
   const evidence = {
     district: {
@@ -194,7 +209,14 @@ export async function POST(request) {
         }
       : null,
     ruleBasedSignals: allSignals.map((s) => ({ hazard: s.hazard, severity: s.severity, basis: s.basis || "forecast", reason: s.reason })),
-    agentFieldReports: compactReports(reports?.data),
+    forecastPoints: pointsOf(district).map((p) => ({ name: p.name, kind: p.area ? "extra point" : "district headquarters" })),
+    agentFieldReports: compactReports(recentReports, district),
+    localTrackRecord: record.since
+      ? {
+          note: `Since ${record.since} (${record.loggedDays} days logged): how automatic signals at each place compared with reports and SMS replies. Unconfirmed is not proof nothing happened.`,
+          places: trackLines(record),
+        }
+      : { note: "Signal logging has only just started; no track record yet." },
     communityFeedbackLast60Days: { count: recentFeedback.length, byObservation: tally(recentFeedback, "observation") },
   };
 
@@ -217,6 +239,9 @@ export async function POST(request) {
             "but treat unverified ones with care. Consider weather-driven disease risk (crop blight and fungal disease after humid, mild spells; " +
             "ticks, worms and foot rot in livestock after long wet spells; malaria 2-4 weeks after rains in warm weather; cholera and diarrhoea after floods). " +
             "Never claim certainty you do not have, never invent numbers, and say what data is missing.\n" +
+            "Think place by place: each report has its nearest forecast point (forecastPoints) and how it was located. Where reports cluster at one place, " +
+            "say so and set that prediction's place. Use localTrackRecord to judge how far to trust signals at each place: signals often confirmed there deserve more weight; " +
+            "events reported with no signal mean the forecast tends to miss them there, so watch for them even below thresholds; say when the record is too short to judge.\n" +
             "Think at two time scales: the next 7 days (forecast) and the season so far (CHIRPS and NDVI). A dry or wet season changes what a forecast means: " +
             "rain after a dry season is less of a flood or landslide threat but matters for planting; heavy rain on ground that is already wet is more dangerous; " +
             "months of low rain with less green pasture point to water and pasture shortages, food insecurity and rising food prices before they are visible in a weekly forecast. " +
@@ -233,7 +258,7 @@ export async function POST(request) {
             "under 140 characters, starting with WARNING, BE READY or NOTICE to match severity. Only suggest an alert when the data supports it.\n" +
             "Reply with JSON: {\"headline\": string, \"summary\": string (3-4 sentences), \"patterns\": [string], " +
             "\"groundTruth\": string (what reports and feedback show, or that there are none), " +
-            `"predictions": [{"outcome": string, "hazard": one of ${JSON.stringify(HAZARD_KEYS)} or null, "likelihood": "low"|"medium"|"high", "timeframe": string, "fromDay": integer days from today when it could start, "toDay": integer days from today when it would end (max 90), "affected": string, "evidence": string}], ` +
+            `"predictions": [{"outcome": string, "place": one of ${JSON.stringify(places)} or null for the whole district, "hazard": one of ${JSON.stringify(HAZARD_KEYS)} or null, "likelihood": "low"|"medium"|"high", "timeframe": string, "fromDay": integer days from today when it could start, "toDay": integer days from today when it would end (max 90), "affected": string, "evidence": string}], ` +
             `"suggestedAlerts": [{"hazard": one of ${JSON.stringify(HAZARD_KEYS)}, "severity": "advisory"|"watch"|"warning", "personas": subset of ${JSON.stringify(PERSONA_KEYS)}, "message": string, "why": string}], ` +
             "\"policyBrief\": string, \"agentChecks\": [string], \"dataGaps\": [string], \"confidence\": \"low\"|\"medium\"|\"high\"}",
         },
@@ -246,7 +271,7 @@ export async function POST(request) {
       district: district.name,
       generatedAt: new Date().toISOString(),
       model: completion.model,
-      insights: clean(output),
+      insights: clean(output, places),
       // The numbers behind the analysis, for the charts beside it.
       visuals: {
         daily: [
@@ -267,6 +292,7 @@ export async function POST(request) {
       },
       inputs: {
         reports: evidence.agentFieldReports.length,
+        loggedDays: record.loggedDays,
         feedback: recentFeedback.length,
         normal: Boolean(normal),
         ensemble: Boolean(forecast),

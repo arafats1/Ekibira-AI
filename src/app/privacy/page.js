@@ -49,7 +49,10 @@ const sections = [
         <ul>
           <li>Your application details and approval status.</li>
           <li>Incident reports you submit: description, category, impact, place, date, number of people affected,
-            and any photos or videos. Reports may include GPS coordinates if your phone provides them.</li>
+            and any photos or videos.</li>
+          <li>Your phone&rsquo;s location when you send a report, if you allow it. The app reads it only at that moment, never
+            in the background, and you can remove it from a report before sending. Without it, we look up the village you
+            type, and places named in the report, on a map.</li>
           <li>Details of community members you register on their behalf, with their consent.</li>
         </ul>
         <p><strong>When you use our tools</strong></p>
@@ -82,7 +85,8 @@ const sections = [
         <li>To send weather, flood, landslide, dry spell and disease-risk warnings to the right people in the right
           district, livelihood and language, by app, SMS or voice call.</li>
         <li>To check how accurate warnings were, using community replies and agent reports, and to improve future
-          warnings and the AI analysis behind them.</li>
+          warnings and the AI analysis behind them. Reports are matched to the nearest forecast point so we can see how
+          warnings perform in each part of a district.</li>
         <li>To answer your questions with AI and to produce farm plans and advice.</li>
         <li>To process payments and manage subscriptions.</li>
         <li>To contact you about your account or the service, and to meet legal obligations.</li>
@@ -214,7 +218,7 @@ export default function PrivacyPage() {
     <LegalPage
       eyebrow="Legal"
       title="Privacy Policy"
-      updated="31 October 2026"
+      updated="2 November 2026"
       intro={
         <p>
           This policy explains what personal information KibiraAI collects through the website, web app, mobile app
