@@ -1,17 +1,22 @@
-import { Space_Grotesk, Fraunces } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
 
-const spaceGrotesk = Space_Grotesk({
+// Self-hosted (SIL Open Font License) latin variable fonts from Google Fonts,
+// so builds don't depend on fetching them; next/font/google sometimes failed
+// when Google answered with /l/font?kit= URLs.
+const spaceGrotesk = localFont({
+  src: "./fonts/space-grotesk-latin.woff2",
   variable: "--font-body",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: "300 700",
+  display: "swap",
 });
 
-const fraunces = Fraunces({
+const fraunces = localFont({
+  src: "./fonts/fraunces-latin.woff2",
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: "400 900",
+  display: "swap",
 });
 
 export const metadata = {
