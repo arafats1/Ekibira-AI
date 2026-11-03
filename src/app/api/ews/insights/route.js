@@ -213,11 +213,22 @@ export async function POST(request) {
     agentFieldReports: compactReports(recentReports, district),
     localTrackRecord: record.since
       ? {
-          note: `Since ${record.since} (${record.loggedDays} days logged): how automatic signals at each place compared with reports and SMS replies. Unconfirmed is not proof nothing happened.`,
+          note: `Since ${record.since} (${record.loggedDays} days logged): how automatic signals at each place compared with reports and community replies. Unconfirmed is not proof nothing happened.`,
           places: trackLines(record),
         }
       : { note: "Signal logging has only just started; no track record yet." },
-    communityFeedbackLast60Days: { count: recentFeedback.length, byObservation: tally(recentFeedback, "observation") },
+    communityFeedbackLast60Days: {
+      count: recentFeedback.length,
+      byObservation: tally(recentFeedback, "observation"),
+      // Replies with the app's GPS or the member's village on the map, by nearest forecast point.
+      byPlace: Object.entries(
+        recentFeedback.reduce((acc, f) => {
+          const where = placeReport(f, district);
+          if (where.lat != null) (acc[where.point] ||= []).push(f);
+          return acc;
+        }, {})
+      ).map(([place, rows]) => ({ place, byObservation: tally(rows, "observation") })),
+    },
   };
 
   try {

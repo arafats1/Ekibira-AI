@@ -1428,7 +1428,7 @@ function RiskMap({ overview, reports = [], selected, onSelect }) {
 
 const HAZARD_NAME = (h) => REPORT_HAZARD[h] || HAZARD_LABELS[h] || h;
 
-/** Reports and SMS replies by place, and how signals there compared with them. */
+/** Reports and community replies by place, and how signals there compared with them. */
 function GroundTruthCard({ district, token }) {
   const [state, setState] = useState({ loading: true, record: null, error: null });
   useEffect(() => {
@@ -1453,7 +1453,7 @@ function GroundTruthCard({ district, token }) {
   return (
     <Card
       title="On the ground"
-      subtitle="Agent reports and SMS replies by place, and how the automatic signals there compared with them. This is the local evidence AI insights weigh."
+      subtitle="Agent reports and community replies (app, SMS, USSD) by place, and how the automatic signals there compared with them. This is the local evidence AI insights weigh."
     >
       {state.loading && <p className="text-sm text-gray-500">Loading reports and signal history…</p>}
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
@@ -1470,7 +1470,7 @@ function GroundTruthCard({ district, token }) {
                 <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400">
                   <th className="px-2 py-1.5 font-semibold">Place</th>
                   <th className="px-2 py-1.5 font-semibold">Reports</th>
-                  <th className="px-2 py-1.5 font-semibold">SMS replies</th>
+                  <th className="px-2 py-1.5 font-semibold">Community replies</th>
                   <th className="px-2 py-1.5 font-semibold">Signals against the ground</th>
                 </tr>
               </thead>
@@ -1482,7 +1482,7 @@ function GroundTruthCard({ district, token }) {
                       <span className="block text-[11px] text-gray-400">{p.area ? "extra forecast point" : "district headquarters"}</span>
                     </td>
                     <td className="px-2 py-1.5 text-gray-700">{p.reports}</td>
-                    <td className="px-2 py-1.5 text-gray-700">{p.area ? "—" : p.replies}</td>
+                    <td className="px-2 py-1.5 text-gray-700">{p.replies}</td>
                     <td className="px-2 py-1.5 text-xs text-gray-700">
                       {p.hazards.length ? (
                         <ul className="space-y-0.5">
@@ -1505,7 +1505,7 @@ function GroundTruthCard({ district, token }) {
             </table>
           </div>
           <p className="text-xs text-gray-500 mt-3">
-            Reports are placed by phone location, else the village or a place they name found on the map; SMS replies count for the district headquarters.
+            Reports are placed by phone location, else the village or a place they name found on the map. Community replies are placed by the app's phone location or the member's village on the map, else count for the district headquarters.
             Confirmed = a matching report or reply within 2 days of a signal. No report doesn&apos;t prove nothing happened.
           </p>
         </>

@@ -5,8 +5,10 @@
  * community members replied by SMS.
  *
  * Reports are placed by the phone's GPS, else the typed village found on the
- * map, else the first place the report names that was found. SMS replies have
- * no location beyond the district, so they count for the headquarters point.
+ * map, else the first place the report names that was found. Community replies
+ * ("what happened", by app, SMS or USSD) are placed by the app's GPS or the
+ * member's village found on the map; without either they count for the
+ * headquarters point.
  */
 
 import { areasOf } from "./regions";
@@ -56,8 +58,8 @@ const dayOf = (v) => String(v || "").slice(0, 10);
  * Per place and hazard since signal logging began (loggingSince, across all
  * districts; nothing before it is counted, as there is no record either way):
  * - signalDays: days with an automatic signal there;
- * - confirmed: of those, days followed within 2 days by a matching report or SMS reply;
- * - denied: heavy-rain days where SMS replies said little or no rain and nothing confirmed it;
+ * - confirmed: of those, days followed within 2 days by a matching report or community reply;
+ * - denied: heavy-rain days where community replies said little or no rain and nothing confirmed it;
  * - missed: days something was reported with no signal for it there in the 3 days before.
  * No report after a signal doesn't mean nothing happened, so unconfirmed is not called a false alarm.
  */
@@ -78,8 +80,9 @@ export function trackRecord({ district, logs = [], reports = [], feedback = [], 
   for (const f of feedback) {
     const date = dayOf(f.observedOn || f.createdAt);
     if (!since || date < since) continue;
-    points[0].replies++;
-    events[0].push({ date, event: FEEDBACK_EVENT[f.observation] || null, denies: DENIES_RAIN.includes(f.observation) });
+    const i = points.indexOf(pointFor(placeReport(f, district).area));
+    points[i].replies++;
+    events[i].push({ date, event: FEEDBACK_EVENT[f.observation] || null, denies: DENIES_RAIN.includes(f.observation) });
   }
 
   points.forEach((p, i) => {
@@ -121,10 +124,10 @@ export function trackLines(record) {
     .map((p) => {
       const parts = p.hazards.map((h) => {
         const bits = [];
-        if (h.signalDays) bits.push(`${h.hazard}: signal on ${h.signalDays} day(s), confirmed on the ground ${h.confirmed}${h.denied ? `, contradicted by SMS ${h.denied}` : ""}`);
+        if (h.signalDays) bits.push(`${h.hazard}: signal on ${h.signalDays} day(s), confirmed on the ground ${h.confirmed}${h.denied ? `, contradicted by community replies ${h.denied}` : ""}`);
         if (h.missed) bits.push(`${h.hazard}: reported ${h.missed} time(s) with no signal`);
         return bits.join("; ");
       });
-      return `${p.area ? `${p.name} (extra point)` : `${p.name} (district headquarters)`}: ${p.reports} report(s), ${p.replies} SMS reply(ies). ${parts.join("; ") || "No signals or matched events."}`;
+      return `${p.area ? `${p.name} (extra point)` : `${p.name} (district headquarters)`}: ${p.reports} report(s), ${p.replies} community reply(ies). ${parts.join("; ") || "No signals or matched events."}`;
     });
 }
