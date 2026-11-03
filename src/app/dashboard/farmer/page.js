@@ -6,6 +6,83 @@ import Link from "next/link";
 
 const SEASON_ICONS = { "Dry": "☀️", "Rainy": "🌧️", "Long Rains": "🌧️", "Short Rains": "🌦️", "Short Dry": "🔧", "Wet": "🌧️", "Planting": "🌱", "Harvest": "🌾", "Preparation": "🔧" };
 
+const SEVERITY_STYLE = {
+  warning: { label: "WARNING", box: "bg-red-50 border-red-200", text: "text-red-800" },
+  watch: { label: "BE READY", box: "bg-orange-50 border-orange-200", text: "text-orange-800" },
+  advisory: { label: "NOTICE", box: "bg-amber-50 border-amber-200", text: "text-amber-800" },
+};
+const HAZARD_EMOJI = {
+  heavy_rain: "🌧️", flood: "🌊", landslide: "⛰️", dry_spell: "☀️", season_dry: "☀️", hailstorm: "🧊", strong_wind: "💨",
+  crop_disease: "🥔", livestock_disease: "🐄", human_disease: "🦟", heat: "🌡️",
+};
+
+/** Early warnings for the looked-up area: rain against usual for past, now and next, each warning with what to do. */
+function AreaWarningsPanel({ analysis }) {
+  const w = analysis?.warnings;
+  if (!w) return null;
+  const periods = [
+    ["Last 30 days", w.past30 ? `${w.past30.rain}mm rain` : "—", w.past30?.vsUsual && `${w.past30.vsUsual}${w.past30.usual != null ? ` (usually ${w.past30.usual}mm)` : ""}`],
+    ["Now", w.now ? `${w.now.temp}°C` : "—", w.now?.label],
+    ["Next 7 days", w.next7 ? `${w.next7.rain}mm rain` : "—", w.next7?.vsUsual && `${w.next7.vsUsual}${w.next7.usual != null ? ` (usually ${w.next7.usual}mm)` : ""}`],
+  ];
+  return (
+    <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6 mb-8">
+      <h2 className="text-lg font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">⚠️ Early warnings — {w.place}</h2>
+      <p className="text-xs text-[#6b7c6b] mb-4 font-[family-name:var(--font-body)]">Worked out from forecasts and recent weather against what is usual for these dates.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        {periods.map(([label, value, note]) => (
+          <div key={label} className="rounded-xl bg-[#f6faf7] border border-[#e3efe7] p-3">
+            <p className="text-[11px] font-semibold text-[#6b7c6b] font-[family-name:var(--font-body)]">{label}</p>
+            <p className="text-xl font-bold text-[#1a2e1a] font-[family-name:var(--font-display)]">{value}</p>
+            {note && <p className="text-xs text-[#4a5c4a] font-[family-name:var(--font-body)]">{note}</p>}
+          </div>
+        ))}
+      </div>
+      {w.hazards.length === 0 ? (
+        <p className="text-sm font-semibold text-green-700 font-[family-name:var(--font-body)]">✅ No raised danger expected in the next 7 days.</p>
+      ) : (
+        <div className="space-y-3">
+          {w.hazards.map((h, i) => {
+            const sev = SEVERITY_STYLE[h.severity] || SEVERITY_STYLE.advisory;
+            return (
+              <div key={`${h.hazard}-${i}`} className={`rounded-xl border p-4 ${sev.box}`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{HAZARD_EMOJI[h.hazard] || "⚠️"}</span>
+                  <span className={`font-bold font-[family-name:var(--font-display)] ${sev.text}`}>{h.label}</span>
+                  <span className={`text-[10px] font-bold border rounded-full px-2 py-0.5 ${sev.text}`}>{sev.label}</span>
+                </div>
+                {h.advice && <p className={`text-sm font-semibold mt-2 font-[family-name:var(--font-body)] ${sev.text}`}>{h.advice.replace(/^[A-Z ]+:\s*/, "")}</p>}
+                <p className="text-xs text-[#6b7c6b] mt-1 font-[family-name:var(--font-body)]">{h.reason}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {analysis.situation && <p className="text-sm text-[#2f3f2f] mt-4 leading-relaxed font-[family-name:var(--font-body)]">{analysis.situation}</p>}
+      {(analysis.communityActions?.length > 0 || analysis.watchFor?.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          {analysis.communityActions?.length > 0 && (
+            <div className="rounded-xl bg-[#f0f7f3] p-4">
+              <p className="text-sm font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">What to do now</p>
+              <ul className="space-y-1">
+                {analysis.communityActions.map((a, i) => <li key={i} className="text-xs text-[#3d4f3d] font-[family-name:var(--font-body)]">✓ {a}</li>)}
+              </ul>
+            </div>
+          )}
+          {analysis.watchFor?.length > 0 && (
+            <div className="rounded-xl bg-[#f0f7f3] p-4">
+              <p className="text-sm font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">Watch for and report</p>
+              <ul className="space-y-1">
+                {analysis.watchFor.map((a, i) => <li key={i} className="text-xs text-[#3d4f3d] font-[family-name:var(--font-body)]">👀 {a}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FarmerDashboard() {
   const { user, loading, logout, getToken } = useAuth();
   const router = useRouter();
@@ -182,7 +259,7 @@ export default function FarmerDashboard() {
             🌾 Welcome, {user.fullName?.split(" ")[0]}
           </h1>
           <p className="text-[#6b7c6b] mt-1 font-[family-name:var(--font-body)]">
-            Your climate-smart farming dashboard — real weather data, location-specific crop planning, and agroforestry guidance.
+            Early warnings for your area — what the last 30 days, today and the next 7 days mean for your community, and what to do. Farming and soil advice too.
           </p>
         </div>
 
@@ -220,7 +297,7 @@ export default function FarmerDashboard() {
 
         {/* Area Search */}
         <div className="mb-6">
-          <label className="text-sm font-medium text-[#1a2e1a] font-[family-name:var(--font-body)] mb-2 block">Search your area for real climate data:</label>
+          <label className="text-sm font-medium text-[#1a2e1a] font-[family-name:var(--font-body)] mb-2 block">Look up an area for its early warnings:</label>
           <form onSubmit={handleSearch} className="flex gap-3">
             <input
               type="text"
@@ -268,6 +345,9 @@ export default function FarmerDashboard() {
         {/* Results — only shown once data is loaded */}
         {analysis && !loadingData && (
           <>
+            {/* Early warnings first: past 30 days, now, next 7 days, what to do */}
+            <AreaWarningsPanel analysis={analysis} />
+
             {/* Risk Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
               {/* Flood Risk */}
@@ -358,7 +438,7 @@ export default function FarmerDashboard() {
             {analysis.climateAdvice && analysis.climateAdvice.length > 0 && (
               <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6 mb-8">
                 <h2 className="text-lg font-bold text-[#1a2e1a] mb-4 font-[family-name:var(--font-display)]">
-                  🧠 Climate-Smart Advice for {analysis.locationName}
+                  🌱 Farming tips this week — {analysis.locationName}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {analysis.climateAdvice.map((advice, i) => {
@@ -422,8 +502,8 @@ export default function FarmerDashboard() {
               </div>
             )}
 
-            {/* Two Column: Crop Calendar + Agroforestry */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Crop calendar (and agroforestry for results that still have it) */}
+            <div className={`grid grid-cols-1 ${analysis.agroforestrySpecies?.length ? "lg:grid-cols-2" : ""} gap-6 mb-8`}>
               {/* Crop Calendar — from AI, specific to this location's climate */}
               <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6">
                 <h2 className="text-lg font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">📅 Crop Calendar — {analysis.locationName}</h2>
@@ -461,6 +541,7 @@ export default function FarmerDashboard() {
               </div>
 
               {/* Agroforestry Species — from AI, specific to this location */}
+              {analysis.agroforestrySpecies?.length > 0 && (
               <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6">
                 <h2 className="text-lg font-bold text-[#1a2e1a] mb-2 font-[family-name:var(--font-display)]">🌳 Agroforestry Species — {analysis.locationName}</h2>
                 <p className="text-xs text-[#6b7c6b] mb-4 font-[family-name:var(--font-body)]">
@@ -482,6 +563,7 @@ export default function FarmerDashboard() {
                   ))}
                 </div>
               </div>
+              )}
             </div>
 
             {/* Data Sources */}
@@ -489,6 +571,7 @@ export default function FarmerDashboard() {
               <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 mb-8">
                 <p className="text-[10px] text-[#6b7c6b] font-[family-name:var(--font-body)]">
                   <span className="font-semibold">Data sources:</span>{" "}
+                  {analysis.dataSources.warnings && <>Warnings: {analysis.dataSources.warnings} • </>}
                   Weather: {analysis.dataSources.weather} • Flood: {analysis.dataSources.flood} • Climate: {analysis.dataSources.climate} • Analysis: {analysis.dataSources.analysis}
                 </p>
               </div>
@@ -502,7 +585,7 @@ export default function FarmerDashboard() {
             <span className="text-5xl mb-4 block">🌍</span>
             <h3 className="text-lg font-bold text-[#1a2e1a] font-[family-name:var(--font-display)] mb-2">Search your area to get started</h3>
             <p className="text-sm text-[#6b7c6b] font-[family-name:var(--font-body)] max-w-md mx-auto">
-              Enter your location above to get real weather data, location-specific crop calendars, flood and drought risk scores, and agroforestry recommendations tailored to your area&apos;s climate.
+              Enter a place above to see its early warnings — rain over the last 30 days, now and the next 7 days against what is usual — with what to do, then flood, heat and dry scores, and farming and soil advice.
             </p>
           </div>
         )}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { placeWarnings, withHeatWarning } from "@/lib/ews/place";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -301,15 +302,18 @@ function buildRainfallProfile(climateHistory) {
   });
 }
 
-// ─── AI System Prompt for Farmer Analysis ───
-function buildFarmerPrompt(weatherSummary, soilSummary, rainfallProfile, forecastSummary) {
-  return `You are an expert agricultural climate advisor for African farmers. Given a location name and REAL climate data, provide location-specific farming guidance.
+// ─── AI prompt: early warning first, farming second ───
+function buildAreaPrompt(warningsSummary, weatherSummary, soilSummary, rainfallProfile, forecastSummary) {
+  return `You are KibiraAI's early warning advisor for last-mile communities in Uganda and East Africa. People look up an area to know what weather danger is coming and what to do. Farming and soil come second.
 
-REAL-TIME DATA (use this — do NOT make up weather data):
+EARLY WARNING ENGINE (rule-based, from forecasts and observations — treat as the truth; do not add hazards it did not find, and do not drop any):
+${warningsSummary}
+
+OTHER REAL DATA (do NOT make up weather data):
 ${weatherSummary}
+${forecastSummary}
 ${soilSummary}
 ${rainfallProfile}
-${forecastSummary}
 
 Respond with ONLY valid JSON:
 {
@@ -319,46 +323,40 @@ Respond with ONLY valid JSON:
   "lat": 0.0000,
   "lng": 0.0000,
   "elevation": "1,200m",
-  "climateZone": "e.g. Tropical Highland, Semi-Arid, Equatorial, etc.",
+  "climateZone": "e.g. Tropical Highland, Semi-Arid",
   "annualRainfallMm": 1200,
-  "rainySeasons": "Describe the specific rainfall pattern — bimodal (March-May & Sept-Nov), unimodal, etc. Be SPECIFIC to this location.",
+  "rainySeasons": "The rainfall pattern here, e.g. bimodal (March-May & Sept-Nov)",
+  "situation": "3-4 short, plain sentences a villager understands: how the last 30 days were, what it is like now, what the next 7 days bring, each compared with usual. Use the real numbers. Name any warning from the engine.",
+  "communityActions": ["4 practical things households should do now, matched to the engine's warnings (or to staying ready when there are none). Short and concrete."],
+  "watchFor": ["3 danger signs people in THIS area should watch for and report, e.g. cracks on slopes, rivers rising fast, many mosquitoes, wilting crops, sick animals"],
+  "climateAdvice": ["2 farming tips for the coming 7 days based on the real forecast"],
   "cropCalendar": [
-    {
-      "months": "Jan-Feb",
-      "season": "Dry/Rainy/etc",
-      "activity": "Specific farming activity for THIS area based on its real climate",
-      "crops": "Specific crops suitable for this area and season"
-    }
+    { "months": "Mar-May", "season": "Rainy/Dry", "activity": "Farming activity for THIS area", "crops": "Crops suited to this area and season" }
   ],
-  "agroforestrySpecies": [
-    {
-      "name": "Scientific name (Common name)",
-      "use": "Primary use (timber, fodder, shade, nitrogen-fixing, etc.)",
-      "co2PerHaPerYear": "X tCO₂/ha/yr",
-      "suitability": "Why this species works in THIS specific area (altitude, rainfall, soil)"
-    }
-  ],
-  "climateAdvice": [
-    "Specific advice based on the REAL current weather data — reference actual temperatures, rainfall amounts",
-    "Advice about soil moisture based on real readings",
-    "Advice about upcoming weather based on the real 7-day forecast",
-    "Long-term climate adaptation advice specific to this area's rainfall pattern"
-  ],
-  "soilType": "Likely dominant soil type for this area",
-  "majorCrops": ["List", "of", "main", "crops", "grown", "here"],
-  "waterHarvestingAdvice": "Specific water management advice based on rainfall pattern"
+  "soilType": "Likely dominant soil type",
+  "majorCrops": ["main", "crops", "grown", "here"],
+  "waterHarvestingAdvice": "One or two sentences on keeping water for dry spells or handling heavy rain, for this rainfall pattern"
 }
 
 RULES:
-- The cropCalendar MUST have 5-6 entries covering the full year, specific to THIS location's rainfall pattern
-  * Karamoja (semi-arid, unimodal) should look COMPLETELY DIFFERENT from Kabale (highland, bimodal)
-  * A dry area should recommend drought-tolerant crops (sorghum, millet, cassava)
-  * A wet highland should recommend different crops (Irish potatoes, wheat, pyrethrum)
-- agroforestrySpecies: Provide exactly 5 species that genuinely grow well in this specific climate/altitude/rainfall zone
-- climateAdvice: Provide exactly 4 pieces of advice. Reference the REAL data above — actual temperatures, rainfall amounts, soil moisture
-- lat/lng: Must be accurate coordinates for the location
-- Be geographically honest. Karamoja is semi-arid with ~600mm annual rainfall. Kabale is highland with ~1200mm. Jinja is lakeside equatorial. Do not give generic answers.
-- cropCalendar must reflect the ACTUAL rainy/dry season pattern from the historical rainfall data provided`;
+- Lead with safety. If the engine found warnings, "situation" and "communityActions" must be about them first.
+- Never invent hazards, probabilities or numbers. If the engine found none, say no raised danger is expected for the next 7 days, and give actions that keep people ready.
+- Plain words; no jargon like "ensemble", "ET0" or "exceedance".
+- cropCalendar: exactly 4 entries covering the year, matching THIS area's real rainy and dry seasons.
+- lat/lng: accurate coordinates for the location.
+- Be geographically honest: Karamoja is semi-arid (~600mm/yr), Kabale is highland (~1200mm), Jinja is lakeside.`;
+}
+
+/** The engine's findings as plain lines for the AI. */
+function summarizeWarnings(w) {
+  if (!w) return "Early warning engine: unavailable for this place";
+  const lines = [`Place: ${w.place}${w.covered ? " (covered district)" : ""}`];
+  if (w.past30) lines.push(`Last 30 days: ${w.past30.rain}mm of rain${w.past30.usual != null ? `, usually ${w.past30.usual}mm (${w.past30.vsUsual})` : ""}${w.past30.heavyRainDays ? `, ${w.past30.heavyRainDays} heavy-rain days` : ""}`);
+  if (w.now) lines.push(`Now: ${w.now.temp}°C, ${w.now.label}, humidity ${w.now.humidity}%`);
+  if (w.next7) lines.push(`Next 7 days: about ${w.next7.rain}mm of rain expected${w.next7.usual != null ? `, usually ${w.next7.usual}mm (${w.next7.vsUsual})` : ""}`);
+  if (!w.hazards.length) lines.push("Warnings: none raised for the next 7 days");
+  for (const h of w.hazards) lines.push(`Warning: ${h.label} (${h.severity}) — ${h.reason}`);
+  return lines.join("\n");
 }
 
 export async function POST(request) {
@@ -372,7 +370,7 @@ export async function POST(request) {
     const sanitizedLocation = location.trim().slice(0, 200);
 
     // Step 1: Geocode via Open-Meteo (free)
-    let geoLat = null, geoLng = null, geoName = null;
+    let geoLat = null, geoLng = null, geoName = null, geoElevation = null;
     try {
       const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(sanitizedLocation)}&count=1&language=en`;
       const geoRes = await fetch(geoUrl, { signal: AbortSignal.timeout(5000) });
@@ -381,6 +379,7 @@ export async function POST(request) {
         geoLat = geoData.results[0].latitude;
         geoLng = geoData.results[0].longitude;
         geoName = geoData.results[0].name;
+        geoElevation = geoData.results[0].elevation ?? null;
       }
     } catch {}
 
@@ -389,17 +388,25 @@ export async function POST(request) {
     const hasGeo = geoLat != null;
 
     // Step 2: Fetch ALL real data in parallel
-    const [weatherData, floodData, climateHistory, usualHighs] = await Promise.all([
+    const [weatherData, floodData, climateHistory, usualHighs, placeEws] = await Promise.all([
       hasGeo ? fetchWeatherAndSoil(lat, lng) : Promise.resolve(null),
       hasGeo ? fetchFloodData(lat, lng) : Promise.resolve(null),
       hasGeo ? fetchClimateHistory(lat, lng) : Promise.resolve(null),
       hasGeo ? fetchUsualHighs(lat, lng) : Promise.resolve(null),
+      // Early warnings for this place: the same rules as the district outlook
+      hasGeo
+        ? placeWarnings({ name: geoName || sanitizedLocation, lat, lng, elevation: geoElevation }).catch((err) => {
+            console.error("[farmer-analysis] warnings:", err.message);
+            return null;
+          })
+        : Promise.resolve(null),
     ]);
 
     // Step 3: Compute risk scores from real data
     const floodRisk = computeFloodRisk(weatherData, floodData);
     const heat = computeHeatStress(weatherData, usualHighs);
     const dryStress = computeDryStress(weatherData);
+    const warnings = withHeatWarning(placeEws, heat);
     const soilData = buildSoilData(weatherData);
     const forecast = buildForecast(weatherData);
     const rainfallProfile = buildRainfallProfile(climateHistory);
@@ -439,8 +446,8 @@ export async function POST(request) {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: buildFarmerPrompt(weatherSummary, soilSummary, rainfallSummaryText, forecastText) },
-        { role: "user", content: `Analyze farming conditions for: ${sanitizedLocation}` },
+        { role: "system", content: buildAreaPrompt(summarizeWarnings(warnings), weatherSummary, soilSummary, rainfallSummaryText, forecastText) },
+        { role: "user", content: `Early warnings and conditions for: ${sanitizedLocation}` },
       ],
       max_tokens: 2000,
       temperature: 0.3,
@@ -472,13 +479,13 @@ export async function POST(request) {
         const newFlood = computeFloodRisk(w, f || finalFlood);
         const newHeat = computeHeatStress(w, u);
         return NextResponse.json({
-          analysis: buildResponse(aiData, newFlood, newHeat, computeDryStress(w), buildSoilData(w), buildForecast(w), rainfallProfile, finalLat, finalLng, w, f),
+          analysis: buildResponse(aiData, warnings, newFlood, newHeat, computeDryStress(w), buildSoilData(w), buildForecast(w), rainfallProfile, finalLat, finalLng, w, f),
         });
       }
     }
 
     return NextResponse.json({
-      analysis: buildResponse(aiData, floodRisk, heat, dryStress, soilData, forecast, rainfallProfile, finalLat, finalLng, finalWeather, finalFlood),
+      analysis: buildResponse(aiData, warnings, floodRisk, heat, dryStress, soilData, forecast, rainfallProfile, finalLat, finalLng, finalWeather, finalFlood),
     });
 
   } catch (error) {
@@ -490,7 +497,7 @@ export async function POST(request) {
   }
 }
 
-function buildResponse(aiData, floodRisk, heat, dryStress, soilData, forecast, rainfallProfile, lat, lng, weatherData, floodData) {
+function buildResponse(aiData, warnings, floodRisk, heat, dryStress, soilData, forecast, rainfallProfile, lat, lng, weatherData, floodData) {
   return {
     locationName: aiData.locationName || aiData.location || "Unknown",
     district: aiData.district || "",
@@ -500,6 +507,13 @@ function buildResponse(aiData, floodRisk, heat, dryStress, soilData, forecast, r
     climateZone: aiData.climateZone || "Tropical",
     annualRainfallMm: aiData.annualRainfallMm || 0,
     rainySeasons: aiData.rainySeasons || "",
+
+    // Early warnings first: engine findings (past 30 days, now, next 7 days,
+    // hazards with what to do) and the AI's plain summary and actions
+    warnings,
+    situation: aiData.situation || "",
+    communityActions: Array.isArray(aiData.communityActions) ? aiData.communityActions : [],
+    watchFor: Array.isArray(aiData.watchFor) ? aiData.watchFor : [],
 
     // Real computed scores
     floodRisk,
@@ -530,6 +544,7 @@ function buildResponse(aiData, floodRisk, heat, dryStress, soilData, forecast, r
       weather: weatherData ? "Open-Meteo (real-time)" : "Unavailable",
       flood: floodData ? "GloFAS via Open-Meteo" : "Unavailable",
       climate: rainfallProfile ? "Open-Meteo Historical Archive" : "Unavailable",
+      warnings: warnings?.sources?.length ? warnings.sources.join(" · ") : "Unavailable",
       analysis: "Kibira AI (GPT-4o)",
     },
   };
