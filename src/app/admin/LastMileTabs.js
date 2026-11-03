@@ -1150,10 +1150,88 @@ const reportIcon = (L) =>
     iconAnchor: [6, 6],
   });
 
+// Rainfall layer: forecast totals binned per period, pale yellow (little) to navy (a lot).
+const RAIN_COLORS = ["#ffffd9", "#c7e9b4", "#7fcdbb", "#41b6c4", "#1d91c0", "#225ea8", "#0c2c84"];
+const RAIN_PERIODS = [
+  { days: 1, label: "Today", breaks: [1, 5, 10, 20, 30, 50] },
+  { days: 3, label: "3 days", breaks: [5, 10, 25, 40, 60, 90] },
+  { days: 7, label: "7 days", breaks: [10, 25, 50, 75, 100, 150] },
+];
+const rainTotal = (cell, days) => (cell || []).slice(0, days).reduce((n, v) => n + (v || 0), 0);
+const rainClass = (mm, breaks) => breaks.filter((b) => mm >= b).length;
+
+/** The rain grid drawn one pixel per cell, as a data URL for an image overlay. */
+function rainImage(data, period) {
+  const { rows, cols } = data.grid;
+  const canvas = document.createElement("canvas");
+  canvas.width = cols;
+  canvas.height = rows;
+  const ctx = canvas.getContext("2d");
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = data.rain[r * cols + c];
+      if (!cell?.length) continue;
+      ctx.fillStyle = RAIN_COLORS[rainClass(rainTotal(cell, period.days), period.breaks)];
+      ctx.fillRect(c, r, 1, 1);
+    }
+  }
+  return canvas.toDataURL();
+}
+
 function RiskMap({ overview, reports = [], selected, onSelect }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
+  const rainLayer = useRef(null);
+  const [ready, setReady] = useState(false);
+  const [rainDays, setRainDays] = useState(0); // 0 = rainfall layer off
+  const [rain, setRain] = useState({ data: null, loading: false, error: null });
+  const [hover, setHover] = useState(null);
+  const period = RAIN_PERIODS.find((p) => p.days === rainDays);
+
+  // Load the grid the first time the layer is turned on.
+  useEffect(() => {
+    if (!rainDays || rain.data || rain.loading || rain.error) return;
+    setRain({ data: null, loading: true, error: null });
+    fetch("/api/ews/rain-map")
+      .then((r) => r.json())
+      .then((j) => setRain({ data: j.error ? null : j, loading: false, error: j.error || null }))
+      .catch((err) => setRain({ data: null, loading: false, error: err.message }));
+  }, [rainDays, rain]);
+
+  // Draw (or remove) the rainfall layer, and read the value under the pointer.
+  useEffect(() => {
+    if (!ready || !map.current) return;
+    let cancelled = false;
+    (async () => {
+      const L = (await import("leaflet")).default;
+      if (cancelled) return;
+      rainLayer.current?.remove();
+      rainLayer.current = null;
+      setHover(null);
+      const data = rain.data;
+      if (!period || !data) return;
+      const { north, south, west, east, step, rows, cols } = data.grid;
+      const half = step / 2;
+      rainLayer.current = L.imageOverlay(rainImage(data, period), [[south - half, west - half], [north + half, east + half]], {
+        opacity: 0.6,
+        className: "rain-layer",
+      }).addTo(map.current);
+      rainLayer.current.getElement().style.imageRendering = "pixelated";
+      const onMove = (e) => {
+        const r = Math.round((north - e.latlng.lat) / step);
+        const c = Math.round((e.latlng.lng - west) / step);
+        const cell = r >= 0 && r < rows && c >= 0 && c < cols ? data.rain[r * cols + c] : null;
+        setHover(cell?.length ? { mm: Math.round(rainTotal(cell, period.days)), lat: north - r * step, lng: west + c * step } : null);
+      };
+      const onOut = () => setHover(null);
+      map.current.on("mousemove", onMove).on("mouseout", onOut);
+      rainLayer.current.on("remove", () => map.current?.off("mousemove", onMove).off("mouseout", onOut));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, period, rain.data]);
 
   useEffect(() => {
     if (!overview?.length) return;
@@ -1170,6 +1248,7 @@ function RiskMap({ overview, reports = [], selected, onSelect }) {
         }).addTo(map.current);
         layer.current = L.layerGroup().addTo(map.current);
         map.current.fitBounds(overview.map((d) => [d.lat, d.lng]), { padding: [24, 24] });
+        setReady(true);
       }
       layer.current.clearLayers();
       for (const d of overview) {
@@ -1217,7 +1296,53 @@ function RiskMap({ overview, reports = [], selected, onSelect }) {
       title="Risk map"
       subtitle="District headquarters (large dots) and extra forecast points (small dots), coloured by the highest signal for the next 7 days or the season so far. Point at one for details; click to open it."
     >
-      <div ref={box} className="h-[380px] rounded-xl overflow-hidden border border-gray-100 relative z-0" />
+      <div className="flex flex-wrap items-center gap-2 mb-3 text-xs">
+        <span className="font-semibold text-gray-600">Rain forecast</span>
+        <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+          {[{ days: 0, label: "Off" }, ...RAIN_PERIODS].map((p) => (
+            <button
+              key={p.days}
+              type="button"
+              onClick={() => setRainDays(p.days)}
+              aria-pressed={rainDays === p.days}
+              className={`px-3 py-1 rounded-md font-medium transition ${rainDays === p.days ? "bg-white shadow-sm text-emerald-800" : "text-gray-500 hover:text-gray-800"}`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {rainDays > 0 && rain.loading && <span className="text-gray-500">Loading rain forecast…</span>}
+        {rainDays > 0 && rain.error && <span className="text-red-600">Rain forecast unavailable: {rain.error}</span>}
+      </div>
+      <div className="relative">
+        <div ref={box} className="h-[380px] rounded-xl overflow-hidden border border-gray-100 relative z-0" />
+        {period && hover && (
+          <div className="absolute top-2 right-2 z-[1000] pointer-events-none rounded-lg bg-white/95 shadow px-3 py-1.5 text-xs text-gray-700">
+            <span className="font-semibold text-gray-900">{hover.mm} mm</span> {period.days === 1 ? "today" : `over the next ${period.days} days`}
+            <span className="block text-[10px] text-gray-400">
+              Cell at {Math.abs(hover.lat).toFixed(2)}°{hover.lat < 0 ? "S" : "N"}, {hover.lng.toFixed(2)}°E
+            </span>
+          </div>
+        )}
+      </div>
+      {period && rain.data && (
+        <div className="mt-3 text-xs text-gray-600">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-semibold text-gray-700">{period.days === 1 ? "Rain today" : `Rain over the next ${period.days} days`}</span>
+            {RAIN_COLORS.map((color, i) => (
+              <span key={color} className="flex items-center gap-1">
+                <span className="w-4 h-3 rounded-sm border border-gray-200" style={{ background: color, opacity: 0.6 }} />
+                {i === 0 ? `under ${period.breaks[0]}` : i === RAIN_COLORS.length - 1 ? `${period.breaks[i - 1]}+` : `${period.breaks[i - 1]}–${period.breaks[i]}`}
+              </span>
+            ))}
+            <span>mm</span>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-1">
+            {rain.data.source}, {rain.data.days[0]}
+            {period.days > 1 ? ` to ${rain.data.days[period.days - 1]}` : ""}. Each square is about 28 km across; point at the map to read a value. One forecast run, so it can miss local storms; the signals use the 51-member ensemble.
+          </p>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-gray-600">
         {["warning", "watch", "advisory", "none"].map((s) => (
           <span key={s} className="flex items-center gap-1.5">
