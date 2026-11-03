@@ -318,7 +318,7 @@ export default function FarmerDashboard() {
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <p className="text-xs text-[#6b7c6b] font-[family-name:var(--font-body)]">
                 Showing real data for: <span className="font-semibold text-amber-700">{analysis.locationName}</span>
-                {analysis.district && <span className="text-[#6b7c6b]"> • {analysis.district}</span>}
+                {analysis.district && analysis.district !== analysis.locationName && <span className="text-[#6b7c6b]"> • {analysis.district}</span>}
                 {analysis.climateZone && <span className="text-[#6b7c6b]"> • {analysis.climateZone}</span>}
                 {analysis.elevation && <span className="text-[#6b7c6b]"> • {analysis.elevation}</span>}
               </p>
@@ -345,9 +345,6 @@ export default function FarmerDashboard() {
         {/* Results — only shown once data is loaded */}
         {analysis && !loadingData && (
           <>
-            {/* Early warnings first: past 30 days, now, next 7 days, what to do */}
-            <AreaWarningsPanel analysis={analysis} />
-
             {/* Risk Cards Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
               {/* Flood Risk */}
@@ -412,6 +409,9 @@ export default function FarmerDashboard() {
                 </div>
               </div>
             </div>
+
+            {/* Then the early warnings: past 30 days, now, next 7 days, what to do */}
+            <AreaWarningsPanel analysis={analysis} />
 
             {/* 7-Day Weather Forecast */}
             {analysis.forecast && analysis.forecast.length > 0 && (
