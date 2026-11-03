@@ -2956,7 +2956,10 @@ export function ReachTab({ token }) {
                     {f.rawText && <span className="block font-normal text-gray-500">&ldquo;{f.rawText}&rdquo;</span>}
                   </td>
                   <td className="py-2 pr-3">{f.rainfallMm != null ? `${f.rainfallMm} mm` : "—"}</td>
-                  <td className="py-2 pr-3">{[f.village, f.district].filter(Boolean).join(", ") || "—"}</td>
+                  <td className="py-2 pr-3">
+                    {placeName(f) || "—"}
+                    <ReportPlace f={f} />
+                  </td>
                   <td className="py-2 pr-3">
                     {f.reporterName || "—"}
                     {f.phone && <span className="block font-mono text-gray-400">{f.phone}</span>}
@@ -2971,6 +2974,29 @@ export function ReachTab({ token }) {
         </div>
       </Card>
     </div>
+  );
+}
+
+/** "Rubuguri, Kisoro": the phone's place name often already ends with the district. */
+const placeName = (f) => [...new Set([f.village, f.district].filter(Boolean).join(", ").split(", "))].join(", ");
+
+/** Under "Where": the phone's location with a map link, or that it is only the registered village. */
+function ReportPlace({ f }) {
+  const lat = f.latitude != null ? Number(f.latitude) : null;
+  const lng = f.longitude != null ? Number(f.longitude) : null;
+  if (lat == null || lng == null) {
+    return <span className="block text-gray-400">{f.village && f.source === "app" ? "Registered village, no phone location" : "No location sent"}</span>;
+  }
+  return (
+    <a
+      href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=14/${lat}/${lng}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block font-mono text-emerald-700 hover:underline"
+    >
+      📍 {Math.abs(lat).toFixed(4)}°{lat < 0 ? "S" : "N"}, {lng.toFixed(4)}°E
+      <span className="font-sans text-gray-400"> · {f.locationSource === "gps" ? "phone location" : "village on the map"}</span>
+    </a>
   );
 }
 
