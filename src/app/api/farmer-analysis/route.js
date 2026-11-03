@@ -132,40 +132,99 @@ function computeFloodRisk(weatherData, floodData) {
   return Math.min(100, Math.max(0, Math.round(score)));
 }
 
-// ─── Compute heat/drought stress from real data ───
-function computeHeatStress(weatherData) {
+// ─── Usual daytime highs here at this time of year ───
+// Daily highs within 10 days either side of today's date in each of the last
+// 5 years (ERA5 via the Open-Meteo archive). 30°C is ordinary in Lira but
+// rare in Kabale, so heat is scored against what is normal for the place.
+async function fetchUsualHighs(lat, lng, years = 5) {
+  try {
+    const today = new Date();
+    const end = new Date(today.getTime() - 7 * 86400000); // the archive lags a few days
+    const start = new Date(today);
+    start.setFullYear(today.getFullYear() - years);
+    start.setDate(start.getDate() - 10);
+    const day = (d) => d.toISOString().split("T")[0];
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lng}` +
+      `&daily=temperature_2m_max&start_date=${day(start)}&end_date=${day(end)}&timezone=auto`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(12000), next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const times = data?.daily?.time || [];
+    const highs = data?.daily?.temperature_2m_max || [];
+
+    // Days of the year within 10 days of today's date, across the year end too.
+    const doy = (d) => Math.floor((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - Date.UTC(d.getUTCFullYear(), 0, 0)) / 86400000);
+    const target = doy(today);
+    const near = times
+      .map((t, i) => [doy(new Date(`${t}T12:00:00Z`)), highs[i]])
+      .filter(([d, v]) => v != null && Math.min(Math.abs(d - target), 365 - Math.abs(d - target)) <= 10)
+      .map(([, v]) => v)
+      .sort((a, b) => a - b);
+    if (near.length < 30) return null;
+    return {
+      mean: Math.round((near.reduce((a, b) => a + b, 0) / near.length) * 10) / 10,
+      // 1 day in 10 at this time of year is hotter than this.
+      hot: Math.round(near[Math.floor(near.length * 0.9)] * 10) / 10,
+      years,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── Heat stress (0–100): hot for crops, people and animals, and hot for here ───
+function computeHeatStress(weatherData, usual) {
+  const maxTemps = (weatherData?.daily?.temperature_2m_max || []).filter((t) => t != null);
+  if (!maxTemps.length) return { score: 0, detail: null };
+  const peak = Math.max(...maxTemps);
+  const weekHigh = maxTemps.reduce((a, b) => a + b, 0) / maxTemps.length;
+
+  // Hot anywhere in Uganda: from 26°C, 30°C already counts, full at 33.5°C
+  // (maize and bean flowers suffer above ~32°C; outdoor work gets hard).
+  const absolute = Math.min(60, Math.max(0, (peak - 26) * 8));
+
+  let local = 0;
+  if (usual) {
+    // Warmer than usual here: 10 points per °C the week's highs are above
+    // normal, plus up to 10 when the hottest day beats the 1-in-10 hot day.
+    local = Math.min(30, Math.max(0, (weekHigh - usual.mean) * 10)) + Math.min(10, Math.max(0, (peak - usual.hot) * 5));
+  }
+  // Without the usual highs, lean on the fixed limits alone.
+  const score = usual ? absolute + local : absolute * 1.4;
+
+  return {
+    score: Math.min(100, Math.max(0, Math.round(score))),
+    detail: {
+      peak: Math.round(peak * 10) / 10,
+      weekHigh: Math.round(weekHigh * 10) / 10,
+      usualHigh: usual?.mean ?? null,
+      hotDay: usual?.hot ?? null,
+      aboveUsual: usual ? Math.round((weekHigh - usual.mean) * 10) / 10 : null,
+      years: usual?.years ?? null,
+    },
+  };
+}
+
+// ─── Dry stress (0–100): crops and pasture short of water ───
+function computeDryStress(weatherData) {
   let score = 0;
-
   if (weatherData?.daily) {
-    const maxTemps = weatherData.daily.temperature_2m_max || [];
-    const peakTemp = maxTemps.length > 0 ? Math.max(...maxTemps) : 25;
-    const avgMaxTemp = maxTemps.length > 0 ? maxTemps.reduce((a, b) => a + b, 0) / maxTemps.length : 25;
-
-    // Peak temperature factor: 0-30pts (above 32°C gets risky for crops)
-    score += Math.min(30, Math.max(0, (peakTemp - 28) * 6));
-
-    // Sustained heat: if average max > 30°C for the week
-    score += Math.min(15, Math.max(0, (avgMaxTemp - 28) * 5));
-
-    // High evapotranspiration = water deficit
+    // High evapotranspiration = water deficit (ET0 above 4mm/day is high)
     const et = weatherData.daily.et0_fao_evapotranspiration || [];
     const avgET = et.length > 0 ? et.reduce((a, b) => a + (b || 0), 0) / et.length : 0;
-    score += Math.min(15, Math.max(0, (avgET - 4) * 5)); // ET0 > 4mm/day is high
+    score += Math.min(30, Math.max(0, (avgET - 4) * 10));
 
-    // Low precipitation during forecast = drought stress
-    const precips = weatherData.daily.precipitation_sum || [];
-    const totalPrecip = precips.reduce((a, b) => a + (b || 0), 0);
-    if (totalPrecip < 5) score += 20; // Almost no rain in 7 days
-    else if (totalPrecip < 15) score += 10;
+    // Little rain in the next 7 days
+    const totalPrecip = (weatherData.daily.precipitation_sum || []).reduce((a, b) => a + (b || 0), 0);
+    if (totalPrecip < 5) score += 40;
+    else if (totalPrecip < 15) score += 20;
   }
-
-  // Low humidity
-  if (weatherData?.current) {
-    const humidity = weatherData.current.relative_humidity_2m || 50;
-    if (humidity < 40) score += 15;
-    else if (humidity < 55) score += 5;
+  // Dry air
+  const humidity = weatherData?.current?.relative_humidity_2m;
+  if (humidity != null) {
+    if (humidity < 40) score += 30;
+    else if (humidity < 55) score += 10;
   }
-
   return Math.min(100, Math.max(0, Math.round(score)));
 }
 
@@ -330,15 +389,17 @@ export async function POST(request) {
     const hasGeo = geoLat != null;
 
     // Step 2: Fetch ALL real data in parallel
-    const [weatherData, floodData, climateHistory] = await Promise.all([
+    const [weatherData, floodData, climateHistory, usualHighs] = await Promise.all([
       hasGeo ? fetchWeatherAndSoil(lat, lng) : Promise.resolve(null),
       hasGeo ? fetchFloodData(lat, lng) : Promise.resolve(null),
       hasGeo ? fetchClimateHistory(lat, lng) : Promise.resolve(null),
+      hasGeo ? fetchUsualHighs(lat, lng) : Promise.resolve(null),
     ]);
 
     // Step 3: Compute risk scores from real data
     const floodRisk = computeFloodRisk(weatherData, floodData);
-    const heatStress = computeHeatStress(weatherData);
+    const heat = computeHeatStress(weatherData, usualHighs);
+    const dryStress = computeDryStress(weatherData);
     const soilData = buildSoilData(weatherData);
     const forecast = buildForecast(weatherData);
     const rainfallProfile = buildRainfallProfile(climateHistory);
@@ -400,23 +461,24 @@ export async function POST(request) {
     let finalFlood = floodData;
 
     if (hasGeo && (Math.abs(finalLat - lat) > 0.5 || Math.abs(finalLng - lng) > 0.5)) {
-      const [w, f] = await Promise.all([
+      const [w, f, u] = await Promise.all([
         fetchWeatherAndSoil(finalLat, finalLng),
         fetchFloodData(finalLat, finalLng),
+        fetchUsualHighs(finalLat, finalLng),
       ]);
       if (w) {
         finalWeather = w;
         // Recompute with corrected data
         const newFlood = computeFloodRisk(w, f || finalFlood);
-        const newHeat = computeHeatStress(w);
+        const newHeat = computeHeatStress(w, u);
         return NextResponse.json({
-          analysis: buildResponse(aiData, newFlood, newHeat, buildSoilData(w), buildForecast(w), rainfallProfile, finalLat, finalLng, w, f),
+          analysis: buildResponse(aiData, newFlood, newHeat, computeDryStress(w), buildSoilData(w), buildForecast(w), rainfallProfile, finalLat, finalLng, w, f),
         });
       }
     }
 
     return NextResponse.json({
-      analysis: buildResponse(aiData, floodRisk, heatStress, soilData, forecast, rainfallProfile, finalLat, finalLng, finalWeather, finalFlood),
+      analysis: buildResponse(aiData, floodRisk, heat, dryStress, soilData, forecast, rainfallProfile, finalLat, finalLng, finalWeather, finalFlood),
     });
 
   } catch (error) {
@@ -428,7 +490,7 @@ export async function POST(request) {
   }
 }
 
-function buildResponse(aiData, floodRisk, heatStress, soilData, forecast, rainfallProfile, lat, lng, weatherData, floodData) {
+function buildResponse(aiData, floodRisk, heat, dryStress, soilData, forecast, rainfallProfile, lat, lng, weatherData, floodData) {
   return {
     locationName: aiData.locationName || aiData.location || "Unknown",
     district: aiData.district || "",
@@ -441,7 +503,11 @@ function buildResponse(aiData, floodRisk, heatStress, soilData, forecast, rainfa
 
     // Real computed scores
     floodRisk,
-    heatStress,
+    // Heat for crops, people and animals, weighed against the usual highs here
+    heatStress: heat.score,
+    heat: heat.detail,
+    // Short of water: little rain ahead, fast drying, dry air
+    dryStress,
 
     // Real soil data
     soil: soilData,

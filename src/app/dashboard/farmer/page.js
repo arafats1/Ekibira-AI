@@ -111,6 +111,14 @@ export default function FarmerDashboard() {
 
   const floodScore = analysis?.floodRisk || 0;
   const heatScore = analysis?.heatStress || 0;
+  const dryScore = analysis?.dryStress;
+  const heat = analysis?.heat;
+  // "Up to 32°C · usually about 30°C here"
+  const heatNote = !heat
+    ? null
+    : heat.usualHigh == null
+      ? `Up to ${Math.round(heat.peak)}°C this week`
+      : `Up to ${Math.round(heat.peak)}°C · usually about ${Math.round(heat.usualHigh)}°C here`;
   const soil = analysis?.soil;
 
   const getRiskColor = (score) => {
@@ -261,7 +269,7 @@ export default function FarmerDashboard() {
         {analysis && !loadingData && (
           <>
             {/* Risk Cards Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
               {/* Flood Risk */}
               <div className={`rounded-xl p-5 border ${getRiskColor(floodScore)}`}>
                 <div className="flex items-center justify-between mb-2">
@@ -272,15 +280,27 @@ export default function FarmerDashboard() {
                 <div className="text-xs mt-1 font-[family-name:var(--font-body)]">{getRiskLabel(floodScore)}</div>
               </div>
 
-              {/* Heat/Drought Stress */}
+              {/* Heat, weighed against the usual highs for this place and time of year */}
               <div className={`rounded-xl p-5 border ${getRiskColor(heatScore)}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold font-[family-name:var(--font-body)]">Heat / Drought Stress</span>
+                  <span className="text-sm font-semibold font-[family-name:var(--font-body)]">Heat Stress</span>
                   <span className="text-2xl">🌡️</span>
                 </div>
                 <div className="text-3xl font-bold font-[family-name:var(--font-display)]">{heatScore}/100</div>
-                <div className="text-xs mt-1 font-[family-name:var(--font-body)]">{getRiskLabel(heatScore)}</div>
+                <div className="text-xs mt-1 font-[family-name:var(--font-body)]">{getRiskLabel(heatScore)}{heatNote ? ` · ${heatNote}` : ""}</div>
               </div>
+
+              {/* Dryness: little rain ahead, fast drying, dry air */}
+              {dryScore != null && (
+                <div className={`rounded-xl p-5 border ${getRiskColor(dryScore)}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold font-[family-name:var(--font-body)]">Dry Stress</span>
+                    <span className="text-2xl">🏜️</span>
+                  </div>
+                  <div className="text-3xl font-bold font-[family-name:var(--font-display)]">{dryScore}/100</div>
+                  <div className="text-xs mt-1 font-[family-name:var(--font-body)]">{getRiskLabel(dryScore)} · rain ahead, drying, dry air</div>
+                </div>
+              )}
 
               {/* Soil Moisture — from real sensor data */}
               <div className={`rounded-xl p-5 border ${soil ? getSoilColor(soil.level) : 'border-gray-200 bg-gray-50 text-gray-600'}`}>
