@@ -23,6 +23,7 @@ import { RAIN_CATEGORY } from "@/lib/ews/satellite";
 import { HAZARD_LABELS } from "@/lib/ews/hazards";
 import { smsSegments, FOOTER_SAMPLE, draftMessages } from "@/lib/ews/messages";
 import { parseContactsCsv } from "@/lib/ews/csv";
+import { shownEmail } from "@/lib/ews/account";
 import { placeReport, trackRecord } from "@/lib/ews/track";
 import "leaflet/dist/leaflet.css";
 
@@ -2760,7 +2761,7 @@ export function AgentsTab({ token }) {
                     <button onClick={() => setAgentId(a.id)} className="font-semibold text-[#1b4332] hover:underline text-left">
                       {a.fullName}
                     </button>
-                    <p className="text-gray-400">{a.email}</p>
+                    <p className="text-gray-400">{shownEmail(a)}</p>
                     {a.notes && <p className="text-gray-500 mt-0.5 max-w-xs">{a.notes}</p>}
                   </td>
                   <td className="py-2 pr-3">

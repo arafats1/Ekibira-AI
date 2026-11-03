@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { AgentsTab, OutlookTab, ReachTab, RegisterTab } from "./LastMileTabs";
+import { shownEmail } from "@/lib/ews/account";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
@@ -44,7 +45,7 @@ function UsersTab({ token, currentUser }) {
 
   const handleRoleChange = async (userEntry, newRole) => {
     if (newRole === (userEntry.role || "user")) return;
-    if (!confirm(`Change ${userEntry.fullName || userEntry.email} to ${ROLE_LABELS[newRole]}?`)) return;
+    if (!confirm(`Change ${userEntry.fullName || shownEmail(userEntry)} to ${ROLE_LABELS[newRole]}?`)) return;
     setTogglingId(userEntry.id);
     try {
       const res = await fetch(`${STRAPI_URL}/api/kibira-users/${userEntry.documentId || userEntry.id}`, {
@@ -95,7 +96,7 @@ function UsersTab({ token, currentUser }) {
                         <span className="font-medium text-[#1a2e1a]">{u.fullName || "—"}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)]">{u.email}</td>
+                    <td className="py-3 px-4 text-[#6b7c6b] font-[family-name:var(--font-body)]">{shownEmail(u)}</td>
                     <td className="py-3 px-4 font-[family-name:var(--font-body)]">
                       <select
                         value={u.role || "user"}
