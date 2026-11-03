@@ -1150,8 +1150,10 @@ const reportIcon = (L) =>
     iconAnchor: [6, 6],
   });
 
-// Rainfall layer: forecast totals binned per period, pale yellow (little) to navy (a lot).
-const RAIN_COLORS = ["#ffffd9", "#c7e9b4", "#7fcdbb", "#41b6c4", "#1d91c0", "#225ea8", "#0c2c84"];
+// Rainfall layer: forecast totals binned per period, light green (some) to navy (a lot).
+// The lowest class is left unshaded so the wet areas stand out against the map.
+const RAIN_COLORS = [null, "#a1dab4", "#41b6c4", "#1d91c0", "#225ea8", "#253494", "#081d58"];
+const RAIN_OPACITY = 0.8;
 const RAIN_PERIODS = [
   { days: 1, label: "Today", breaks: [1, 5, 10, 20, 30, 50] },
   { days: 3, label: "3 days", breaks: [5, 10, 25, 40, 60, 90] },
@@ -1159,6 +1161,65 @@ const RAIN_PERIODS = [
 ];
 const rainTotal = (cell, days) => (cell || []).slice(0, days).reduce((n, v) => n + (v || 0), 0);
 const rainClass = (mm, breaks) => breaks.filter((b) => mm >= b).length;
+const kmBetween = (aLat, aLng, bLat, bLng) => Math.hypot((aLat - bLat) * 111, (aLng - bLng) * 111 * Math.cos((aLat * Math.PI) / 180));
+const shortDay = (date) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", timeZone: "UTC" });
+
+/** The district headquarters or extra forecast point nearest a spot, if within 40 km. */
+function nearestPlace(overview, lat, lng) {
+  let best = null;
+  for (const d of overview || []) {
+    for (const p of [{ name: d.district, lat: d.lat, lng: d.lng }, ...(d.areas || []).map((a) => ({ name: `${a.name}, ${d.district}`, lat: a.lat, lng: a.lng }))]) {
+      const km = kmBetween(lat, lng, p.lat, p.lng);
+      if (km <= 40 && (!best || km < best.km)) best = { name: p.name, km: Math.round(km) };
+    }
+  }
+  return best;
+}
+
+/** Rain stats for the grid square under the pointer: total, each day, wettest day. */
+function RainCard({ hover, period, days }) {
+  const { cell } = hover;
+  const total = Math.round(rainTotal(cell, period.days));
+  const shown = cell.slice(0, period.days);
+  const wettest = shown.indexOf(Math.max(...shown));
+  const rainyDays = shown.filter((v) => v >= 10).length;
+  const top = Math.max(10, ...cell);
+  // Keep the card inside the map: flip to the other side of the pointer near the edges.
+  const style = {
+    left: hover.x > hover.w - 250 ? hover.x - 244 : hover.x + 14,
+    top: hover.y > hover.h - 190 ? Math.max(4, hover.y - 184) : hover.y + 14,
+  };
+  return (
+    <div className="absolute z-[1000] pointer-events-none w-[230px] rounded-xl bg-white/95 shadow-lg border border-gray-100 px-3 py-2.5 text-xs text-gray-600" style={style}>
+      <p className="font-semibold text-gray-900 text-[13px]">{hover.place ? `Near ${hover.place.name}` : "Rain forecast"}</p>
+      <p className="text-[10px] text-gray-400">
+        {Math.abs(hover.lat).toFixed(2)}°{hover.lat < 0 ? "S" : "N"}, {hover.lng.toFixed(2)}°E{hover.place ? ` · ${hover.place.km} km from the point` : ""}
+      </p>
+      <p className="mt-1.5">
+        <span className="text-lg font-bold text-gray-900">{total} mm</span> {period.days === 1 ? "today" : `in the next ${period.days} days`}
+      </p>
+      {period.days > 1 && (
+        <p>
+          Wettest: <span className="font-semibold text-gray-800">{shortDay(days[wettest])}</span>, {cell[wettest]} mm · {rainyDays} day{rainyDays === 1 ? "" : "s"} with 10 mm or more
+        </p>
+      )}
+      <div className="flex items-end gap-1 h-14 mt-2" aria-hidden>
+        {cell.map((v, i) => (
+          <div key={days[i]} className="flex-1 flex flex-col items-center justify-end h-full">
+            <span className="text-[9px] text-gray-500 leading-none mb-0.5">{Math.round(v)}</span>
+            <div className="w-full rounded-t-sm" style={{ height: `${Math.max(2, (v / top) * 36)}px`, background: i < period.days ? "#1d91c0" : "#d1d5db" }} />
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-1 mt-0.5">
+        {days.map((d) => (
+          <span key={d} className="flex-1 text-center text-[9px] text-gray-400">{shortDay(d).split(" ")[0]}</span>
+        ))}
+      </div>
+      <p className="text-[10px] text-gray-400 mt-1">Daily rain, mm. Grey days are outside the period shown.</p>
+    </div>
+  );
+}
 
 /** The rain grid drawn one pixel per cell, as a data URL for an image overlay. */
 function rainImage(data, period) {
@@ -1170,8 +1231,9 @@ function rainImage(data, period) {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const cell = data.rain[r * cols + c];
-      if (!cell?.length) continue;
-      ctx.fillStyle = RAIN_COLORS[rainClass(rainTotal(cell, period.days), period.breaks)];
+      const color = cell?.length && RAIN_COLORS[rainClass(rainTotal(cell, period.days), period.breaks)];
+      if (!color) continue;
+      ctx.fillStyle = color;
       ctx.fillRect(c, r, 1, 1);
     }
   }
@@ -1188,6 +1250,8 @@ function RiskMap({ overview, reports = [], selected, onSelect }) {
   const [rain, setRain] = useState({ data: null, loading: false, error: null });
   const [hover, setHover] = useState(null);
   const period = RAIN_PERIODS.find((p) => p.days === rainDays);
+  const overviewRef = useRef(overview);
+  overviewRef.current = overview;
 
   // Load the grid the first time the layer is turned on.
   useEffect(() => {
@@ -1214,7 +1278,7 @@ function RiskMap({ overview, reports = [], selected, onSelect }) {
       const { north, south, west, east, step, rows, cols } = data.grid;
       const half = step / 2;
       rainLayer.current = L.imageOverlay(rainImage(data, period), [[south - half, west - half], [north + half, east + half]], {
-        opacity: 0.6,
+        opacity: RAIN_OPACITY,
         className: "rain-layer",
       }).addTo(map.current);
       rainLayer.current.getElement().style.imageRendering = "pixelated";
@@ -1222,7 +1286,11 @@ function RiskMap({ overview, reports = [], selected, onSelect }) {
         const r = Math.round((north - e.latlng.lat) / step);
         const c = Math.round((e.latlng.lng - west) / step);
         const cell = r >= 0 && r < rows && c >= 0 && c < cols ? data.rain[r * cols + c] : null;
-        setHover(cell?.length ? { mm: Math.round(rainTotal(cell, period.days)), lat: north - r * step, lng: west + c * step } : null);
+        if (!cell?.length) return setHover(null);
+        const lat = north - r * step;
+        const lng = west + c * step;
+        const size = map.current.getSize();
+        setHover({ cell, lat, lng, place: nearestPlace(overviewRef.current, lat, lng), x: e.containerPoint.x, y: e.containerPoint.y, w: size.x, h: size.y });
       };
       const onOut = () => setHover(null);
       map.current.on("mousemove", onMove).on("mouseout", onOut);
@@ -1314,32 +1382,29 @@ function RiskMap({ overview, reports = [], selected, onSelect }) {
         {rainDays > 0 && rain.loading && <span className="text-gray-500">Loading rain forecast…</span>}
         {rainDays > 0 && rain.error && <span className="text-red-600">Rain forecast unavailable: {rain.error}</span>}
       </div>
-      <div className="relative">
+      <div
+        className="relative"
+        // Marker hover cards take over from the rain card.
+        onMouseOver={(e) => e.target.closest?.(".leaflet-marker-icon") && setHover(null)}
+      >
         <div ref={box} className="h-[380px] rounded-xl overflow-hidden border border-gray-100 relative z-0" />
-        {period && hover && (
-          <div className="absolute top-2 right-2 z-[1000] pointer-events-none rounded-lg bg-white/95 shadow px-3 py-1.5 text-xs text-gray-700">
-            <span className="font-semibold text-gray-900">{hover.mm} mm</span> {period.days === 1 ? "today" : `over the next ${period.days} days`}
-            <span className="block text-[10px] text-gray-400">
-              Cell at {Math.abs(hover.lat).toFixed(2)}°{hover.lat < 0 ? "S" : "N"}, {hover.lng.toFixed(2)}°E
-            </span>
-          </div>
-        )}
+        {period && hover && rain.data && <RainCard hover={hover} period={period} days={rain.data.days} />}
       </div>
       {period && rain.data && (
         <div className="mt-3 text-xs text-gray-600">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-semibold text-gray-700">{period.days === 1 ? "Rain today" : `Rain over the next ${period.days} days`}</span>
             {RAIN_COLORS.map((color, i) => (
-              <span key={color} className="flex items-center gap-1">
-                <span className="w-4 h-3 rounded-sm border border-gray-200" style={{ background: color, opacity: 0.6 }} />
-                {i === 0 ? `under ${period.breaks[0]}` : i === RAIN_COLORS.length - 1 ? `${period.breaks[i - 1]}+` : `${period.breaks[i - 1]}–${period.breaks[i]}`}
+              <span key={i} className="flex items-center gap-1">
+                <span className="w-4 h-3 rounded-sm border border-gray-300" style={{ background: color || "transparent", opacity: color ? RAIN_OPACITY : 1 }} />
+                {i === 0 ? `under ${period.breaks[0]} (not shaded)` : i === RAIN_COLORS.length - 1 ? `${period.breaks[i - 1]}+` : `${period.breaks[i - 1]}–${period.breaks[i]}`}
               </span>
             ))}
             <span>mm</span>
           </div>
           <p className="text-[11px] text-gray-400 mt-1">
             {rain.data.source}, {rain.data.days[0]}
-            {period.days > 1 ? ` to ${rain.data.days[period.days - 1]}` : ""}. Each square is about 28 km across; point at the map to read a value. One forecast run, so it can miss local storms; the signals use the 51-member ensemble.
+            {period.days > 1 ? ` to ${rain.data.days[period.days - 1]}` : ""}. Each square is about 28 km across; point at the map for that square's rain, day by day. One forecast run, so it can miss local storms; the signals use the 51-member ensemble.
           </p>
         </div>
       )}
