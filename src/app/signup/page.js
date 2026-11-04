@@ -1,6 +1,7 @@
 "use client";
 import { useState, Suspense } from "react";
 import Link from "next/link";
+import AuthShell from "../components/AuthShell";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import { DISTRICTS, LANGUAGES, PERSONAS, REGIONS } from "../../lib/ews/regions";
@@ -135,11 +136,9 @@ function SignupForm() {
   const selected = ROLES.find((r) => r.id === role);
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4 py-8">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f13] via-[#122a1a] to-[#0f2618]" />
-
+    <AuthShell>
       <div className="w-full max-w-lg relative z-10">
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 lg:hidden">
           <Link href="/" className="inline-flex items-center gap-2">
             <span className="text-3xl">🌿</span>
             <span className="font-[family-name:var(--font-display)] text-2xl font-bold text-[#4ade80]">KibiraAI</span>
@@ -319,7 +318,7 @@ function SignupForm() {
           <Link href="/privacy" className="underline hover:text-white/70">Privacy Policy</Link>.
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }
 
