@@ -3,48 +3,62 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getDashboardRoute, SIGNUP_ACCOUNT_TYPES } from "../../lib/dashboardRoutes";
+import { getDashboardRoute } from "../../lib/dashboardRoutes";
 
 const solutionLinks = [
   {
     href: "/problem",
     label: "The Problem",
-    description: "Why forests, cities, and children need climate foresight",
+    description: "Why warnings rarely reach last-mile communities",
   },
   {
     href: "/solution",
     label: "Our Solution",
-    description: "How KibiraAI turns climate data into protection",
+    description: "How a forecast becomes a warning on a phone in the village",
   },
 ];
 
-/** Public systems only — Forest Sentinel is forestry-account access, not listed here */
 const systemLinks = [
+  {
+    href: "/last-mile",
+    label: "Last-mile Early Warning",
+    description: "Today's warnings for every covered district",
+    accent: "bg-emerald-500",
+  },
   {
     href: "/childrens-early-warning",
     label: "Children's Early Warning",
-    description: "Live risk dashboards for schools and clinics",
+    description: "Malaria, diarrhoea, pneumonia and heat risk for children",
     accent: "bg-rose-500",
-  },
-  {
-    href: "/urban-warning",
-    label: "Urban Warning",
-    description: "Hyperlocal flood and heat prediction",
-    accent: "bg-blue-500",
   },
   {
     href: "/advisor",
     label: "Dr. Kibira AI",
-    description: "AI climate research assistant",
+    description: "Ask what the weather means for you",
   },
 ];
 
-const useCaseLinks = SIGNUP_ACCOUNT_TYPES.map((t) => ({
-  href: `/signup?type=${t.id}`,
-  label: t.navLabel,
-  description: t.desc,
-  accent: t.id === "farmer" ? "bg-amber-500" : t.id === "forestry" ? "bg-emerald-500" : "bg-rose-500",
-}));
+// The same two sign-ups as the mobile app; any other use starts with a conversation.
+const useCaseLinks = [
+  {
+    href: "/signup?type=farmer",
+    label: "Community member",
+    description: "Warnings for your district by SMS and app, in your language",
+    accent: "bg-amber-500",
+  },
+  {
+    href: "/signup?type=agent",
+    label: "KibiraAI Agent",
+    description: "Register your community and report what happens on the ground",
+    accent: "bg-emerald-500",
+  },
+  {
+    href: "/contact",
+    label: "Organisations & other uses",
+    description: "Schools, health facilities, NGOs, local government: get in touch",
+    accent: "bg-sky-500",
+  },
+];
 
 function Chevron({ open }) {
   return (
@@ -239,10 +253,10 @@ export default function Navbar() {
             onClose={() => setDesktopMenu(null)}
           />
           <a
-            href="/plant-a-tree"
+            href="/contact"
             className="inline-flex items-center h-10 px-3 whitespace-nowrap text-base font-semibold text-[#1a2e1a]/85 hover:text-[#2d6a4f] transition-colors"
           >
-            Plant a Tree
+            Contact
           </a>
         </div>
 
@@ -384,11 +398,11 @@ export default function Navbar() {
             ))}
 
           <a
-            href="/plant-a-tree"
+            href="/contact"
             onClick={() => setOpen(false)}
             className="hover:text-[#2d6a4f] py-3 border-b border-[#eef2e6] font-semibold text-[#1a2e1a]"
           >
-            Plant a Tree
+            Contact
           </a>
 
           {user ? (

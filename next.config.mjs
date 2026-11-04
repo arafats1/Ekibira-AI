@@ -21,6 +21,9 @@ const contentSecurityPolicy = [
     "connect-src 'self'",
     "https://js.stripe.com",
     "https://api.stripe.com",
+    // Homepage live forecast, and the place name for the visitor's location
+    "https://api.open-meteo.com",
+    "https://api.bigdatacloud.net",
     strapiOrigin,
   ]
     .filter(Boolean)
@@ -36,7 +39,7 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=(self)",
+    value: "camera=(), microphone=(), geolocation=(self), payment=(self)",
   },
   {
     key: "Strict-Transport-Security",

@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Children's Early Warning | KibiraAI",
+  title: "Children's Early Warning",
   description:
-    "Hyper-local heat, humidity, UV, air quality, flood, heat-illness and vector early warning for schools, clinics, and local governments — with anticipatory action playbooks.",
+    "Weekly malaria, diarrhoea, pneumonia and heat-illness risk for children in each district, worked out from weather and air quality, with what parents can do.",
   alternates: {
     canonical: "/childrens-early-warning",
   },

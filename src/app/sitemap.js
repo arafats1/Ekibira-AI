@@ -1,77 +1,18 @@
 export default function sitemap() {
   const baseUrl = "https://www.kibiraai.com";
+  const page = (path, changeFrequency, priority) => ({ url: `${baseUrl}${path}`, lastModified: new Date(), changeFrequency, priority });
 
   return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/forest-sentinel`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/urban-warning`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/childrens-early-warning`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/early-warning-status`,
-      lastModified: new Date(),
-      changeFrequency: "hourly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/docs/early-warning`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.85,
-    },    {
-      url: `${baseUrl}/plant-a-tree`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/advisor`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/problem`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/solution`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    page("", "weekly", 1),
+    page("/last-mile", "daily", 0.9),
+    page("/childrens-early-warning", "daily", 0.9),
+    page("/problem", "monthly", 0.7),
+    page("/solution", "monthly", 0.7),
+    page("/advisor", "daily", 0.8),
+    page("/contact", "monthly", 0.6),
+    page("/signup", "monthly", 0.6),
+    page("/docs/early-warning", "weekly", 0.5),
+    page("/privacy", "yearly", 0.3),
+    page("/terms", "yearly", 0.3),
   ];
 }

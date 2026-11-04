@@ -18,6 +18,7 @@ export const HAZARD_LABELS = {
   crop_disease: "Crop disease risk",
   livestock_disease: "Livestock disease risk",
   human_disease: "Malaria & waterborne disease risk",
+  child_health: "Children's health",
 };
 
 export const DISEASE_HAZARDS = ["crop_disease", "livestock_disease", "human_disease"];

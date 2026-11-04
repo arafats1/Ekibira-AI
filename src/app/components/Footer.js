@@ -12,8 +12,8 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-sm leading-relaxed font-[family-name:var(--font-body)]">
-              AI-powered climate intelligence for Africa — fighting deforestation, delivering urban early warning,
-              and turning climate data into children&rsquo;s health foresight.
+              Early warnings for last-mile communities: heavy rain, floods, landslides, dry spells and disease,
+              by SMS, voice and app in local languages.
             </p>
           </div>
 
@@ -21,15 +21,13 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-3 font-[family-name:var(--font-display)]">Quick Links</h4>
             <div className="sm:space-y-2 text-sm font-[family-name:var(--font-body)]">
-              <a href="/#problem" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">The Problem</a>
+              <a href="/problem" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">The Problem</a>
               <a href="/solution" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Our Solution</a>
-              <a href="/advisor" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Dr. Kibira AI</a>
-              <a href="/docs/early-warning" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Developer Docs (Early Warning)</a>
+              <a href="/last-mile" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Today&apos;s Warnings</a>
               <a href="/childrens-early-warning" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Children&apos;s Early Warning</a>
-              <a href="/early-warning-status" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Public Status Dashboard</a>
-              <a href="/urban-warning" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Urban Warning</a>
-              <a href="/signup?type=forestry" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Forestry &amp; Conservation Signup</a>
-              <a href="/#impact" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Projected Impact</a>
+              <a href="/advisor" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Dr. Kibira AI</a>
+              <a href="https://play.google.com/store/apps/details?id=com.kibiraai.mobile&amp;pcampaignid=web_share" target="_blank" rel="noopener noreferrer" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Get the App</a>
+              <a href="/contact" className="flex items-center sm:block leading-snug hover:text-[#4ade80] transition-colors">Work With Us</a>
             </div>
           </div>
 
@@ -39,7 +37,8 @@ export default function Footer() {
             <div className="space-y-2 text-xs sm:text-sm font-[family-name:var(--font-body)]">
               <p className="break-words">📧 arafats144@gmail.com</p>
               <p>📍 Kampala, Uganda</p>
-              <p>🌍 Serving communities across Africa</p>
+              <p>🌍 Serving last-mile communities in Uganda</p>
+              <a href="/contact" className="inline-block text-[#4ade80] hover:underline">Send us a message →</a>
             </div>
           </div>
         </div>

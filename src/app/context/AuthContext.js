@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { ugandaPhone } from "@/lib/ews/account";
 
 const AuthContext = createContext(null);
 
@@ -237,7 +238,29 @@ export function AuthProvider({ children }) {
     return userData;
   }, []);
 
-  const login = useCallback(async ({ identifier, password }) => {
+  /**
+   * Community member or KibiraAI agent account, as in the mobile app: a phone
+   * number (typed 07...) and/or email. The backend also creates the profile.
+   */
+  const registerAccount = useCallback(async ({ phone, email, password, fullName, position, accountType }) => {
+    const res = await fetch(`${STRAPI_URL}/api/ews/account/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: phone || undefined, email: email || undefined, password, fullName, position, accountType }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error?.message || "Registration failed");
+    const userData = buildUserData(data.user, data.profile, null);
+    localStorage.setItem("kibira_token", data.jwt);
+    localStorage.setItem("kibira_user", JSON.stringify(userData));
+    setUser(userData);
+    return { ...userData, jwt: data.jwt };
+  }, []);
+
+  const login = useCallback(async ({ identifier: typed, password }) => {
+    // A phone number signs in however it was typed: 0772..., 772..., +256...
+    const id = String(typed || "").trim();
+    const identifier = id.includes("@") ? id : ugandaPhone(id) || id;
     const res = await fetch(`${STRAPI_URL}/api/auth/local`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -281,7 +304,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout, getToken }}>
+    <AuthContext.Provider value={{ user, loading, register, registerAccount, login, logout, getToken }}>
       {children}
     </AuthContext.Provider>
   );

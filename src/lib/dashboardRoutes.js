@@ -4,6 +4,8 @@
  */
 export const DASHBOARD_ROUTES = {
   farmer: "/dashboard/farmer",
+  agent: "/dashboard/farmer", // agent work happens in the mobile app
+
   forestry: "/dashboard/forestry",
   school_health: "/dashboard/school",
   local_gov: "/dashboard/school", // legacy → schools & health dashboard

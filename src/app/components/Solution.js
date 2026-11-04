@@ -1,164 +1,18 @@
+import WarningStory from "./home/WarningStory";
+
 export default function Solution() {
-  const useCases = [
-    {
-      icon: "🌲",
-      role: "Forestry & Conservation",
-      title: "Real-Time Forest Protection",
-      description:
-        "Forestry officers and conservationists use acoustic sensors and AI to detect illegal logging in real time. Monitor forest health, track deforestation patterns, and receive instant alerts when threats are detected.",
-      features: [
-        "Forest Sentinel with live acoustic monitoring",
-        "AI-powered chainsaw and logging sound detection",
-        "GPS-tagged alerts sent to rangers within 30 seconds",
-        "Dr. Kibira AI for forest research and analysis",
-      ],
-      color: "from-emerald-500/20 to-emerald-600/10",
-      accent: "text-emerald-400",
-      border: "border-emerald-500/30",
-    },
-    {
-      icon: "🏙️",
-      role: "Urban Policymakers",
-      title: "Climate-Resilient Cities",
-      description:
-        "City planners and policymakers get AI-driven urban climate analysis — heat island mapping, flood risk scoring, and neighborhood-level vulnerability assessments to prioritize infrastructure investments.",
-      features: [
-        "Urban heat and flood early warning system",
-        "Neighborhood-level climate vulnerability maps",
-        "AI recommendations for cooling and drainage",
-        "Real-time environmental data for any African area",
-      ],
-      color: "from-blue-500/20 to-blue-600/10",
-      accent: "text-blue-400",
-      border: "border-blue-500/30",
-    },
-    {
-      icon: "👧",
-      role: "Schools & Health",
-      title: "Children's Climate Health",
-      description:
-        "Turn climate data into early action for children — hyper-local heat, flood, air quality, and humidity alerts with playbooks for schools, clinics, and community health workers.",
-      features: [
-        "Facility-aware flood, heat & AQI risk",
-        "Anticipatory action for schools and clinics",
-        "Climate-sensitive health risk guidance",
-        "Alerts to caregivers and local leaders",
-      ],
-      color: "from-rose-500/20 to-rose-600/10",
-      accent: "text-rose-400",
-      border: "border-rose-500/30",
-    },
-    {
-      icon: "🌾",
-      role: "Farmers & Agribusiness",
-      title: "My Farm — Track, Predict, Sell",
-      description:
-        "Farmers register crops, follow weather-matched daily actions through the season, see expected harvest outcomes, and check market prices so they plant, manage, and sell with foresight.",
-      features: [
-        "My Farm crop tracking from planting to harvest",
-        "Daily actions matched to real local weather",
-        "Yield outcome predictions and risk alerts",
-        "Market price forecasts when you harvest",
-      ],
-      color: "from-amber-500/20 to-amber-600/10",
-      accent: "text-amber-400",
-      border: "border-amber-500/30",
-    },
-  ];
-
-  const steps = [
-    {
-      step: "01",
-      title: "Explore Free Tools",
-      description: "Use Dr. Kibira AI and Early Warning free — no signup required",
-    },
-    {
-      step: "02",
-      title: "Create Your Account",
-      description: "Select your role — farmer, forestry & conservation, or schools & health facilities",
-    },
-    {
-      step: "03",
-      title: "AI Analyzes Data",
-      description: "Our AI processes weather, crops, forest, and climate signals in real time",
-    },
-    {
-      step: "04",
-      title: "Act on Insights",
-      description: "Get crop plans, price forecasts, forest alerts, and early warning for cities and schools",
-    },
-  ];
-
   return (
-    <section id="solution" className="relative py-16 sm:py-24 md:py-32 overflow-hidden">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=1920&q=80')] bg-cover bg-center" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0a1f13]/85 via-[#0a1f13]/75 to-[#0a1f13]/90" />
-
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center mb-10 sm:mb-16">
-          <span className="inline-block text-[#4ade80] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 sm:mb-4 font-[family-name:var(--font-body)]">
-            How It Works
-          </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6">
-            One Platform, <span className="text-[#4ade80]">Many Use Cases</span>
-          </h2>
-          <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-[family-name:var(--font-body)]">
-            KibiraAI gives every user a role-specific dashboard — farmers track crops and prices,
-            rangers protect forests, cities get early warning, and schools act on children&rsquo;s climate health.
-          </p>
+    <section id="solution" className="py-16 sm:py-24 bg-gradient-to-b from-[#eef6f0] to-[#f6faf7]">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <p className="text-sm font-semibold uppercase tracking-wider text-[#2d6a4f]">Our solution</p>
+          <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-[#1a2e1a] max-w-3xl mx-auto">From a forecast to a phone in the village</h2>
         </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-14 sm:mb-20">
-          {useCases.map((uc, i) => (
-            <div
-              key={i}
-              className={`bg-gradient-to-br ${uc.color} backdrop-blur-md rounded-2xl p-5 sm:p-6 border ${uc.border} hover:bg-white/15 transition-all duration-300 ${
-                i === useCases.length - 1 && useCases.length % 3 === 1 ? "lg:col-start-2" : ""
-              }`}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-3xl">{uc.icon}</span>
-                <div>
-                  <p className={`text-xs font-semibold ${uc.accent} font-[family-name:var(--font-body)]`}>{uc.role}</p>
-                  <h3 className="text-base sm:text-lg font-bold text-white font-[family-name:var(--font-display)] leading-tight">{uc.title}</h3>
-                </div>
-              </div>
-              <p className="text-white/60 text-sm leading-relaxed mb-4 font-[family-name:var(--font-body)]">
-                {uc.description}
-              </p>
-              <div className="space-y-1.5">
-                {uc.features.map((feat, j) => (
-                  <div key={j} className="flex items-start gap-2">
-                    <span className={`${uc.accent} text-xs mt-0.5`}>✓</span>
-                    <p className="text-white/50 text-xs font-[family-name:var(--font-body)]">{feat}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="text-center mb-8 sm:mb-12">
-          <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
-            Getting Started
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {steps.map((step, i) => (
-            <div key={i} className="relative text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#4ade80] text-[#0a1f13] text-base sm:text-xl font-bold mb-3 sm:mb-4 font-[family-name:var(--font-display)]">
-                {step.step}
-              </div>
-              {i < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-white/20" />
-              )}
-              <h4 className="text-sm sm:text-lg font-bold text-white mb-1 sm:mb-2 font-[family-name:var(--font-display)]">
-                {step.title}
-              </h4>
-              <p className="text-white/60 text-xs sm:text-sm font-[family-name:var(--font-body)]">{step.description}</p>
-            </div>
-          ))}
+        <p className="mt-3 text-[#4a5c4a] max-w-2xl mx-auto text-center font-[family-name:var(--font-body)]">
+          Every day KibiraAI checks the past 30 days, today and the coming week for each district, against what is usual there, and drafts warnings people can act on.
+        </p>
+        <div className="mt-10">
+          <WarningStory />
         </div>
       </div>
     </section>

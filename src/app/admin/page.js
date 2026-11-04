@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { AgentsTab, OutlookTab, ReachTab, RegisterTab } from "./LastMileTabs";
+import ChildHealthTab from "./ChildHealthTab";
 import { shownEmail } from "@/lib/ews/account";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
@@ -921,6 +922,7 @@ const TAB_GROUPS = [
       { id: "register", label: "Register people", icon: "📝" },
       { id: "agents", label: "Agents & field reports", icon: "📣" },
       { id: "reach", label: "Reach & feedback", icon: "📡" },
+      { id: "children", label: "Children's health", icon: "👶" },
     ],
   },
   {
@@ -1051,6 +1053,7 @@ export default function AdminPage() {
             {tab === "register" && <RegisterTab token={token} ussdCode={meta?.ussdCode} />}
             {tab === "agents" && <AgentsTab token={token} />}
             {tab === "reach" && <ReachTab token={token} />}
+            {tab === "children" && <ChildHealthTab token={token} />}
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-[#e5e7eb] p-6">

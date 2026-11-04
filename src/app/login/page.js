@@ -25,7 +25,7 @@ function LoginForm() {
     setError("");
 
     if (!form.identifier || !form.password) {
-      setError("Email and password are required.");
+      setError("Enter your phone number or email, and your password.");
       return;
     }
 
@@ -81,14 +81,15 @@ function LoginForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[#1a2e1a] mb-1 font-[family-name:var(--font-body)]">
-                Email Address
+                Phone number or email
               </label>
               <input
-                type="email"
+                type="text"
+                autoComplete="username"
                 name="identifier"
                 value={form.identifier}
                 onChange={handleChange}
-                placeholder="you@company.com"
+                placeholder="0772 123 456 or you@email.com"
                 className="w-full px-4 py-2.5 rounded-xl border border-[#d1d5db] focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/15 outline-none text-sm font-[family-name:var(--font-body)] transition-all"
                 required
               />
