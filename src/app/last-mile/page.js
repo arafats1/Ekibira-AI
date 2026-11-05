@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import RainMap from "../components/home/RainMap";
+import OfficialAlerts from "../components/OfficialAlerts";
 import { REGIONS } from "../../lib/ews/regions";
 import { PLAY_STORE_URL } from "../../lib/ews/account";
 
@@ -40,6 +41,9 @@ function DistrictCard({ d }) {
           <span className="text-[10px] font-bold uppercase rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-800">Clear</span>
         )}
       </div>
+      {d.official?.length > 0 && (
+        <p className="mt-3 text-xs font-bold text-red-700">🏛️ Official DMS: {d.official.map((o) => o.event).join(", ")}</p>
+      )}
       {d.hazards?.length ? (
         <>
         <ul className="mt-3 space-y-1">
@@ -117,6 +121,11 @@ export default function LastMilePage() {
           {!data && !error && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {Array.from({ length: 8 }, (_, i) => <div key={i} className="h-28 rounded-2xl bg-white border border-[#e5e7eb] animate-pulse" />)}
+            </div>
+          )}
+          {data && (
+            <div className="mb-8">
+              <OfficialAlerts alerts={data.official} error={data.officialError} />
             </div>
           )}
           <div className="mb-10 rounded-2xl border border-[#d5e8dc] bg-white p-5 sm:p-6">

@@ -24,6 +24,7 @@ import { HAZARD_LABELS } from "@/lib/ews/hazards";
 import { smsSegments, FOOTER_SAMPLE, draftMessages } from "@/lib/ews/messages";
 import { parseContactsCsv } from "@/lib/ews/csv";
 import { shownEmail } from "@/lib/ews/account";
+import OfficialAlerts from "../components/OfficialAlerts";
 import { placeReport, trackRecord } from "@/lib/ews/track";
 import "leaflet/dist/leaflet.css";
 
@@ -1624,6 +1625,7 @@ function SeasonOverview({ overview, onSelect }) {
 
 export function OutlookTab({ token, isAdmin, meta }) {
   const [overview, setOverview] = useState(null);
+  const [official, setOfficial] = useState(null);
   const [loadingOverview, setLoadingOverview] = useState(true);
   const [selected, setSelected] = useState("Kisoro");
   const [detail, setDetail] = useState(null);
@@ -1643,7 +1645,10 @@ export function OutlookTab({ token, isAdmin, meta }) {
   useEffect(() => {
     fetch("/api/ews/outlook")
       .then((r) => r.json())
-      .then((d) => setOverview(d.districts || []))
+      .then((d) => {
+        setOverview(d.districts || []);
+        setOfficial({ alerts: d.official || [], error: d.officialError || null });
+      })
       .catch(() => setOverview([]))
       .finally(() => setLoadingOverview(false));
   }, []);
@@ -1723,6 +1728,7 @@ export function OutlookTab({ token, isAdmin, meta }) {
 
   return (
     <div className="space-y-6">
+      {official && <OfficialAlerts alerts={official.alerts} error={official.error} />}
       <RiskMap overview={overview} reports={mapReports} selected={selected} onSelect={openDistrict} />
       <SeasonOverview overview={overview} onSelect={openDistrict} />
       <div id="district-outlook" className="grid lg:grid-cols-[300px_1fr] gap-6">

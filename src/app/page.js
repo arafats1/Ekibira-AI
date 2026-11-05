@@ -1,5 +1,6 @@
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
+import OfficialBand from "./components/home/OfficialBand";
 import Problem from "./components/Problem";
 import Solution from "./components/Solution";
 import LocalForecast from "./components/home/LocalForecast";
@@ -24,6 +25,7 @@ export default function Home() {
     <>
       <Navbar />
       <Hero />
+      <OfficialBand />
       <Problem />
       <Solution />
       <section id="forecast" className="py-16 sm:py-20 bg-[#f6faf7]">

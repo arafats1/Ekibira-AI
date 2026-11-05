@@ -5,6 +5,7 @@ import { assessHazards, assessDiseaseRisks, applySeason, seasonState, SEVERITY_O
 import { getDailyWeather, getClimateNormals } from "@/lib/ews/weather";
 import { draftMessages } from "@/lib/ews/messages";
 import { getSatellite } from "@/lib/ews/satellite";
+import { dmsFor, getDmsAlerts } from "@/lib/ews/dms";
 
 const PERSONA_KEYS = PERSONAS.map((p) => p.key);
 
@@ -68,12 +69,13 @@ export async function GET(request) {
     if (!district) return NextResponse.json({ error: "Unknown district" }, { status: 404, headers: CORS });
     try {
       const extra = areasOf(district.name);
-      const [forecast, [weather], [normal], satellite, areaForecasts] = await Promise.all([
+      const [forecast, [weather], [normal], satellite, areaForecasts, dms] = await Promise.all([
         getDistrictForecast(district),
         getDailyWeather([district]),
         getClimateNormals([district]),
         getSatellite(district),
         extra.length ? getDistrictForecasts(extra) : [],
+        getDmsAlerts(),
       ]);
       const signals = assessHazards(district, forecast);
       const all = [...signals, ...assessDiseaseRisks(weather, signals, normal)];
@@ -84,7 +86,18 @@ export async function GET(request) {
       }));
       const areas = extra.map((a, i) => areaOutlook(a, district, areaForecasts[i], satellite, weather, normal, true));
       return NextResponse.json(
-        { district, forecast, weather, normal, satellite, season, hazards: withAreaSignals(hazards, areas), areas },
+        {
+          district,
+          forecast,
+          weather,
+          normal,
+          satellite,
+          season,
+          hazards: withAreaSignals(hazards, areas),
+          areas,
+          // Official DMS warnings covering this district (shown first, never merged into ours)
+          official: dmsFor(dms.alerts, district.name).map(({ polygons, ...a }) => a),
+        },
         { headers: CORS }
       );
     } catch (err) {
@@ -92,12 +105,13 @@ export async function GET(request) {
     }
   }
 
-  const [forecasts, weather, normals, satellites, areaForecasts] = await Promise.all([
+  const [forecasts, weather, normals, satellites, areaForecasts, dms] = await Promise.all([
     getDistrictForecasts(DISTRICTS),
     getDailyWeather(DISTRICTS),
     getClimateNormals(DISTRICTS),
     Promise.all(DISTRICTS.map((d) => getSatellite(d))),
     getDistrictForecasts(AREAS),
+    getDmsAlerts(),
   ]);
   const results = DISTRICTS.map((district, i) => {
     const forecast = forecasts[i];
@@ -107,12 +121,16 @@ export async function GET(request) {
     const areas = AREAS.map((a, j) => [a, areaForecasts[j]])
       .filter(([a]) => a.district === district.name)
       .map(([a, f]) => areaOutlook(a, district, f, satellites[i], weather[i], normals[i], false));
-    const base = { district: district.name, region: district.region, lat: district.lat, lng: district.lng, current, today, season, areas };
+    const official = dmsFor(dms.alerts, district.name).map(({ id, event, level, severity, headline, expires, web }) => ({ id, event, level, severity, headline, expires, web }));
+    const base = { district: district.name, region: district.region, lat: district.lat, lng: district.lng, current, today, season, areas, official };
     const signals = forecast.error ? [] : assessHazards(district, forecast);
     const all = [...signals, ...assessDiseaseRisks(weather[i], signals, normals[i])];
     const hazards = withAreaSignals(applySeason(district, all, satellites[i], weather[i], normals[i]), areas);
     if (forecast.error) return { ...base, error: forecast.error, hazards };
     return { ...base, provider: forecast.rainfall.provider, hazards };
   });
-  return NextResponse.json({ districts: results, generatedAt: new Date().toISOString() }, { headers: CORS });
+  return NextResponse.json(
+    { districts: results, official: dms.alerts.map(({ polygons, ...a }) => a), officialError: dms.error, generatedAt: new Date().toISOString() },
+    { headers: CORS }
+  );
 }
